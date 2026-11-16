@@ -17,7 +17,7 @@ const script = readFileSync(join(dir, 'assets', js[0]), 'utf8').replace(/<\/scri
 const style = css.map((f) => readFileSync(join(dir, 'assets', f), 'utf8')).join('\n').replace(/<\/style/gi, '<\\/style');
 const favicon = readFileSync('public/favicon.svg', 'utf8');
 
-const html = `<title>FIT Command Center</title>
+const html = `<title>Replete</title>
 <meta name="theme-color" content="#0b0f14">
 <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(favicon)}">
 <style>

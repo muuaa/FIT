@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { FlaskConical, HardDrive, TriangleAlert, X } from 'lucide-react';
+import { FlaskConical, TriangleAlert, X } from 'lucide-react';
+import { Logo } from '@/components/Logo';
 import { useState } from 'react';
 import { Button, IconButton } from '@/components/ui/Button';
 import { eraseAll, getMeta, setMeta, storageAvailable } from '@/lib/localDb';
@@ -62,14 +63,15 @@ export function WelcomeCard() {
       >
         <X size={18} />
       </IconButton>
-      <div className="flex items-center gap-2.5 pr-10">
-        <span className="grid size-8 place-items-center rounded-xl bg-water/15 text-water">
-          <HardDrive size={17} />
-        </span>
-        <h2 className="text-[15px] font-semibold">Saved on this device</h2>
+      <div className="flex items-center gap-3 pr-10">
+        <Logo size={44} />
+        <div>
+          <h2 className="text-lg font-bold tracking-tight">Welcome to Replete</h2>
+          <p className="text-xs text-ink-3">Train · Fuel · Hydrate · Recover</p>
+        </div>
       </div>
       <p className="mt-2 text-sm text-ink-2">
-        Everything you log stays in this browser on this phone. There's no account and nothing is uploaded. Make a backup now
+        Everything you log is saved on this phone, in this browser. There's no account and nothing is uploaded. Make a backup now
         and then from Settings.
       </p>
       <div className="mt-3 flex gap-2">
@@ -81,7 +83,7 @@ export function WelcomeCard() {
             refresh();
           }}
         >
-          <FlaskConical size={16} /> Try sample data
+          <FlaskConical size={16} /> Sample data
         </Button>
         <Button
           variant="primary"

@@ -9,6 +9,7 @@ import { SplitSwitcher } from '@/features/train/TrainPage';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { toast } from '@/stores/toastStore';
 import type { Profile } from '@/types/db';
+import { Logo } from '@/components/Logo';
 import { BackupCard } from './BackupCard';
 
 type Form = Record<
@@ -135,6 +136,11 @@ export function SettingsPage() {
           Save changes
         </Button>
         <BackupCard />
+        <div className="flex flex-col items-center gap-1 pb-2 pt-4 text-center">
+          <Logo size={36} />
+          <div className="text-sm font-semibold">Replete</div>
+          <div className="text-xs text-ink-3">Train · Fuel · Hydrate · Recover</div>
+        </div>
       </div>
     </>
   );

@@ -22,7 +22,7 @@ requestPersistence();
 
 /** Embedded single-file builds (VITE_EMBEDDED=1) can't rely on URL paths, so they route in memory. */
 function Router({ children }: { children: ReactNode }) {
-  return import.meta.env.VITE_EMBEDDED ? <MemoryRouter>{children}</MemoryRouter> : <BrowserRouter>{children}</BrowserRouter>;
+  return import.meta.env.VITE_EMBEDDED ? <MemoryRouter>{children}</MemoryRouter> : <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>{children}</BrowserRouter>;
 }
 
 createRoot(document.getElementById('root')!).render(

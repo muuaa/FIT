@@ -245,10 +245,10 @@ export function importAll(json: string): void {
   try {
     data = JSON.parse(json) as Backup;
   } catch {
-    throw new Error('That file is not a FIT backup (invalid JSON).');
+    throw new Error('That file is not a Replete backup (invalid JSON).');
   }
   if (data?.app !== 'fit' || data.version !== 1 || typeof data.tables !== 'object') {
-    throw new Error('That file is not a FIT backup.');
+    throw new Error('That file is not a Replete backup.');
   }
   for (const t of TABLE_NAMES) {
     const rows = data.tables[t];

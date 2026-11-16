@@ -1,4 +1,8 @@
-# FIT — Fitness Command Center
+# Replete
+
+<img src="public/favicon.svg" width="96" alt="Replete logo">
+
+**Train · Fuel · Hydrate · Recover.**
 
 A mobile-first, installable PWA for lifting, nutrition, hydration, supplements, bodyweight and cardio.
 
@@ -60,19 +64,24 @@ FIT/
 
 `supabase/migrations/0001_init.sql` holds a tested Postgres schema with per-user Row Level Security, kept for a future optional cloud sync. The app doesn't use it right now.
 
-## Run & deploy (free)
+## Install on your phone
+
+The app is hosted free on **GitHub Pages** at **https://muuaa.github.io/FIT/**. Every push to `claude/kind-wright-huie8c` or `main` rebuilds and redeploys it (`.github/workflows/deploy.yml`).
+
+- **iPhone:** open the link in **Safari** → Share → **Add to Home Screen** → Add.
+- **Android:** open the link in **Chrome** → ⋮ → **Install app** (or **Add to Home screen**).
+
+It then opens full-screen from its own icon and works offline. Data belongs to the browser it was entered in, so the home-screen app keeps its own data, separate from a normal browser tab. To move data across, use **Settings → Your data → Copy backup / Paste backup**.
+
+One-time setup: in the repo go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
+
+## Develop
 
 ```bash
 npm install
 npm run dev          # http://localhost:5173
-npm run build        # dist/ (PWA with offline service worker)
+npm run build        # dist/ (PWA with offline service worker; BASE_PATH=/FIT/ for Pages)
 ```
-
-Deploy `dist/` on Vercel (**Add New → Project**, import the repo; Vite is detected automatically, no environment variables needed). Then install it on your phone:
-- **iPhone (Safari):** Share → **Add to Home Screen**.
-- **Android (Chrome):** ⋮ → **Install app**.
-
-Data belongs to the browser it was entered in. A home-screen install, a normal Safari tab and a preview link each keep **separate** data. Pick one to use day to day, and move data between them with **Settings → Your data** (copy a backup in one, paste it in the other).
 
 `npm run build:embedded` builds the whole app as a single HTML file (`dist-embedded/fit.html`) for hosts that can't serve multiple files.
 
