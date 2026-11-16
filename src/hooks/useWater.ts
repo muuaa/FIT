@@ -1,15 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { currentUserId, supabase, unwrap } from '@/lib/supabase';
+import { all, upsert } from '@/lib/localDb';
 
 export function useWater(date: string) {
   return useQuery({
     queryKey: ['water', date],
-    queryFn: async () => {
-      const row = unwrap(await supabase.from('water_days').select('ml').eq('date', date).maybeSingle()) as {
-        ml: number;
-      } | null;
-      return row?.ml ?? 0;
-    },
+    queryFn: async () => all('water_days').find((w) => w.date === date)?.ml ?? 0,
   });
 }
 
@@ -17,18 +12,11 @@ export function useSetWater(date: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (ml: number) => {
-      const user_id = await currentUserId();
       const clamped = Math.max(0, Math.min(20000, Math.round(ml)));
-      unwrap(await supabase.from('water_days').upsert({ user_id, date, ml: clamped }, { onConflict: 'user_id,date' }));
+      upsert('water_days', { date, ml: clamped }, (w) => w.date === date);
       return clamped;
     },
-    onMutate: async (ml) => {
-      await qc.cancelQueries({ queryKey: ['water', date] });
-      const prev = qc.getQueryData<number>(['water', date]);
-      qc.setQueryData(['water', date], Math.max(0, ml));
-      return { prev };
-    },
-    onError: (_e, _v, c) => qc.setQueryData(['water', date], c?.prev ?? 0),
+    onSuccess: (ml) => qc.setQueryData(['water', date], ml),
   });
 }
 

@@ -1,32 +1,36 @@
 import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StrictMode } from 'react';
+import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import App from './App';
-import { AuthProvider } from './features/auth/AuthContext';
+import { requestPersistence } from './lib/localDb';
 import { toast } from './stores/toastStore';
 import './index.css';
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (err) => toast.error(err instanceof Error ? err.message : 'Failed to load data'),
+    onError: (err) => toast.error(err instanceof Error ? err.message : 'Could not read your data'),
   }),
   mutationCache: new MutationCache({
     onError: (err) => toast.error(err instanceof Error ? err.message : 'Could not save'),
   }),
-  defaultOptions: {
-    queries: { staleTime: 30_000, retry: 1, refetchOnWindowFocus: true },
-  },
+  // Data is on-device, so it is always fresh: no refetch timers needed.
+  defaultOptions: { queries: { staleTime: Infinity, retry: false, refetchOnWindowFocus: false } },
 });
+
+requestPersistence();
+
+/** Embedded single-file builds (VITE_EMBEDDED=1) can't rely on URL paths, so they route in memory. */
+function Router({ children }: { children: ReactNode }) {
+  return import.meta.env.VITE_EMBEDDED ? <MemoryRouter>{children}</MemoryRouter> : <BrowserRouter>{children}</BrowserRouter>;
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </BrowserRouter>
+      <Router>
+        <App />
+      </Router>
     </QueryClientProvider>
   </StrictMode>,
 );

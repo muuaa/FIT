@@ -4,12 +4,19 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import path from 'node:path';
 
+// VITE_EMBEDDED=1 builds one self-contained file (no service worker, no code splitting)
+// for previews such as a claude.ai artifact. See scripts/build-embedded.mjs.
+const embedded = Boolean(process.env.VITE_EMBEDDED);
+
 export default defineConfig({
-  build: { chunkSizeWarningLimit: 1200 },
+  build: embedded
+    ? { outDir: 'dist-embedded', assetsInlineLimit: 100_000_000, rolldownOptions: { output: { codeSplitting: false } } }
+    : { chunkSizeWarningLimit: 1200 },
   resolve: { alias: { '@': path.resolve(import.meta.dirname, 'src') } },
   plugins: [
     react(),
     tailwindcss(),
+    !embedded &&
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],

@@ -12,6 +12,7 @@ import { FoodEntrySheet } from '@/features/fuel/FoodEntrySheet';
 import { SupplementChecklist } from '@/features/fuel/SupplementChecklist';
 import { SupplementManagerSheet } from '@/features/fuel/SupplementManagerSheet';
 import { WaterTracker } from '@/features/fuel/WaterTracker';
+import { WelcomeCard } from '@/features/onboarding/WelcomeCard';
 import { BodyweightQuick } from '@/features/progress/BodyweightQuick';
 import { useCardio } from '@/hooks/useCardio';
 import { useProfile } from '@/hooks/useProfile';
@@ -175,6 +176,7 @@ export function TodayPage() {
         <Spinner />
       ) : (
         <div className="space-y-3">
+          <WelcomeCard />
           <WorkoutCard profile={profile} />
 
           <Card

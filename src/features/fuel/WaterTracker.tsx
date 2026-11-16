@@ -7,7 +7,7 @@ import type { Profile } from '@/types/db';
 function Bottle({ fill, index, onTap, ml }: { fill: number; index: number; onTap: () => void; ml: number }) {
   const clip = useId();
   const full = fill >= 1;
-  const top = 14 + (1 - fill) * 70; // liquid surface y within body (14..84)
+  const top = 88 - fill * 76; // liquid surface: 88 = empty (bottom of bottle), 12 = full
   return (
     <button
       type="button"

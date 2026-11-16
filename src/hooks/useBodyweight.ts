@@ -1,31 +1,26 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, todayISO } from '@/lib/date';
-import { currentUserId, supabase, unwrap } from '@/lib/supabase';
+import { all, remove, upsert } from '@/lib/localDb';
 import type { BodyweightLog } from '@/types/db';
 
 /** All bodyweight entries in the last `days` days, oldest first. */
 export function useBodyweight(days = 120) {
-  const since = addDays(todayISO(), -days);
   return useQuery({
     queryKey: ['bodyweight', days],
-    queryFn: async () =>
-      (
-        unwrap(
-          await supabase.from('bodyweight_logs').select('date, weight_kg').gte('date', since).order('date'),
-        ) as BodyweightLog[]
-      ).map((r) => ({ ...r, weight_kg: Number(r.weight_kg) })),
+    queryFn: async () => {
+      const since = addDays(todayISO(), -days);
+      return all('bodyweight_logs')
+        .filter((l) => l.date >= since)
+        .sort((a, b) => a.date.localeCompare(b.date));
+    },
   });
 }
 
 export function useLogBodyweight() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ date, weight_kg }: BodyweightLog) => {
-      const user_id = await currentUserId();
-      unwrap(
-        await supabase.from('bodyweight_logs').upsert({ user_id, date, weight_kg }, { onConflict: 'user_id,date' }),
-      );
-    },
+    mutationFn: async ({ date, weight_kg }: BodyweightLog) =>
+      upsert('bodyweight_logs', { date, weight_kg }, (l) => l.date === date),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bodyweight'] }),
   });
 }
@@ -33,7 +28,7 @@ export function useLogBodyweight() {
 export function useDeleteBodyweight() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (date: string) => unwrap(await supabase.from('bodyweight_logs').delete().eq('date', date)),
+    mutationFn: async (date: string) => remove('bodyweight_logs', (l) => l.date === date),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['bodyweight'] }),
   });
 }

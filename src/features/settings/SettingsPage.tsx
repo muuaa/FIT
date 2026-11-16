@@ -1,4 +1,4 @@
-import { Droplets, Flame, LogOut, Timer, User } from 'lucide-react';
+import { Droplets, Flame, Timer, User } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
@@ -7,10 +7,9 @@ import { Field } from '@/components/ui/Field';
 import { Spinner } from '@/components/ui/States';
 import { SplitSwitcher } from '@/features/train/TrainPage';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
-import { supabase } from '@/lib/supabase';
 import { toast } from '@/stores/toastStore';
 import type { Profile } from '@/types/db';
-import { useAuth } from '@/features/auth/AuthContext';
+import { BackupCard } from './BackupCard';
 
 type Form = Record<
   'display_name' | 'kcal_target' | 'protein_target_g' | 'carbs_target_g' | 'fat_target_g' | 'water_target_ml' | 'bottle_ml' | 'default_rest_seconds',
@@ -39,14 +38,13 @@ const LIMITS: Record<Exclude<keyof Form, 'display_name'>, [number, number]> = {
 };
 
 export function SettingsPage() {
-  const { session } = useAuth();
   const { data: profile } = useProfile();
   const update = useUpdateProfile();
   const [form, setForm] = useState<Form | null>(null);
 
   useEffect(() => {
-    if (profile && !form) setForm(toForm(profile));
-  }, [profile, form]);
+    if (profile) setForm(toForm(profile));
+  }, [profile]);
 
   if (!profile || !form)
     return (
@@ -92,7 +90,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle={session?.user.email} />
+      <PageHeader title="Settings" subtitle="Targets · Split · Your data" />
       <div className="space-y-3">
         <Card title="Profile" icon={User}>
           <Field label="Display name" value={form.display_name} onChange={set('display_name')} />
@@ -136,9 +134,7 @@ export function SettingsPage() {
         <Button variant="primary" accent="var(--color-fuel)" size="lg" block disabled={!dirty || errors.length > 0 || update.isPending} onClick={save}>
           Save changes
         </Button>
-        <Button variant="danger" size="lg" block onClick={() => supabase.auth.signOut()}>
-          <LogOut size={18} /> Sign out
-        </Button>
+        <BackupCard />
       </div>
     </>
   );

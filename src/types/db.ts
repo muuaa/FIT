@@ -17,7 +17,6 @@ export interface Profile {
 
 export interface Exercise {
   id: string;
-  user_id: string;
   day_type: DayType;
   name: string;
   target_sets: number;
@@ -27,7 +26,6 @@ export interface Exercise {
 
 export interface WorkoutSession {
   id: string;
-  user_id: string;
   date: string;
   day_type: DayType;
   started_at: string;
@@ -59,6 +57,7 @@ export interface FoodEntry {
 
 export interface SavedMeal {
   id: string;
+  created_at?: string;
   name: string;
   kcal: number;
   protein_g: number;
