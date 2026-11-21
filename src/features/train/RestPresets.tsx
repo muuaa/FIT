@@ -1,12 +1,12 @@
 import { Timer } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Field } from '@/components/ui/Field';
 import { Sheet } from '@/components/ui/Sheet';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { unlockAudio } from '@/lib/alerts';
 import { cn } from '@/lib/cn';
-import { formatClock, parseDuration } from '@/lib/format';
+import { formatClock } from '@/lib/format';
+import { DurationField, durationSeconds } from '@/components/ui/DurationField';
 import { useRestStore } from '@/stores/workoutStore';
 
 const PRESETS = [60, 90, 120, 180];
@@ -17,10 +17,11 @@ export function RestPresets() {
   const update = useUpdateProfile();
   const start = useRestStore((s) => s.start);
   const [customOpen, setCustomOpen] = useState(false);
-  const [custom, setCustom] = useState('');
+  const [cm, setCm] = useState('');
+  const [cs, setCs] = useState('');
   const current = profile?.default_rest_seconds ?? 90;
   const isCustom = !PRESETS.includes(current);
-  const parsed = parseDuration(custom.includes(':') ? custom : custom ? `0:${custom}` : '');
+  const parsed = durationSeconds(cm, cs);
 
   return (
     <div className="rounded-3xl border border-line/70 bg-surface p-3">
@@ -44,7 +45,8 @@ export function RestPresets() {
         <button
           type="button"
           onClick={() => {
-            setCustom(isCustom ? formatClock(current) : '');
+            setCm(isCustom ? String(Math.floor(current / 60)) : '');
+            setCs(isCustom ? String(current % 60).padStart(2, '0') : '');
             setCustomOpen(true);
           }}
           className={cn(
@@ -89,13 +91,15 @@ export function RestPresets() {
           </Button>
         }
       >
-        <Field
+        <DurationField
           label="Rest length"
-          value={custom}
-          onChange={(e) => setCustom(e.target.value)}
-          placeholder="e.g. 150 or 2:30"
-          inputMode="numeric"
-          hint="Seconds (150) or m:ss (2:30). Between 10 s and 15 min."
+          minutes={cm}
+          seconds={cs}
+          onChange={(m, s) => {
+            setCm(m);
+            setCs(s);
+          }}
+          hint="Between 10 seconds and 15 minutes."
           autoFocus
         />
       </Sheet>

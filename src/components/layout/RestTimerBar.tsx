@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { restFinishedAlert } from '@/lib/alerts';
 import { formatClock } from '@/lib/format';
 import { useNow } from '@/hooks/useNow';
+import { toast } from '@/stores/toastStore';
 import { useRestStore } from '@/stores/workoutStore';
 
 /** Global floating rest countdown. Always mounted so the alert fires on any tab. */
@@ -16,7 +17,12 @@ export function RestTimerBar() {
   useEffect(() => {
     if (endsAt && now >= endsAt && firedFor.current !== endsAt) {
       firedFor.current = endsAt;
-      restFinishedAlert();
+      // Only alert if the rest just ended. If the app was closed or in the background for a while,
+      // reopening it should quietly clear the old timer rather than beep at you.
+      if (now - endsAt < 15_000) {
+        restFinishedAlert();
+        toast.info('Rest over. Next set!');
+      }
       stop();
     }
   }, [endsAt, now, stop]);

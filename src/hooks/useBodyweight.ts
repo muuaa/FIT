@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { addDays, todayISO } from '@/lib/date';
 import { all, remove, upsert } from '@/lib/localDb';
+import { toast } from '@/stores/toastStore';
 import type { BodyweightLog } from '@/types/db';
 
 /** All bodyweight entries in the last `days` days, oldest first. */
@@ -28,8 +29,19 @@ export function useLogBodyweight() {
 export function useDeleteBodyweight() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (date: string) => remove('bodyweight_logs', (l) => l.date === date),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['bodyweight'] }),
+    mutationFn: async (date: string) => {
+      const row = all('bodyweight_logs').find((l) => l.date === date);
+      remove('bodyweight_logs', (l) => l.date === date);
+      return row;
+    },
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ['bodyweight'] });
+      if (row)
+        toast.undo(`Deleted ${row.weight_kg} kg weigh-in`, () => {
+          upsert('bodyweight_logs', row, (l) => l.date === row.date);
+          qc.invalidateQueries({ queryKey: ['bodyweight'] });
+        });
+    },
   });
 }
 

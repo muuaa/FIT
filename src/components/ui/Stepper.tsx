@@ -9,11 +9,17 @@ interface StepperProps {
   decimals?: number;
   suffix?: string;
   inputMode?: 'decimal' | 'numeric';
+  /** Value to start from when the box is empty and −/+ is tapped. */
+  fallback?: number;
 }
 
 /** Compact numeric input with large −/+ buttons for one-thumb adjustments. */
-export function Stepper({ label, value, onChange, step, min = 0, decimals = 0, suffix, inputMode = 'decimal' }: StepperProps) {
+export function Stepper({ label, value, onChange, step, min = 0, decimals = 0, suffix, inputMode = 'decimal', fallback }: StepperProps) {
   const bump = (dir: 1 | -1) => {
+    if (value.trim() === '' && fallback !== undefined) {
+      onChange(String(fallback));
+      return;
+    }
     const cur = Number(value.replace(',', '.'));
     const base = Number.isFinite(cur) ? cur : 0;
     const next = Math.max(min, Math.round((base + dir * step) * 10 ** decimals) / 10 ** decimals);

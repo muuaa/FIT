@@ -98,7 +98,9 @@ export function ExerciseLogCard({
   const logSet = useLogSet(sessionId);
 
   const nextNumber = logged.length + 1;
-  const prevForNext = previous?.find((p) => p.set_number === nextNumber) ?? previous?.[previous.length - 1];
+  const exactPrev = previous?.find((p) => p.set_number === nextNumber);
+  // For extra sets beyond last time's count, suggest last time's final set.
+  const prevForNext = exactPrev ?? previous?.[previous.length - 1];
   const lastLogged = logged[logged.length - 1];
 
   // Prefill the next set: carry today's working weight forward, aim for last session's reps on this set.
@@ -189,10 +191,10 @@ export function ExerciseLogCard({
           <Check size={22} strokeWidth={3} />
         </button>
       </div>
-      {prevForNext && (
+      {(exactPrev || done) && (
         <p className="tabular mt-1.5 text-[11px] text-ink-3">
-          Set {nextNumber} last time: {fmtSet(prevForNext)}
-          {done && ' · extra set'}
+          {exactPrev ? `Set ${nextNumber} last time: ${fmtSet(exactPrev)}` : 'Target reached'}
+          {done && ' · this would be an extra set'}
         </p>
       )}
     </section>

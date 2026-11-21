@@ -115,7 +115,7 @@ function WorkoutCard({ profile }: { profile: Profile }) {
         disabled={start.isPending}
         onClick={() => start.mutate(scheduled, { onSuccess: () => navigate('/train') })}
       >
-        <Play size={18} fill="currentColor" /> Start workout
+        <Play size={18} fill="currentColor" /> {count ? 'Start workout' : `Set up & start ${DAY_LABEL[scheduled]}`}
       </Button>
     </section>
   );

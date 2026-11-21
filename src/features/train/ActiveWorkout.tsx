@@ -2,6 +2,7 @@ import { Flag, ListPlus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { WorkoutClock } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
+import { ProgressBar } from '@/components/ui/Progress';
 import { Sheet } from '@/components/ui/Sheet';
 import { Spinner } from '@/components/ui/States';
 import {
@@ -30,6 +31,12 @@ export function ActiveWorkout({ active }: { active: Active }) {
   const [editOpen, setEditOpen] = useState(false);
   const [confirm, setConfirm] = useState<null | 'finish' | 'discard'>(null);
 
+  const targetSets = exercises.reduce((n, e) => n + e.target_sets, 0);
+  // Count each exercise up to its target, so extra sets don't overfill the bar.
+  const doneSets = exercises.reduce(
+    (n, e) => n + Math.min(e.target_sets, sets.filter((s) => s.exercise_id === e.id).length),
+    0,
+  );
   const volume = Math.round(sets.reduce((a, s) => a + s.weight_kg * s.reps, 0));
 
   // Sets for exercises that were later removed from the template still count; show them too.
@@ -41,10 +48,12 @@ export function ActiveWorkout({ active }: { active: Active }) {
         <div className="text-xs font-medium uppercase tracking-wider text-lift">{DAY_LABEL[active.dayType]} day · in progress</div>
         <WorkoutClock className="mt-1 block text-5xl font-bold tracking-tight" />
         <div className="tabular mt-1 text-sm text-ink-3">
-          {sets.length} {sets.length === 1 ? 'set' : 'sets'} · {volume.toLocaleString()} kg volume
+          {targetSets > 0 ? `${doneSets} of ${targetSets} sets` : `${sets.length} ${sets.length === 1 ? 'set' : 'sets'}`} ·{' '}
+          {volume.toLocaleString()} kg volume
         </div>
+        {targetSets > 0 && <ProgressBar className="mt-3" value={doneSets} max={targetSets} accent="var(--color-lift)" />}
         <div className="mt-4 flex gap-2">
-          <Button variant="danger" onClick={() => setConfirm('discard')}>
+          <Button variant="danger" aria-label="Discard workout" onClick={() => setConfirm('discard')}>
             <Trash2 size={16} />
           </Button>
           <Button variant="secondary" onClick={() => setEditOpen(true)}>

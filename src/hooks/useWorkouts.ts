@@ -2,8 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { todayISO } from '@/lib/date';
 import { estimated1RM } from '@/lib/format';
 import { all, insert, remove, uid, update } from '@/lib/localDb';
+import { toast } from '@/stores/toastStore';
 import { useWorkoutStore } from '@/stores/workoutStore';
 import type { DayType, Exercise, SetLog, WorkoutSession } from '@/types/db';
+
+function invalidateTraining(qc: ReturnType<typeof useQueryClient>) {
+  for (const key of ['workoutHistory', 'todaySessions', 'previousSets', 'exerciseProgress', 'sessionSets', 'sessionDetail']) {
+    qc.invalidateQueries({ queryKey: [key] });
+  }
+}
 
 // ---------------------------------------------------------------- exercises
 
@@ -37,7 +44,10 @@ export function useUpdateExercise() {
       // Keep history readable after a rename.
       if (patch.name) update('set_logs', (s) => s.exercise_id === id, { exercise_name: patch.name });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['exercises'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['exercises'] });
+      invalidateTraining(qc);
+    },
   });
 }
 
@@ -49,7 +59,10 @@ export function useDeleteExercise() {
       // History stays, matched by name from now on.
       update('set_logs', (s) => s.exercise_id === id, { exercise_id: null });
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['exercises'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['exercises'] });
+      invalidateTraining(qc);
+    },
   });
 }
 
@@ -85,12 +98,6 @@ export function useStartWorkout() {
     onSuccess: (row) =>
       setActive({ sessionId: row.id, dayType: row.day_type, startedAt: new Date(row.started_at).getTime() }),
   });
-}
-
-function invalidateTraining(qc: ReturnType<typeof useQueryClient>) {
-  for (const key of ['workoutHistory', 'todaySessions', 'previousSets', 'exerciseProgress']) {
-    qc.invalidateQueries({ queryKey: [key] });
-  }
 }
 
 export function useFinishWorkout() {
@@ -223,6 +230,7 @@ export function useDeleteSet(sessionId: string | undefined) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      const row = all('set_logs').find((s) => s.id === id);
       remove('set_logs', (s) => s.id === id);
       // Keep set numbers contiguous per exercise.
       const byExercise = new Map<string, SetLog[]>();
@@ -235,8 +243,20 @@ export function useDeleteSet(sessionId: string | undefined) {
           .sort((a, b) => a.set_number - b.set_number)
           .forEach((s, i) => s.set_number !== i + 1 && update('set_logs', (x) => x.id === s.id, { set_number: i + 1 }));
       }
+      return row;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sessionSets', sessionId] }),
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ['sessionSets', sessionId] });
+      if (row)
+        toast.undo(`Deleted set ${row.set_number}`, () => {
+          // Put it back in its old slot and shift later sets of the same exercise down one.
+          const key = (s: SetLog) => (s.exercise_id ?? s.exercise_name) === (row.exercise_id ?? row.exercise_name);
+          for (const s of all('set_logs').filter((x) => x.session_id === row.session_id && key(x) && x.set_number >= row.set_number))
+            update('set_logs', (x) => x.id === s.id, { set_number: s.set_number + 1 });
+          insert('set_logs', row);
+          qc.invalidateQueries({ queryKey: ['sessionSets', sessionId] });
+        });
+    },
   });
 }
 
@@ -309,6 +329,48 @@ export function useExerciseProgress(exercise: Exercise | undefined) {
       return [...byDate.values()]
         .map((p) => ({ ...p, e1rm: Math.round(p.e1rm * 10) / 10 }))
         .sort((a, b) => a.date.localeCompare(b.date));
+    },
+  });
+}
+
+/** A finished session's sets, grouped by exercise in the order they were logged. */
+export function useSessionDetail(sessionId: string | null) {
+  return useQuery({
+    queryKey: ['sessionDetail', sessionId],
+    enabled: Boolean(sessionId),
+    queryFn: async () => {
+      const groups = new Map<string, SetLog[]>();
+      for (const s of all('set_logs')
+        .filter((x) => x.session_id === sessionId)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))) {
+        groups.set(s.exercise_name, [...(groups.get(s.exercise_name) ?? []), s]);
+      }
+      return [...groups.entries()].map(([name, sets]) => ({
+        name,
+        sets: sets.sort((a, b) => a.set_number - b.set_number),
+      }));
+    },
+  });
+}
+
+export function useDeleteWorkout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const session = all('workout_sessions').find((s) => s.id === id);
+      const sets = all('set_logs').filter((s) => s.session_id === id);
+      remove('set_logs', (s) => s.session_id === id);
+      remove('workout_sessions', (s) => s.id === id);
+      return session ? { session, sets } : null;
+    },
+    onSuccess: (deleted) => {
+      invalidateTraining(qc);
+      if (deleted)
+        toast.undo('Workout deleted', () => {
+          insert('workout_sessions', deleted.session);
+          for (const s of deleted.sets) insert('set_logs', s);
+          invalidateTraining(qc);
+        });
     },
   });
 }

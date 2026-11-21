@@ -1,9 +1,8 @@
 import { Check, Scale } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Line, LineChart, ResponsiveContainer, YAxis } from 'recharts';
+import { Sparkline } from '@/components/ui/Sparkline';
 import { Stepper } from '@/components/ui/Stepper';
 import { buildWeightSeries, useBodyweight, useLogBodyweight } from '@/hooks/useBodyweight';
-import { CHART } from '@/lib/chartColors';
 import { addDays, todayISO } from '@/lib/date';
 import { num, round1 } from '@/lib/format';
 import { toast } from '@/stores/toastStore';
@@ -55,22 +54,11 @@ export function BodyweightQuick() {
           </div>
         </div>
         <div className="h-12 w-28 shrink-0" aria-label="7-day bodyweight trend" role="img">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={series} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
-              <YAxis hide domain={['dataMin - 0.5', 'dataMax + 0.5']} />
-              <Line dataKey="avg7" stroke={CHART.weightAvg} strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
-              <Line
-                dataKey="weight"
-                stroke="none"
-                dot={{ r: 2.5, fill: CHART.weightDaily, strokeWidth: 0 }}
-                isAnimationActive={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <Sparkline data={series} />
         </div>
       </div>
       <div className="flex items-end gap-2">
-        <Stepper label="Morning weight · kg" value={value} onChange={setValue} step={0.1} decimals={1} />
+        <Stepper label="Morning weight · kg" value={value} onChange={setValue} step={0.1} decimals={1} fallback={70} />
         <button
           type="button"
           aria-label="Save weight"

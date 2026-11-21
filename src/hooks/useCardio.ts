@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { all, insert, remove, uid } from '@/lib/localDb';
+import { toast } from '@/stores/toastStore';
 import type { CardioLog } from '@/types/db';
 
 export function useCardio(limit = 60) {
@@ -24,7 +25,18 @@ export function useAddCardio() {
 export function useDeleteCardio() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => remove('cardio_logs', (c) => c.id === id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['cardio'] }),
+    mutationFn: async (id: string) => {
+      const row = all('cardio_logs').find((c) => c.id === id);
+      remove('cardio_logs', (c) => c.id === id);
+      return row;
+    },
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ['cardio'] });
+      if (row)
+        toast.undo('Cardio session deleted', () => {
+          insert('cardio_logs', row);
+          qc.invalidateQueries({ queryKey: ['cardio'] });
+        });
+    },
   });
 }

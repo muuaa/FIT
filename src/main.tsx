@@ -3,6 +3,7 @@ import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import App from './App';
+import './lib/install';
 import { requestPersistence } from './lib/localDb';
 import { toast } from './stores/toastStore';
 import './index.css';

@@ -6,7 +6,8 @@ import { Segmented } from '@/components/ui/Segmented';
 import { Sheet } from '@/components/ui/Sheet';
 import { useAddCardio } from '@/hooks/useCardio';
 import { todayISO } from '@/lib/date';
-import { formatPace, num, parseDuration } from '@/lib/format';
+import { formatPace, num } from '@/lib/format';
+import { DurationField, durationSeconds } from '@/components/ui/DurationField';
 import { toast } from '@/stores/toastStore';
 import type { CardioKind } from '@/types/db';
 
@@ -23,7 +24,8 @@ export function CardioSheet({
 }) {
   const add = useAddCardio();
   const [kind, setKind] = useState<CardioKind>(initialKind);
-  const [duration, setDuration] = useState('');
+  const [mins, setMins] = useState('');
+  const [secs, setSecs] = useState('');
   const [distance, setDistance] = useState('');
   const [rounds, setRounds] = useState('');
   const [count, setCount] = useState('');
@@ -33,7 +35,7 @@ export function CardioSheet({
     if (open) setKind(initialKind);
   }, [open, initialKind]);
 
-  const seconds = parseDuration(duration);
+  const seconds = durationSeconds(mins, secs);
   const km = num(distance);
   const roundsN = num(rounds);
   const countN = num(count);
@@ -43,7 +45,8 @@ export function CardioSheet({
     (kind === 'running' ? km === null || km > 0 : (roundsN === null || roundsN > 0) && (countN === null || countN > 0));
 
   function reset() {
-    setDuration('');
+    setMins('');
+    setSecs('');
     setDistance('');
     setRounds('');
     setCount('');
@@ -94,14 +97,15 @@ export function CardioSheet({
         ]}
       />
       <div className="space-y-3">
-        <Field
+        <DurationField
           label="Duration"
-          value={duration}
-          onChange={(e) => setDuration(e.target.value)}
-          placeholder="25 or 24:30"
-          inputMode="numeric"
-          hint="Minutes (25) or m:ss / h:mm:ss"
-          autoFocus
+          minutes={mins}
+          seconds={secs}
+          onChange={(m, s) => {
+            setMins(m);
+            setSecs(s);
+          }}
+          hint={secs !== '' && Number(secs) > 59 ? 'Seconds must be 0–59' : undefined}
         />
         {kind === 'running' ? (
           <>

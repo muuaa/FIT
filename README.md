@@ -17,12 +17,12 @@ A mobile-first, installable PWA for lifting, nutrition, hydration, supplements, 
 | Tab | What it does |
 |---|---|
 | **Today** | Today's workout or rest status with one-tap start, calories remaining with macro bars, tap-to-fill water bottles, morning weigh-in with a 7-day sparkline, supplement checklist, and quick cardio logging (Run / Jump rope). |
-| **Train** | PPL·UL ⇄ UL·PPL split switch, the week's schedule (Thu, Fri, Sat, Mon, Tue), exercises for each day type (add, edit, reorder, delete), live workout timer, previous session's weight × reps shown for every exercise and set, auto rest timer after each logged set (60/90/120/180 s or custom) with sound and vibration, and workout history. |
-| **Fuel** | Look back at any day. Log calories and macros (kcal can be calculated from macros), a saved-meals library for one-tap logging, hydration, and the supplement shelf (turn items on or off, add custom items with dosage, edit, delete). |
+| **Train** | PPL·UL ⇄ UL·PPL split switch, the week's schedule (Thu, Fri, Sat, Mon, Tue), exercises for each day type (add, edit, reorder, delete), live workout timer, previous session's weight × reps shown for every exercise and set, auto rest timer after each logged set (60/90/120/180 s or custom) with sound and vibration, a progress bar for the session, the screen kept awake during a workout, and workout history (tap a workout to see every set, or delete it). |
+| **Fuel** | Look back at any day. Log calories and macros (kcal can be calculated from macros), a saved-meals library (tap a meal to log it, edit or delete meals), hydration, and the supplement shelf (turn items on or off, add custom items with dosage, edit, delete). |
 | **Progress** | Bodyweight chart with daily weigh-ins and a 7-day rolling average (7/30/90 days), latest / average / weekly-change stats, a table of all entries, strength progress per exercise (estimated 1RM and top set), and cardio history with pace. |
-| **Settings** (⚙ in the header) | Calorie and macro targets, water goal and bottle size, split, default rest time, and your data (backup copy/download, restore from file or pasted text, erase everything). |
+| **Settings** (⚙ in the header) | Calorie and macro targets, water goal and bottle size, split, default rest time, install-to-home-screen help, and your data (backup copy/download, restore from file or pasted text, erase everything). |
 
-Units are **kg** and **km**. Exercise templates and saved meals start empty. The seven default supplements are created on first launch, all switched **off**. On first launch you can choose **Try sample data** (clearly labelled, removed with one tap) or **Start fresh**.
+Deleting a meal, set, workout, weigh-in or cardio session shows an **Undo** button for a few seconds. Sheets close with a swipe down. Units are **kg** and **km**. Exercise templates and saved meals start empty. The seven default supplements are created on first launch, all switched **off**. On first launch you can choose **Try sample data** (clearly labelled, removed with one tap) or **Start fresh**.
 
 ---
 

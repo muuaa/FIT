@@ -1,5 +1,5 @@
 import { Droplets, Flame, Timer, User } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +11,7 @@ import { toast } from '@/stores/toastStore';
 import type { Profile } from '@/types/db';
 import { Logo } from '@/components/Logo';
 import { BackupCard } from './BackupCard';
+import { InstallCard } from './InstallCard';
 
 type Form = Record<
   'display_name' | 'kcal_target' | 'protein_target_g' | 'carbs_target_g' | 'fat_target_g' | 'water_target_ml' | 'bottle_ml' | 'default_rest_seconds',
@@ -42,9 +43,20 @@ export function SettingsPage() {
   const { data: profile } = useProfile();
   const update = useUpdateProfile();
   const [form, setForm] = useState<Form | null>(null);
+  const base = useRef<Form | null>(null);
 
+  // When the profile changes elsewhere (e.g. the split switch on this page), take the new values
+  // only for fields the user hasn't edited, so unsaved changes aren't wiped.
   useEffect(() => {
-    if (profile) setForm(toForm(profile));
+    if (!profile) return;
+    const next = toForm(profile);
+    setForm((cur) => {
+      if (!cur || !base.current) return next;
+      const merged = { ...next };
+      for (const k of Object.keys(next) as (keyof Form)[]) if (cur[k] !== base.current[k]) merged[k] = cur[k];
+      return merged;
+    });
+    base.current = next;
   }, [profile]);
 
   if (!profile || !form)
@@ -58,10 +70,13 @@ export function SettingsPage() {
   const set = (k: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm({ ...form, [k]: e.target.value });
   const errors = (Object.keys(LIMITS) as (keyof typeof LIMITS)[]).filter((k) => {
     const n = Number(form[k]);
-    return !Number.isInteger(n) || n < LIMITS[k][0] || n > LIMITS[k][1];
+    return form[k].trim() === '' || !Number.isInteger(n) || n < LIMITS[k][0] || n > LIMITS[k][1];
   });
-  const macroKcal = Number(form.protein_target_g) * 4 + Number(form.carbs_target_g) * 4 + Number(form.fat_target_g) * 9;
   const bottles = Math.ceil(Number(form.water_target_ml) / Math.max(1, Number(form.bottle_ml)));
+  // More than 10 bottles won't fit on one row on a phone.
+  const tooManyBottles = Number.isFinite(bottles) && bottles > 10;
+  const macroKcal = Number(form.protein_target_g) * 4 + Number(form.carbs_target_g) * 4 + Number(form.fat_target_g) * 9;
+  const macroGap = Number.isFinite(macroKcal) ? Math.abs(macroKcal - Number(form.kcal_target)) : 0;
   const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile));
 
   function save() {
@@ -105,9 +120,14 @@ export function SettingsPage() {
               <Field label="Carbs" inputMode="numeric" value={form.carbs_target_g} onChange={set('carbs_target_g')} suffix="g" />
               <Field label="Fat" inputMode="numeric" value={form.fat_target_g} onChange={set('fat_target_g')} suffix="g" />
             </div>
-            <p className="tabular text-xs text-ink-3">
-              Macros add up to {Number.isFinite(macroKcal) ? Math.round(macroKcal).toLocaleString() : '—'} kcal
-            </p>
+            {(['protein_target_g', 'carbs_target_g', 'fat_target_g'] as const).some((k) => errors.includes(k)) ? (
+              <p className="text-xs text-danger">Macro targets must be whole numbers of grams.</p>
+            ) : (
+              <p className={`tabular text-xs ${macroGap > 150 ? 'text-lift' : 'text-ink-3'}`}>
+                Macros add up to {Math.round(macroKcal).toLocaleString()} kcal
+                {macroGap > 150 && ` (${Math.round(macroGap).toLocaleString()} kcal away from your calorie target)`}
+              </p>
+            )}
           </div>
         </Card>
 
@@ -116,7 +136,13 @@ export function SettingsPage() {
             <Field label="Daily goal" inputMode="numeric" value={form.water_target_ml} onChange={set('water_target_ml')} suffix="ml" hint={invalid('water_target_ml')} />
             <Field label="Bottle size" inputMode="numeric" value={form.bottle_ml} onChange={set('bottle_ml')} suffix="ml" hint={invalid('bottle_ml')} />
           </div>
-          <p className="mt-2 text-xs text-ink-3">{Number.isFinite(bottles) && bottles > 0 ? `${bottles} bottles per day` : ''}</p>
+          <p className={`mt-2 text-xs ${tooManyBottles ? 'text-danger' : 'text-ink-3'}`}>
+            {tooManyBottles
+              ? `That's ${bottles} bottles a day. Use a bigger bottle so it's 10 or fewer.`
+              : Number.isFinite(bottles) && bottles > 0
+                ? `${bottles} bottles per day`
+                : ''}
+          </p>
         </Card>
 
         <SplitSwitcher />
@@ -132,9 +158,22 @@ export function SettingsPage() {
           />
         </Card>
 
-        <Button variant="primary" accent="var(--color-fuel)" size="lg" block disabled={!dirty || errors.length > 0 || update.isPending} onClick={save}>
-          Save changes
-        </Button>
+        <div
+          className={dirty ? 'sticky z-20 -mx-1 rounded-3xl bg-bg/85 p-1 backdrop-blur' : ''}
+          style={dirty ? { bottom: 'calc(5rem + env(safe-area-inset-bottom))' } : undefined}
+        >
+          <Button
+            variant="primary"
+            accent="var(--color-fuel)"
+            size="lg"
+            block
+            disabled={!dirty || errors.length > 0 || tooManyBottles || update.isPending}
+            onClick={save}
+          >
+            {dirty ? 'Save changes' : 'All changes saved'}
+          </Button>
+        </div>
+        <InstallCard />
         <BackupCard />
         <div className="flex flex-col items-center gap-1 pb-2 pt-4 text-center">
           <Logo size={36} />

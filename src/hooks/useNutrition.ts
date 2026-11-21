@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { all, insert, remove, uid } from '@/lib/localDb';
+import { all, insert, remove, uid, update } from '@/lib/localDb';
+import { toast } from '@/stores/toastStore';
 import type { FoodEntry, Macros, SavedMeal } from '@/types/db';
 
 export function useFoodEntries(date: string) {
@@ -36,8 +37,19 @@ export function useAddFood(date: string) {
 export function useDeleteFood(date: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => remove('food_entries', (e) => e.id === id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['food', date] }),
+    mutationFn: async (id: string) => {
+      const row = all('food_entries').find((e) => e.id === id);
+      remove('food_entries', (e) => e.id === id);
+      return row;
+    },
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ['food', date] });
+      if (row)
+        toast.undo(`Deleted ${row.name}`, () => {
+          insert('food_entries', row);
+          qc.invalidateQueries({ queryKey: ['food', date] });
+        });
+    },
   });
 }
 
@@ -60,7 +72,27 @@ export function useAddSavedMeal() {
 export function useDeleteSavedMeal() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (id: string) => remove('saved_meals', (m) => m.id === id),
+    mutationFn: async (id: string) => {
+      const row = all('saved_meals').find((m) => m.id === id);
+      remove('saved_meals', (m) => m.id === id);
+      return row;
+    },
+    onSuccess: (row) => {
+      qc.invalidateQueries({ queryKey: ['savedMeals'] });
+      if (row)
+        toast.undo(`Removed ${row.name} from saved meals`, () => {
+          insert('saved_meals', row);
+          qc.invalidateQueries({ queryKey: ['savedMeals'] });
+        });
+    },
+  });
+}
+
+export function useUpdateSavedMeal() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...patch }: Partial<SavedMeal> & { id: string }) =>
+      update('saved_meals', (m) => m.id === id, patch),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['savedMeals'] }),
   });
 }
