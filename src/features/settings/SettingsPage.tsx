@@ -11,6 +11,7 @@ import { toast } from '@/stores/toastStore';
 import type { Profile } from '@/types/db';
 import { Logo } from '@/components/Logo';
 import { BackupCard } from './BackupCard';
+import { AccountCard } from './AccountCard';
 import { InstallCard } from './InstallCard';
 
 type Form = Record<
@@ -111,6 +112,7 @@ export function SettingsPage() {
     <>
       <PageHeader title="Settings" subtitle="Targets · Split · Your data" />
       <div className="space-y-3">
+        <AccountCard />
         <Card title="Profile" icon={User}>
           <Field label="Display name" value={form.display_name} onChange={set('display_name')} />
         </Card>

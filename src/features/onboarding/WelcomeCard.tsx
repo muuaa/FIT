@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Button, IconButton } from '@/components/ui/Button';
 import { eraseAll, getMeta, setMeta, storageAvailable } from '@/lib/localDb';
 import { loadSampleData } from '@/lib/sampleData';
+import { cloudEnabled } from '@/lib/supabase';
 import { useRestStore, useWorkoutStore } from '@/stores/workoutStore';
 
 /** First-run note about on-device storage, the sample-data switch, and a storage warning when blocked. */
@@ -71,8 +72,9 @@ export function WelcomeCard() {
         </div>
       </div>
       <p className="mt-2 text-sm text-ink-2">
-        Everything you log is saved on this phone, in this browser. There's no account and nothing is uploaded. Make a backup now
-        and then from Settings.
+        {cloudEnabled
+          ? 'Everything you log is saved to your private account and works offline. Try the sample data to look around, or start fresh.'
+          : "Everything you log is saved on this phone, in this browser. There's no account and nothing is uploaded. Make a backup now and then from Settings."}
       </p>
       <div className="mt-3 flex gap-2">
         <Button

@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { eraseAll, exportAll, importAll, setMeta, storageAvailable, TABLE_NAMES, all } from '@/lib/localDb';
+import { cloudEnabled } from '@/lib/supabase';
 import { toast } from '@/stores/toastStore';
 import { useRestStore, useWorkoutStore } from '@/stores/workoutStore';
 
@@ -62,9 +63,11 @@ export function BackupCard() {
   return (
     <Card title="Your data" icon={HardDrive} accent="var(--color-water)">
       <p className="text-sm text-ink-2">
-        {storageAvailable
-          ? `Stored only in this browser on this device (${rowCount.toLocaleString()} entries). Clearing browser data or uninstalling the browser deletes it, so keep a backup.`
-          : 'Storage is blocked in this browser, so nothing will be kept after you close the page.'}
+        {cloudEnabled
+          ? `${rowCount.toLocaleString()} entries, saved to your account. You can also keep your own copy as a file.`
+          : storageAvailable
+            ? `Stored only in this browser on this device (${rowCount.toLocaleString()} entries). Clearing browser data or uninstalling the browser deletes it, so keep a backup.`
+            : 'Storage is blocked in this browser, so nothing will be kept after you close the page.'}
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
@@ -129,7 +132,7 @@ export function BackupCard() {
             placeholder="Paste a Replete backup here"
             className="h-28 w-full rounded-2xl border border-line bg-surface-2 p-3 font-mono text-xs text-ink outline-none"
           />
-          <p className="text-xs text-ink-3">Restoring replaces everything currently on this device.</p>
+          <p className="text-xs text-ink-3">Restoring replaces everything currently in {cloudEnabled ? "your account" : "this app on this device"}.</p>
           <Button block variant="primary" accent="var(--color-water)" disabled={!pasted.trim()} onClick={() => restore(pasted)}>
             Restore this backup
           </Button>
@@ -139,7 +142,9 @@ export function BackupCard() {
       <div className="mt-4 border-t border-line/60 pt-3">
         {confirmErase ? (
           <div className="space-y-2">
-            <p className="text-sm text-danger">Delete every workout, meal, weigh-in and setting on this device? This can't be undone.</p>
+            <p className="text-sm text-danger">{cloudEnabled
+                ? "Delete every workout, meal, weigh-in and setting from your account, on all your devices? This can't be undone."
+                : "Delete every workout, meal, weigh-in and setting on this device? This can't be undone."}</p>
             <div className="flex gap-2">
               <Button variant="ghost" className="flex-1" onClick={() => setConfirmErase(false)}>
                 Cancel

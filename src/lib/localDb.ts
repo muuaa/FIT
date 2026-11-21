@@ -1,5 +1,10 @@
 /**
- * On-device database. Every table is a JSON array in localStorage under `fit.v1.<table>`.
+ * On-device database. Every table is a JSON array in localStorage.
+ *  - Signed out / local-only builds: keys are `fit.v1.<table>` (the original layout).
+ *  - Signed in: keys are `fit.v1.u.<userId>.<table>`, so two accounts on one device never mix.
+ * Every write is reported to `onLocalChange` listeners (the cloud sync engine) as row-level
+ * upserts/deletes. Rows pulled from the cloud are applied with `applyRemote`, which does not
+ * report back, so nothing echoes.
  * If storage is blocked (private window, sandboxed preview) the app keeps working in memory
  * for the session and `storageAvailable` reports false so the UI can warn.
  */
@@ -52,12 +57,14 @@ export const TABLE_NAMES: TableName[] = [
   'cardio_logs',
 ];
 
-const PREFIX = 'fit.v1.';
+const BASE = 'fit.v1.';
+let PREFIX = BASE;
+let currentUser: string | null = null;
 const memory = new Map<string, string>();
 
 function probeStorage(): boolean {
   try {
-    const k = `${PREFIX}__probe`;
+    const k = `${BASE}__probe`;
     localStorage.setItem(k, '1');
     localStorage.removeItem(k);
     return true;
@@ -76,11 +83,11 @@ function readRaw(key: string): string | null {
       /* fall through to memory */
     }
   }
-  return memory.get(key) ?? null;
+  return memory.get(PREFIX + key) ?? null;
 }
 
 function writeRaw(key: string, value: string): void {
-  memory.set(key, value);
+  memory.set(PREFIX + key, value);
   if (!storageAvailable) return;
   try {
     localStorage.setItem(PREFIX + key, value);
@@ -94,7 +101,7 @@ function writeRaw(key: string, value: string): void {
 }
 
 function removeRaw(key: string): void {
-  memory.delete(key);
+  memory.delete(PREFIX + key);
   if (!storageAvailable) return;
   try {
     localStorage.removeItem(PREFIX + key);
@@ -127,9 +134,167 @@ export function all<T extends TableName>(t: T): Tables[T][] {
   return cache.get(t) as Tables[T][];
 }
 
+// ---------------------------------------------------------------- change tracking (for sync)
+
+/** Stable id of a row within its table (some tables are keyed by date rather than an id). */
+export function rowKey<T extends TableName>(t: T, row: Tables[T]): string {
+  if (t === 'water_days' || t === 'bodyweight_logs') return (row as { date: string }).date;
+  if (t === 'supplement_logs') {
+    const r = row as SupplementLog;
+    return `${r.supplement_id}|${r.date}`;
+  }
+  return (row as { id: string }).id;
+}
+
+export interface RowChange {
+  tbl: TableName | 'profile';
+  row_id: string;
+  data: unknown | null; // null = deleted
+}
+
+type ChangeListener = (changes: RowChange[]) => void;
+const changeListeners = new Set<ChangeListener>();
+
+export function onLocalChange(l: ChangeListener): () => void {
+  changeListeners.add(l);
+  return () => void changeListeners.delete(l);
+}
+
+function emit(changes: RowChange[]): void {
+  if (changes.length) changeListeners.forEach((l) => l(changes));
+}
+
+function diff<T extends TableName>(t: T, prev: Tables[T][], next: Tables[T][]): RowChange[] {
+  const before = new Map(prev.map((r) => [rowKey(t, r), r]));
+  const out: RowChange[] = [];
+  for (const r of next) {
+    const k = rowKey(t, r);
+    const old = before.get(k);
+    before.delete(k);
+    // Unchanged rows keep their object identity (map/filter), so most rows skip the deep compare.
+    if (old === r || (old && JSON.stringify(old) === JSON.stringify(r))) continue;
+    out.push({ tbl: t, row_id: k, data: r });
+  }
+  for (const k of before.keys()) out.push({ tbl: t, row_id: k, data: null });
+  return out;
+}
+
 function commit<T extends TableName>(t: T, rows: Tables[T][]): void {
+  const prev = all(t);
   writeRaw(t, JSON.stringify(rows));
   cache.set(t, rows);
+  emit(diff(t, prev, rows));
+}
+
+/** Replace a whole table (reported to sync as row changes). */
+export function replaceTable<T extends TableName>(t: T, rows: Tables[T][]): void {
+  commit(t, rows);
+}
+
+/** Apply a row that came from the cloud. Does not notify change listeners. */
+export function applyRemote(tbl: string, rowId: string, data: unknown | null): void {
+  if (tbl === 'profile') {
+    if (data === null) {
+      removeRaw('profile');
+      profileCache = null;
+    } else {
+      writeRaw('profile', JSON.stringify(data));
+      profileCache = null;
+    }
+    return;
+  }
+  if (!(TABLE_NAMES as string[]).includes(tbl)) return; // a table from a newer app version
+  const t = tbl as TableName;
+  const rows = all(t);
+  const idx = rows.findIndex((r) => rowKey(t, r) === rowId);
+  let next: Tables[TableName][];
+  if (data === null) {
+    if (idx === -1) return;
+    next = rows.filter((_, i) => i !== idx);
+  } else {
+    next = idx === -1 ? [...rows, data as Tables[TableName]] : rows.map((r, i) => (i === idx ? (data as Tables[TableName]) : r));
+  }
+  writeRaw(t, JSON.stringify(next));
+  cache.set(t, next);
+}
+
+/** Every row on this device, as changes (used to upload legacy data into a new account). */
+export function snapshot(): RowChange[] {
+  const out: RowChange[] = [];
+  for (const t of TABLE_NAMES) for (const r of all(t)) out.push({ tbl: t, row_id: rowKey(t, r), data: r });
+  const p = readRaw('profile');
+  if (p) out.push({ tbl: 'profile', row_id: 'local', data: { ...DEFAULT_PROFILE, ...JSON.parse(p), id: 'local' } });
+  return out;
+}
+
+// ---------------------------------------------------------------- accounts
+
+/** Switch storage to a signed-in user's space (or back to the original local space with null). */
+export function setNamespace(userId: string | null): void {
+  currentUser = userId;
+  PREFIX = userId ? `${BASE}u.${userId}.` : BASE;
+  cache.clear();
+  profileCache = null;
+}
+
+export function currentNamespace(): string | null {
+  return currentUser;
+}
+
+/** Raw value in this user's space that isn't a table (sync cursor, outbox, flags). */
+export function readKey(key: string): string | null {
+  return readRaw(`__${key}`);
+}
+export function writeKey(key: string, value: string): void {
+  writeRaw(`__${key}`, value);
+}
+export function removeKey(key: string): void {
+  removeRaw(`__${key}`);
+}
+
+/** Data saved before accounts existed (the original `fit.v1.<table>` keys), if any. */
+export function readLegacy(): { tables: Partial<Record<TableName, unknown[]>>; profile: Partial<Profile> | null } | null {
+  if (!storageAvailable) return null;
+  const tables: Partial<Record<TableName, unknown[]>> = {};
+  let found = false;
+  for (const t of TABLE_NAMES) {
+    try {
+      const raw = localStorage.getItem(BASE + t);
+      if (!raw) continue;
+      const rows = JSON.parse(raw);
+      if (Array.isArray(rows) && rows.length) {
+        tables[t] = rows;
+        found = true;
+      }
+    } catch {
+      /* skip unreadable table */
+    }
+  }
+  let profile: Partial<Profile> | null = null;
+  try {
+    const raw = localStorage.getItem(BASE + 'profile');
+    profile = raw ? JSON.parse(raw) : null;
+  } catch {
+    profile = null;
+  }
+  // A profile alone (just opened the app once) isn't worth migrating; real entries are.
+  return found ? { tables, profile } : null;
+}
+
+/** After migrating, keep one copy of the old data aside (just in case) and clear the old keys. */
+export function retireLegacy(): void {
+  if (!storageAvailable) return;
+  try {
+    const copy: Record<string, string> = {};
+    for (const k of [...TABLE_NAMES, 'profile', 'meta']) {
+      const v = localStorage.getItem(BASE + k);
+      if (v !== null) copy[k] = v;
+    }
+    localStorage.setItem(`${BASE}legacy-backup`, JSON.stringify({ saved_at: new Date().toISOString(), data: copy }));
+    for (const k of [...TABLE_NAMES, 'profile', 'meta']) localStorage.removeItem(BASE + k);
+  } catch {
+    /* best effort */
+  }
 }
 
 export function insert<T extends TableName>(t: T, row: Tables[T]): Tables[T] {
@@ -200,9 +365,11 @@ export function getProfile(): Profile {
     stored = null;
   }
   if (!stored) {
-    // First launch on this device: create profile and the default (inactive) supplement shelf.
+    // First launch (on this device, or for this account): create the profile and the default
+    // (inactive) supplement shelf.
     stored = DEFAULT_PROFILE;
     writeRaw('profile', JSON.stringify(stored));
+    emit([{ tbl: 'profile', row_id: 'local', data: stored }]);
     if (all('supplements').length === 0) {
       commit(
         'supplements',
@@ -218,6 +385,7 @@ export function setProfile(patch: Partial<Profile>): Profile {
   const next = { ...getProfile(), ...patch, id: 'local' };
   writeRaw('profile', JSON.stringify(next));
   profileCache = next;
+  emit([{ tbl: 'profile', row_id: 'local', data: next }]);
   return next;
 }
 
@@ -256,17 +424,18 @@ export function importAll(json: string): void {
     commit(t, Array.isArray(rows) ? (rows as never[]) : []);
   }
   profileCache = null;
-  writeRaw('profile', JSON.stringify({ ...DEFAULT_PROFILE, ...data.profile }));
+  const profile = { ...DEFAULT_PROFILE, ...data.profile, id: 'local' };
+  writeRaw('profile', JSON.stringify(profile));
+  emit([{ tbl: 'profile', row_id: 'local', data: profile }]);
 }
 
+/** Deletes every entry (and, when signed in, from the account on every device too). */
 export function eraseAll(): void {
-  for (const t of TABLE_NAMES) {
-    removeRaw(t);
-    cache.delete(t);
-  }
+  for (const t of TABLE_NAMES) commit(t, []);
   removeRaw('profile');
   removeRaw('meta');
   profileCache = null;
+  emit([{ tbl: 'profile', row_id: 'local', data: null }]);
 }
 
 // ---------------------------------------------------------------- meta flags
