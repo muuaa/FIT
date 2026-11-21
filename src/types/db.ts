@@ -11,6 +11,8 @@ export interface Profile {
   fat_target_g: number;
   water_target_ml: number;
   bottle_ml: number;
+  /** Amount the water +/− buttons add or remove. */
+  water_step_ml: number;
   split_mode: SplitMode;
   default_rest_seconds: number;
 }

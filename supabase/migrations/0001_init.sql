@@ -17,6 +17,7 @@ create table public.profiles (
   fat_target_g         integer not null default 75  check (fat_target_g between 0 and 1000),
   water_target_ml      integer not null default 4000 check (water_target_ml between 250 and 15000),
   bottle_ml            integer not null default 800  check (bottle_ml between 100 and 3000),
+  water_step_ml        integer not null default 250  check (water_step_ml between 50 and 3000),
   split_mode           text not null default 'PPL-UL' check (split_mode in ('PPL-UL', 'UL-PPL')),
   default_rest_seconds integer not null default 90 check (default_rest_seconds between 10 and 900),
   created_at           timestamptz not null default now(),

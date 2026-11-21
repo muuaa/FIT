@@ -51,6 +51,7 @@ export function WaterTracker({ profile, date }: { profile: Profile; date: string
   const { data: ml = 0 } = useWater(date);
   const setWater = useSetWater(date);
   const bottleMl = profile.bottle_ml;
+  const step = profile.water_step_ml;
   const count = Math.max(1, Math.ceil(profile.water_target_ml / bottleMl));
   const pct = Math.round((ml / profile.water_target_ml) * 100);
   const extra = ml - profile.water_target_ml;
@@ -89,20 +90,20 @@ export function WaterTracker({ profile, date }: { profile: Profile; date: string
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          aria-label="Remove 250 ml"
-          onClick={() => set(Math.max(0, ml - 250))}
+          aria-label={`Remove ${step} ml`}
+          onClick={() => set(Math.max(0, ml - step))}
           disabled={ml === 0}
           className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-surface-2 text-sm font-medium text-ink-2 active:scale-95 disabled:opacity-40"
         >
-          <Minus size={14} /> 250 ml
+          <Minus size={14} /> {step} ml
         </button>
         <button
           type="button"
-          aria-label="Add 250 ml"
-          onClick={() => set(ml + 250)}
+          aria-label={`Add ${step} ml`}
+          onClick={() => set(ml + step)}
           className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-water/12 text-sm font-semibold text-water active:scale-95"
         >
-          <Plus size={14} /> 250 ml
+          <Plus size={14} /> {step} ml
         </button>
       </div>
     </div>

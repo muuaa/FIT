@@ -173,6 +173,7 @@ export const DEFAULT_PROFILE: Profile = {
   fat_target_g: 75,
   water_target_ml: 4000,
   bottle_ml: 800,
+  water_step_ml: 250,
   split_mode: 'PPL-UL',
   default_rest_seconds: 90,
 };

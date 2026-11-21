@@ -14,7 +14,7 @@ import { BackupCard } from './BackupCard';
 import { InstallCard } from './InstallCard';
 
 type Form = Record<
-  'display_name' | 'kcal_target' | 'protein_target_g' | 'carbs_target_g' | 'fat_target_g' | 'water_target_ml' | 'bottle_ml' | 'default_rest_seconds',
+  'display_name' | 'kcal_target' | 'protein_target_g' | 'carbs_target_g' | 'fat_target_g' | 'water_target_ml' | 'bottle_ml' | 'water_step_ml' | 'default_rest_seconds',
   string
 >;
 
@@ -26,6 +26,7 @@ const toForm = (p: Profile): Form => ({
   fat_target_g: String(p.fat_target_g),
   water_target_ml: String(p.water_target_ml),
   bottle_ml: String(p.bottle_ml),
+  water_step_ml: String(p.water_step_ml),
   default_rest_seconds: String(p.default_rest_seconds),
 });
 
@@ -36,6 +37,7 @@ const LIMITS: Record<Exclude<keyof Form, 'display_name'>, [number, number]> = {
   fat_target_g: [0, 1000],
   water_target_ml: [250, 15000],
   bottle_ml: [100, 3000],
+  water_step_ml: [50, 3000],
   default_rest_seconds: [10, 900],
 };
 
@@ -90,6 +92,7 @@ export function SettingsPage() {
         fat_target_g: Number(form.fat_target_g),
         water_target_ml: Number(form.water_target_ml),
         bottle_ml: Number(form.bottle_ml),
+        water_step_ml: Number(form.water_step_ml),
         default_rest_seconds: Number(form.default_rest_seconds),
       },
       {
@@ -143,6 +146,31 @@ export function SettingsPage() {
                 ? `${bottles} bottles per day`
                 : ''}
           </p>
+          <Field
+            className="mt-3"
+            label="+/− button amount"
+            inputMode="numeric"
+            value={form.water_step_ml}
+            onChange={set('water_step_ml')}
+            suffix="ml"
+            hint={invalid('water_step_ml') ?? 'How much each tap of + or − adds or removes.'}
+          />
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[...new Set([250, 500, Number(form.bottle_ml)])]
+              .filter((v) => Number.isInteger(v) && v >= 50 && v <= 3000)
+              .map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setForm({ ...form, water_step_ml: String(v) })}
+                  className={`tabular h-8 rounded-full px-3 text-xs font-semibold active:scale-95 ${
+                    form.water_step_ml === String(v) ? 'bg-water text-bg' : 'bg-surface-2 text-ink-2'
+                  }`}
+                >
+                  {v} ml{v === Number(form.bottle_ml) ? ' (1 bottle)' : ''}
+                </button>
+              ))}
+          </div>
         </Card>
 
         <SplitSwitcher />
