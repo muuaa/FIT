@@ -93,7 +93,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
         // Also covers a session that expired on its own: stop syncing and leave the account's space.
         activeUser.current = null;
         stopSync();
-        setNamespace(null);
+        setNamespace('signed-out');
         useSession.setState({ user: null });
         qc.clear();
         setPhase('signedOut');

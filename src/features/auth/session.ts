@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { setNamespace } from '@/lib/localDb';
+import { disablePush } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
 import { stopSync, useSyncStore } from '@/lib/sync';
 import { useRestStore, useWorkoutStore } from '@/stores/workoutStore';
@@ -17,10 +18,12 @@ export function pendingChanges(): number {
 }
 
 export async function signOut(): Promise<void> {
+  // Stop this phone getting the account's reminders (while still signed in, so the delete is allowed).
+  await disablePush().catch(() => undefined);
   stopSync();
   useWorkoutStore.getState().setActive(null);
   useRestStore.getState().stop();
-  setNamespace(null);
+  setNamespace('signed-out');
   useSession.setState({ user: null });
   await supabase?.auth.signOut({ scope: 'local' }).catch(() => undefined);
 }

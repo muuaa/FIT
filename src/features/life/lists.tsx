@@ -108,7 +108,7 @@ function ListCard({ list, items, members }: { list: SharedList; items: SharedIte
         <ul className="space-y-1">
           {[...open, ...done].map((i) => (
             <li key={i.id} className="flex items-center gap-1 rounded-xl bg-surface-2 pe-1">
-              <button type="button" role="checkbox" aria-checked={i.done} onClick={() => toggle(i)} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-start">
+              <button type="button" role="checkbox" aria-checked={i.done} disabled={i.id.startsWith('tmp-')} onClick={() => toggle(i)} className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-start">
                 <span className={cn('grid size-5 shrink-0 place-items-center rounded-md border-2', i.done ? 'border-lists bg-lists text-bg' : 'border-ink-3')}>
                   {i.done && <Check size={12} strokeWidth={3} />}
                 </span>
@@ -117,6 +117,7 @@ function ListCard({ list, items, members }: { list: SharedList; items: SharedIte
               <IconButton
                 label={t('Delete')}
                 className="size-9"
+                disabled={i.id.startsWith('tmp-')}
                 onClick={() => void mutate(() => deleteItem(i.id), (d) => ({ ...d, items: d.items.filter((x) => x.id !== i.id) }))}
               >
                 <Trash2 size={14} />

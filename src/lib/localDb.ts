@@ -273,10 +273,14 @@ export function snapshot(): RowChange[] {
 
 // ---------------------------------------------------------------- accounts
 
-/** Switch storage to a signed-in user's space (or back to the original local space with null). */
-export function setNamespace(userId: string | null): void {
-  currentUser = userId;
-  PREFIX = userId ? `${BASE}u.${userId}.` : BASE;
+/**
+ * Switch storage to a signed-in user's space, back to the original local space (null), or to an
+ * empty throwaway space while signed out ('signed-out'), so nothing written then can be mistaken
+ * for pre-account data later.
+ */
+export function setNamespace(userId: string | null | 'signed-out'): void {
+  currentUser = userId === 'signed-out' ? null : userId;
+  PREFIX = userId === 'signed-out' ? `${BASE}signedout.` : userId ? `${BASE}u.${userId}.` : BASE;
   cache.clear();
   profileCache = null;
 }
@@ -334,7 +338,9 @@ export function retireLegacy(): void {
       const v = localStorage.getItem(BASE + k);
       if (v !== null) copy[k] = v;
     }
-    localStorage.setItem(`${BASE}legacy-backup`, JSON.stringify({ saved_at: new Date().toISOString(), data: copy }));
+    // Keep the first copy: it's the one with the real pre-account data.
+    if (!localStorage.getItem(`${BASE}legacy-backup`))
+      localStorage.setItem(`${BASE}legacy-backup`, JSON.stringify({ saved_at: new Date().toISOString(), data: copy }));
     for (const k of [...TABLE_NAMES, 'profile', 'meta']) localStorage.removeItem(BASE + k);
   } catch {
     /* best effort */

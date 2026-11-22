@@ -1,5 +1,6 @@
 /** Arabic translations, keyed by the English text used in the code. */
 export const AR: Record<string, string> = {
+  "You already have a reminder with that name.": "لديك تذكير بهذا الاسم بالفعل.",
   "Drink water": "اشرب الماء",
   "Stop once you hit your water goal": "توقف عند بلوغ هدف الماء",
   "Skip once all are ticked": "تخطَّ عند تناولها كلها",

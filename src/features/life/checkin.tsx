@@ -1,5 +1,5 @@
 import { Smile, Trash2 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/Card';
 import { DayPicker } from '@/components/ui/DayPicker';
@@ -22,7 +22,22 @@ export function CheckInForm({ date }: { date: string }) {
   const actions = useTableActions('checkins');
   const cur = rows.find((r) => r.date === date);
   const [note, setNote] = useState(cur?.note ?? '');
-  useEffect(() => setNote(cur?.note ?? ''), [cur?.note, date]);
+  const typing = useRef<number | null>(null);
+  useEffect(() => {
+    if (typing.current === null) setNote(cur?.note ?? '');
+  }, [cur?.note, date]);
+  // Save shortly after typing stops, and on leaving the screen (blur doesn't fire on navigation).
+  const pending = useRef<string | null>(null);
+  const flushNote = () => {
+    if (typing.current !== null) window.clearTimeout(typing.current);
+    typing.current = null;
+    if (pending.current !== null) {
+      const v = pending.current;
+      pending.current = null;
+      save({ note: v.trim() });
+    }
+  };
+  useEffect(() => () => flushNote(), [date]); // eslint-disable-line react-hooks/exhaustive-deps
   const save = (patch: Partial<CheckIn>) => {
     const next: CheckIn = { date, mood: 0, energy: 0, stress: 0, note: '', ...cur, ...patch };
     if (!next.mood && !next.energy && !next.stress && !next.note) actions.remove(date);
@@ -43,8 +58,13 @@ export function CheckInForm({ date }: { date: string }) {
       />
       <input
         value={note}
-        onChange={(e) => setNote(e.target.value)}
-        onBlur={() => note !== (cur?.note ?? '') && save({ note: note.trim() })}
+        onChange={(e) => {
+          setNote(e.target.value);
+          pending.current = e.target.value;
+          if (typing.current !== null) window.clearTimeout(typing.current);
+          typing.current = window.setTimeout(flushNote, 800);
+        }}
+        onBlur={flushNote}
         placeholder={t("What's on your mind? (optional)")}
         aria-label={t('Note')}
         className="h-12 w-full rounded-2xl border border-line bg-surface-2 px-4 text-ink outline-none placeholder:text-ink-3 focus:border-ink-3"

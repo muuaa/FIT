@@ -81,35 +81,39 @@ function localNow(tz: string, offsetMin = 0) {
   return { date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}`, wd };
 }
 
-/** The user's synced rows we need for "smart" skipping. */
+/**
+ * The user's synced rows we need for "smart" skipping. Day-specific tables are filtered to that
+ * day in the query (Supabase returns at most 1000 rows per request, and logs pile up over time).
+ */
 async function userState(userId: string, date: string) {
-  const { data, error } = await db
-    .from('records')
-    .select('tbl,row_id,data')
-    .eq('user_id', userId)
-    .eq('deleted', false)
-    .in('tbl', ['profile', 'water_days', 'bodyweight_logs', 'journal', 'supplements', 'supplement_logs', 'workout_sessions', 'habits', 'habit_logs']);
-  if (error) console.error('load state failed', error.message);
-  const rows = data ?? [];
+  const base = () => db.from('records').select('tbl,row_id,data').eq('user_id', userId).eq('deleted', false);
+  const [small, today] = await Promise.all([
+    base().in('tbl', ['profile', 'supplements', 'habits']),
+    base().in('tbl', ['water_days', 'bodyweight_logs', 'journal', 'supplement_logs', 'workout_sessions', 'habit_logs']).eq('data->>date', date),
+  ]);
+  for (const r of [small, today]) if (r.error) console.error('load state failed', r.error.message);
+  const rows = [...(small.data ?? []), ...(today.data ?? [])];
   const of = (t: string) => rows.filter((r) => r.tbl === t).map((r) => r.data as Record<string, unknown>);
   const profile = (of('profile')[0] ?? {}) as Record<string, unknown>;
+  const suppLogs = of('supplement_logs');
+  const habitLogs = of('habit_logs');
+  const wd = new Date(`${date}T12:00:00Z`).getUTCDay();
   return {
     lang: (profile.language === 'ar' ? 'ar' : 'en') as Lang,
     split: String(profile.split_mode ?? 'PPL-UL'),
     waterTarget: Number(profile.water_target_ml ?? 4000),
-    waterMl: Number(of('water_days').find((r) => r.date === date)?.ml ?? 0),
-    weighed: of('bodyweight_logs').some((r) => r.date === date),
-    journaled: of('journal').some((r) => r.date === date),
-    worked: of('workout_sessions').some((r) => r.date === date && r.ended_at),
+    waterMl: Number(of('water_days')[0]?.ml ?? 0),
+    weighed: of('bodyweight_logs').length > 0,
+    journaled: of('journal').length > 0,
+    worked: of('workout_sessions').some((r) => r.ended_at),
     suppsLeft: of('supplements')
-      .filter((s) => s.active)
-      .filter((s) => !of('supplement_logs').some((l) => l.supplement_id === s.id && l.date === date))
+      .filter((s) => s.active && !suppLogs.some((l) => l.supplement_id === s.id))
       .map((s) => String(s.name)),
     habitsLeft: of('habits').filter(
       (h) =>
         !h.archived &&
-        (!(h.days as number[])?.length || (h.days as number[]).includes(new Date(`${date}T12:00:00Z`).getUTCDay())) &&
-        !of('habit_logs').some((l) => l.habit_id === h.id && l.date === date),
+        (!(h.days as number[])?.length || (h.days as number[]).includes(wd)) &&
+        !habitLogs.some((l) => l.habit_id === h.id),
     ).length,
   };
 }

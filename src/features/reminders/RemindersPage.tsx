@@ -66,7 +66,9 @@ function useSave() {
     qc.setQueryData<Reminder[]>(KEY, (list = []) =>
       id ? list.map((r) => (r.id === id ? { ...r, ...patch } : r)) : list,
     );
-    const q = id ? db().from('reminders').update(row).eq('id', id) : db().from('reminders').insert({ title: '', ...row });
+    const q = id
+      ? db().from('reminders').update(row).eq('id', id)
+      : db().from('reminders').upsert({ title: '', ...row }, { onConflict: 'user_id,kind,title' });
     const { error } = await q;
     if (error) toast.error(error.message);
     await qc.invalidateQueries({ queryKey: KEY });
@@ -162,6 +164,10 @@ function CustomReminders({ rows }: { rows: Reminder[] }) {
   const [time, setTime] = useState('09:00');
   const add = () => {
     if (!title.trim()) return;
+    if (rows.some((r) => r.title.toLowerCase() === title.trim().toLowerCase())) {
+      toast.error(t('You already have a reminder with that name.'));
+      return;
+    }
     void save({ kind: 'custom', title: title.trim().slice(0, 80), times: [time], days: [], enabled: true, smart: false });
     setTitle('');
   };

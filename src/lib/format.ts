@@ -29,8 +29,12 @@ export function parseDuration(input: string): number | null {
 }
 
 export function num(value: string): number | null {
-  if (value.trim() === '') return null;
-  const n = Number(value.replace(',', '.'));
+  let v = value.trim().replace(/\s/g, '');
+  if (v === '') return null;
+  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(v)) v = v.replace(/,/g, ''); // 1,250 or 12,500.50
+  else if (/^\d{1,3}(\.\d{3})+,\d+$/.test(v)) v = v.replace(/\./g, '').replace(',', '.'); // 1.250,50
+  else v = v.replace(',', '.'); // 2,5 → 2.5
+  const n = Number(v);
   return Number.isFinite(n) ? n : null;
 }
 
