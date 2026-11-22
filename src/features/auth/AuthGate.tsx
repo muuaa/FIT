@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/States';
 import { getProfile, setNamespace } from '@/lib/localDb';
 import { migrateLegacyIntoAccount } from '@/lib/migrate';
+import { refreshPush } from '@/lib/push';
 import { cloudEnabled, supabase } from '@/lib/supabase';
 import { hasSyncedBefore, startSync, stopSync, syncNow, useSyncStore } from '@/lib/sync';
 import { toast } from '@/stores/toastStore';
@@ -46,6 +47,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       const finish = () => {
         const moved = migrateLegacyIntoAccount();
         getProfile(); // first use of a brand-new account: create targets + default supplement shelf
+        void refreshPush();
         qc.invalidateQueries();
         setPhase('ready');
         if (moved) toast.success(t('Moved {n} entries from this phone into your account', { n: moved.toLocaleString() }));

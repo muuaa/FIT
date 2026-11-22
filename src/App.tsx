@@ -22,6 +22,7 @@ const BodyPage = lazy(() => import('@/features/life/body').then((m) => ({ defaul
 const MoneyPage = lazy(() => import('@/features/life/money').then((m) => ({ default: m.MoneyPage })));
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
 const ListsPage = lazy(() => import('@/features/life/lists').then((m) => ({ default: m.ListsPage })));
+const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage').then((m) => ({ default: m.RemindersPage })));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
 export default function App() {
@@ -59,6 +60,7 @@ export default function App() {
             <Route path="/life/journal" element={<JournalPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/settings/reminders" element={<RemindersPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

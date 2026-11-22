@@ -21,7 +21,7 @@ export default defineConfig({
     !embedded &&
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'push-sw.js'],
       manifest: {
         id: 'replete',
         name: 'Replete',
@@ -40,6 +40,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['push-sw.js'],
         navigateFallback: 'index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
       },

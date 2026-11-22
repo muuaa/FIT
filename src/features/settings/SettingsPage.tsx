@@ -1,4 +1,6 @@
-import { Droplets, Flame, LayoutList, Sparkles, Timer, User } from 'lucide-react';
+import { Bell, ChevronRight, Droplets, Flame, LayoutList, Sparkles, Timer, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { cloudEnabled } from '@/lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
@@ -125,6 +127,16 @@ export function SettingsPage() {
       <PageHeader title={t('Settings')} subtitle={t('Targets · Split · Your data')} />
       <div className="space-y-3">
         <AccountCard />
+        {cloudEnabled && (
+          <Link to="/settings/reminders" className="flex items-center gap-3 rounded-3xl border border-line/70 bg-surface p-4 active:bg-surface-2">
+            <span className="grid size-8 place-items-center rounded-xl bg-life/15 text-life">
+              <Bell size={17} />
+            </span>
+            <span className="flex-1 text-[15px] font-semibold">{t('Reminders')}</span>
+            <span className="text-sm text-ink-3">{t('Notifications')}</span>
+            <ChevronRight size={18} className="text-ink-3 rtl:-scale-x-100" />
+          </Link>
+        )}
         <Card title={t('Profile')} icon={User}>
           <Field label={t('Display name')} value={form.display_name} onChange={set('display_name')} />
           <div className="mt-3">
