@@ -77,7 +77,7 @@ Photos, files and handwriting are stored in a private Supabase Storage bucket un
 
 ## Install on your phone
 
-The app is hosted free on **GitHub Pages** at **https://muuaa.github.io/FIT/**. Every push to `claude/kind-wright-huie8c` or `main` rebuilds and redeploys it (`.github/workflows/deploy.yml`).
+The app is hosted free on **GitHub Pages** at **https://muuaa.github.io/FIT/**. Every push to `main` rebuilds and redeploys it (`.github/workflows/deploy.yml`).
 
 - **iPhone:** open the link in **Safari** → Share → **Add to Home Screen** → Add.
 - **Android:** open the link in **Chrome** → ⋮ → **Install app** (or **Add to Home screen**).
