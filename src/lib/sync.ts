@@ -9,6 +9,7 @@
  *  - Conflicts resolve as "last write to reach the server wins", per row.
  */
 import { create } from 'zustand';
+import { t } from './i18n';
 import { applyRemote, onLocalChange, readKey, removeKey, writeKey, type RowChange } from './localDb';
 import { supabase } from './supabase';
 
@@ -134,7 +135,7 @@ async function pull(uid: string): Promise<number> {
 function describe(e: unknown): string {
   const msg = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String(e.message) : String(e);
   if (/relation .*records.* does not exist|Could not find the table/i.test(msg))
-    return 'The cloud database is not set up yet (run the setup SQL in Supabase).';
+    return t('The cloud database is not set up yet (run the setup SQL in Supabase).');
   return msg;
 }
 

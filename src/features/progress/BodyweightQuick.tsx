@@ -1,4 +1,5 @@
 import { Check, Scale } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useEffect, useMemo, useState } from 'react';
 import { Sparkline } from '@/components/ui/Sparkline';
 import { Stepper } from '@/components/ui/Stepper';
@@ -36,38 +37,37 @@ export function BodyweightQuick() {
             {todays ? (
               <>
                 {round1(todays.weight_kg)}
-                <span className="text-sm font-medium text-ink-3"> kg today</span>
+                <span className="text-sm font-medium text-ink-3"> {t('kg today')}</span>
               </>
             ) : (
-              <span className="text-base font-semibold text-ink-2">Not logged yet today</span>
+              <span className="text-base font-semibold text-ink-2">{t('Not logged yet today')}</span>
             )}
           </div>
           <div className="tabular text-xs text-ink-3">
-            7-day avg {avg ? `${round1(avg)} kg` : '—'}
+            {t('7-day avg {v}', { v: avg ? `${round1(avg)} kg` : '—' })}
             {delta !== null && (
               <span className="text-ink-2">
                 {' '}
-                · {delta > 0 ? '+' : ''}
-                {delta} kg vs last week
+                · {t('{delta} kg vs last week', { delta: `${delta > 0 ? '+' : ''}${delta}` })}
               </span>
             )}
           </div>
         </div>
-        <div className="h-12 w-28 shrink-0" aria-label="7-day bodyweight trend" role="img">
+        <div className="h-12 w-28 shrink-0" aria-label={t('7-day bodyweight trend')} role="img">
           <Sparkline data={series} />
         </div>
       </div>
       <div className="flex items-end gap-2">
-        <Stepper label="Morning weight · kg" value={value} onChange={setValue} step={0.1} decimals={1} fallback={70} />
+        <Stepper label={t('Morning weight · kg')} value={value} onChange={setValue} step={0.1} decimals={1} fallback={70} />
         <button
           type="button"
-          aria-label="Save weight"
+          aria-label={t('Save weight')}
           disabled={n === null || n < 20 || n > 400 || log.isPending}
           onClick={() =>
             n !== null &&
             log.mutate(
               { date: today, weight_kg: round1(n) },
-              { onSuccess: () => toast.success(`Logged ${round1(n)} kg`) },
+              { onSuccess: () => toast.success(t('Logged {kg} kg', { kg: round1(n) })) },
             )
           }
           className="grid h-12 w-14 shrink-0 place-items-center rounded-2xl bg-weight text-bg transition active:scale-90 disabled:opacity-40"

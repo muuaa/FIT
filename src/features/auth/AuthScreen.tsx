@@ -1,4 +1,5 @@
 import { Eye, EyeOff, LogIn, Mail, UserPlus } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useState, type FormEvent } from 'react';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/Button';
@@ -9,12 +10,12 @@ import { appUrl, supabase } from '@/lib/supabase';
 type Mode = 'signin' | 'signup' | 'reset';
 
 function friendly(message: string): string {
-  if (/invalid login credentials/i.test(message)) return 'Wrong email or password.';
-  if (/email not confirmed/i.test(message)) return 'Confirm your email first: open the link we sent you, then sign in.';
-  if (/already registered|already been registered/i.test(message)) return 'There is already an account with this email. Sign in instead.';
-  if (/password should be at least/i.test(message)) return 'Use a password of at least 8 characters.';
-  if (/rate limit|too many/i.test(message)) return 'Too many tries. Wait a minute and try again.';
-  if (/failed to fetch|network/i.test(message)) return 'No internet connection. Connect and try again.';
+  if (/invalid login credentials/i.test(message)) return t('Wrong email or password.');
+  if (/email not confirmed/i.test(message)) return t('Confirm your email first: open the link we sent you, then sign in.');
+  if (/already registered|already been registered/i.test(message)) return t('There is already an account with this email. Sign in instead.');
+  if (/password should be at least/i.test(message)) return t('Use a password of at least 8 characters.');
+  if (/rate limit|too many/i.test(message)) return t('Too many tries. Wait a minute and try again.');
+  if (/failed to fetch|network/i.test(message)) return t('No internet connection. Connect and try again.');
   return message;
 }
 
@@ -48,13 +49,13 @@ export function AuthScreen() {
         });
         if (error) throw error;
         if (!data.session) {
-          setNotice(`We sent a confirmation link to ${email.trim()}. Open it on this device, then sign in here.`);
+          setNotice(t('We sent a confirmation link to {email}. Open it on this device, then sign in here.', { email: email.trim() }));
           setMode('signin');
         }
       } else {
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo: appUrl() });
         if (error) throw error;
-        setNotice(`If ${email.trim()} has an account, a link to set a new password is on its way.`);
+        setNotice(t('If {email} has an account, a link to set a new password is on its way.', { email: email.trim() }));
         setMode('signin');
       }
     } catch (err) {
@@ -68,8 +69,8 @@ export function AuthScreen() {
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-sm flex-col justify-center px-5 py-10">
       <div className="mb-8 flex flex-col items-center text-center">
         <Logo size={64} />
-        <h1 className="mt-4 text-2xl font-bold tracking-tight">Replete</h1>
-        <p className="mt-1 text-sm text-ink-3">Train · Fuel · Hydrate · Recover</p>
+        <h1 className="mt-4 text-2xl font-bold tracking-tight">{t('Replete')}</h1>
+        <p className="mt-1 text-sm text-ink-3">{t('Train · Fuel · Hydrate · Recover')}</p>
       </div>
 
       {mode !== 'reset' && (
@@ -81,8 +82,8 @@ export function AuthScreen() {
             setError(null);
           }}
           options={[
-            { value: 'signin', label: 'Sign in' },
-            { value: 'signup', label: 'Create account' },
+            { value: 'signin', label: t('Sign in') },
+            { value: 'signup', label: t('Create account') },
           ]}
         />
       )}
@@ -90,34 +91,34 @@ export function AuthScreen() {
       <form onSubmit={submit} className="space-y-3">
         {mode === 'reset' && (
           <div>
-            <h2 className="text-lg font-semibold">Reset your password</h2>
-            <p className="text-sm text-ink-3">We'll email you a link to choose a new one.</p>
+            <h2 className="text-lg font-semibold">{t('Reset your password')}</h2>
+            <p className="text-sm text-ink-3">{t('We\'ll email you a link to choose a new one.')}</p>
           </div>
         )}
         <Field
-          label="Email"
+          label={t('Email')}
           type="email"
           autoComplete="email"
           inputMode="email"
           autoCapitalize="none"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder={t('you@example.com')}
         />
         {mode !== 'reset' && (
           <Field
-            label="Password"
+            label={t('Password')}
             type={show ? 'text' : 'password'}
             autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            hint={mode === 'signup' ? 'At least 8 characters.' : undefined}
+            hint={mode === 'signup' ? t('At least 8 characters.') : undefined}
             suffix={
               <button
                 type="button"
-                aria-label={show ? 'Hide password' : 'Show password'}
+                aria-label={show ? t('Hide password') : t('Show password')}
                 onClick={() => setShow((v) => !v)}
-                className="-mr-1 grid size-9 place-items-center rounded-lg text-ink-3"
+                className="-me-1 grid size-9 place-items-center rounded-lg text-ink-3"
               >
                 {show ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -130,25 +131,24 @@ export function AuthScreen() {
 
         <Button type="submit" variant="primary" accent="var(--color-fuel)" size="lg" block disabled={!valid || busy}>
           {mode === 'signin' ? <LogIn size={18} /> : mode === 'signup' ? <UserPlus size={18} /> : <Mail size={18} />}
-          {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create account' : 'Send reset link'}
+          {busy ? t('Please wait…') : mode === 'signin' ? t('Sign in') : mode === 'signup' ? t('Create account') : t('Send reset link')}
         </Button>
       </form>
 
       <div className="mt-4 text-center">
         {mode === 'reset' ? (
           <button type="button" className="text-sm font-medium text-ink-2" onClick={() => setMode('signin')}>
-            Back to sign in
+            {t('Back to sign in')}
           </button>
         ) : mode === 'signin' ? (
           <button type="button" className="text-sm font-medium text-ink-2" onClick={() => setMode('reset')}>
-            Forgot password?
+            {t('Forgot password?')}
           </button>
         ) : null}
       </div>
 
       <p className="mt-8 text-center text-xs text-ink-3">
-        Your data is private to your account and works offline. Anything already on this phone moves into your account when you
-        first sign in.
+        {t('Your data is private to your account and works offline. Anything already on this phone moves into your account when you first sign in.')}
       </p>
     </div>
   );
@@ -163,7 +163,7 @@ export function NewPasswordScreen({ onDone }: { onDone: () => void }) {
     <div className="pt-safe mx-auto flex min-h-full max-w-sm flex-col justify-center px-5 py-10">
       <div className="mb-6 flex flex-col items-center text-center">
         <Logo size={56} />
-        <h1 className="mt-4 text-xl font-bold">Choose a new password</h1>
+        <h1 className="mt-4 text-xl font-bold">{t('Choose a new password')}</h1>
       </div>
       <form
         className="space-y-3"
@@ -177,10 +177,10 @@ export function NewPasswordScreen({ onDone }: { onDone: () => void }) {
           else onDone();
         }}
       >
-        <Field label="New password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} hint="At least 8 characters." />
+        <Field label={t('New password')} type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} hint={t('At least 8 characters.')} />
         {error && <p className="text-sm text-danger">{error}</p>}
         <Button type="submit" variant="primary" accent="var(--color-fuel)" size="lg" block disabled={password.length < 8 || busy}>
-          Save password
+          {t('Save password')}
         </Button>
       </form>
     </div>

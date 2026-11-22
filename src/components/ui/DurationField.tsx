@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { t } from '@/lib/i18n';
 
 /**
  * Minutes + seconds entry. Two numeric boxes instead of one "m:ss" text field, because the
@@ -42,7 +43,7 @@ export function DurationField({
             onChange={(e) => onChange(digits(e.target.value), seconds)}
             className={input}
           />
-          <span className="ml-2 text-sm text-ink-3">min</span>
+          <span className="ms-2 text-sm text-ink-3">{t('min')}</span>
         </label>
         <label className={box}>
           <input
@@ -55,7 +56,7 @@ export function DurationField({
             onChange={(e) => onChange(minutes, digits(e.target.value).slice(0, 2))}
             className={input}
           />
-          <span className="ml-2 text-sm text-ink-3">sec</span>
+          <span className="ms-2 text-sm text-ink-3">{t('sec')}</span>
         </label>
       </div>
       {hint && <span className="mt-1 block text-xs text-ink-3">{hint}</span>}

@@ -1,4 +1,5 @@
 import { CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { t } from '@/lib/i18n';
 import { ChartTooltip, Legend } from '@/components/ui/ChartTooltip';
 import type { WeightPoint } from '@/hooks/useBodyweight';
 import { CHART } from '@/lib/chartColors';
@@ -12,11 +13,11 @@ export function BodyweightChart({ data, height = 220 }: { data: WeightPoint[]; h
     <div>
       <Legend
         items={[
-          { label: 'Daily weigh-in', color: CHART.weightDaily, kind: 'dot' },
-          { label: '7-day average', color: CHART.weightAvg, kind: 'line' },
+          { label: t('Daily weigh-in'), color: CHART.weightDaily, kind: 'dot' },
+          { label: t('7-day average'), color: CHART.weightAvg, kind: 'line' },
         ]}
       />
-      <div className="-ml-2 mt-2" style={{ height }}>
+      <div className="-ms-2 mt-2" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid stroke={CHART.grid} vertical={false} />
@@ -38,7 +39,7 @@ export function BodyweightChart({ data, height = 220 }: { data: WeightPoint[]; h
             />
             <Tooltip content={<ChartTooltip />} cursor={{ stroke: CHART.axis, strokeDasharray: '3 3' }} />
             <Line
-              name="7-day avg"
+              name={t('7-day avg')}
               dataKey="avg7"
               stroke={CHART.weightAvg}
               strokeWidth={2}
@@ -48,7 +49,7 @@ export function BodyweightChart({ data, height = 220 }: { data: WeightPoint[]; h
               isAnimationActive={false}
             />
             <Line
-              name="Weigh-in"
+              name={t('Weigh-in')}
               dataKey="weight"
               stroke="none"
               dot={{ r: 4, fill: CHART.weightDaily, stroke: 'var(--color-surface)', strokeWidth: 2 }}

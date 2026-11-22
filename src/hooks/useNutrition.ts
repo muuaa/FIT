@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { t } from '@/lib/i18n';
 import { all, insert, remove, uid, update } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
 import type { FoodEntry, Macros, SavedMeal } from '@/types/db';
@@ -45,7 +46,7 @@ export function useDeleteFood(date: string) {
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ['food', date] });
       if (row)
-        toast.undo(`Deleted ${row.name}`, () => {
+        toast.undo(t('Deleted {name}', { name: row.name }), () => {
           insert('food_entries', row);
           qc.invalidateQueries({ queryKey: ['food', date] });
         });
@@ -80,7 +81,7 @@ export function useDeleteSavedMeal() {
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ['savedMeals'] });
       if (row)
-        toast.undo(`Removed ${row.name} from saved meals`, () => {
+        toast.undo(t('Removed {name} from saved meals', { name: row.name }), () => {
           insert('saved_meals', row);
           qc.invalidateQueries({ queryKey: ['savedMeals'] });
         });

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useEffect, useRef, useState, type PointerEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { IconButton } from './Button';
@@ -64,7 +65,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-surface-3" />
           <header className="flex items-center gap-2 px-5 pb-1 pt-2">
           <h2 className="flex-1 text-lg font-semibold tracking-tight">{title}</h2>
-          <IconButton label="Close" onClick={onClose} className="-mr-2">
+          <IconButton label={t('Close')} onClick={onClose} className="-me-2">
             <X size={20} />
             </IconButton>
           </header>

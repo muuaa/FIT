@@ -1,4 +1,5 @@
 import { Timer } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
@@ -26,7 +27,7 @@ export function RestPresets() {
   return (
     <div className="rounded-3xl border border-line/70 bg-surface p-3">
       <div className="mb-2 flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-ink-3">
-        <Timer size={14} className="text-lift" /> Auto rest after each set
+        <Timer size={14} className="text-lift" /> {t('Auto rest after each set')}
       </div>
       <div className="flex gap-1.5">
         {PRESETS.map((s) => (
@@ -54,7 +55,7 @@ export function RestPresets() {
             isCustom ? 'bg-lift text-bg' : 'bg-surface-2 text-ink-2',
           )}
         >
-          {isCustom ? formatClock(current) : 'Custom'}
+          {isCustom ? formatClock(current) : t('Custom')}
         </button>
       </div>
       <Button
@@ -67,13 +68,13 @@ export function RestPresets() {
           start(current);
         }}
       >
-        Start {formatClock(current)} rest now
+        {t('Start {time} rest now', { time: formatClock(current) })}
       </Button>
 
       <Sheet
         open={customOpen}
         onClose={() => setCustomOpen(false)}
-        title="Custom rest"
+        title={t('Custom rest')}
         footer={
           <Button
             variant="primary"
@@ -92,14 +93,14 @@ export function RestPresets() {
         }
       >
         <DurationField
-          label="Rest length"
+          label={t('Rest length')}
           minutes={cm}
           seconds={cs}
           onChange={(m, s) => {
             setCm(m);
             setCs(s);
           }}
-          hint="Between 10 seconds and 15 minutes."
+          hint={t('Between 10 seconds and 15 minutes.')}
           autoFocus
         />
       </Sheet>

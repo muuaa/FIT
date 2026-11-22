@@ -1,4 +1,5 @@
 import { CalendarClock, ChevronRight, Trash2 } from 'lucide-react';
+import { t , tn} from '@/lib/i18n';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
@@ -6,7 +7,7 @@ import { Empty, Spinner, Stat } from '@/components/ui/States';
 import { useDeleteWorkout, useSessionDetail, useWorkoutHistory, type HistoryItem } from '@/hooks/useWorkouts';
 import { relativeDay } from '@/lib/date';
 import { formatClock, round1 } from '@/lib/format';
-import { DAY_LABEL } from '@/lib/split';
+import { dayLabel } from '@/lib/split';
 
 function WorkoutDetailSheet({ item, onClose }: { item: HistoryItem | null; onClose: () => void }) {
   const { data: groups = [], isLoading } = useSessionDetail(item?.id ?? null);
@@ -20,7 +21,7 @@ function WorkoutDetailSheet({ item, onClose }: { item: HistoryItem | null; onClo
     <Sheet
       open={item !== null}
       onClose={close}
-      title={item ? `${DAY_LABEL[item.day_type]} · ${relativeDay(item.date)}` : ''}
+      title={item ? `${dayLabel(item.day_type)} · ${relativeDay(item.date)}` : ''}
       footer={
         confirm ? (
           <div className="flex gap-2">
@@ -32,21 +33,21 @@ function WorkoutDetailSheet({ item, onClose }: { item: HistoryItem | null; onClo
               className="flex-1"
               onClick={() => item && del.mutate(item.id, { onSuccess: close })}
             >
-              Delete workout
+              {t('Delete workout')}
             </Button>
           </div>
         ) : (
           <Button variant="ghost" block className="text-danger" onClick={() => setConfirm(true)}>
-            <Trash2 size={16} /> Delete this workout
+            <Trash2 size={16} /> {t('Delete this workout')}
           </Button>
         )
       }
     >
       {item && (
         <div className="mb-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface-2 p-3">
-          <Stat label="Time" value={formatClock(item.duration_seconds ?? 0)} />
-          <Stat label="Sets" value={item.setCount} />
-          <Stat label="Volume" value={`${item.volumeKg.toLocaleString()}`} sub="kg" />
+          <Stat label={t('Time')} value={formatClock(item.duration_seconds ?? 0)} />
+          <Stat label={t('Sets')} value={item.setCount} />
+          <Stat label={t('Volume')} value={`${item.volumeKg.toLocaleString()}`} sub="kg" />
         </div>
       )}
       {isLoading ? (
@@ -78,8 +79,8 @@ export function WorkoutHistory({ limit = 15 }: { limit?: number }) {
   if (isLoading) return <Spinner />;
   if (!data.length)
     return (
-      <Empty icon={CalendarClock} title="No workouts logged yet">
-        Finished workouts show up here. Tap one to see every set.
+      <Empty icon={CalendarClock} title={t('No workouts logged yet')}>
+        {t('Finished workouts show up here. Tap one to see every set.')}
       </Empty>
     );
   return (
@@ -90,19 +91,19 @@ export function WorkoutHistory({ limit = 15 }: { limit?: number }) {
             <button
               type="button"
               onClick={() => setOpen(w)}
-              className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left active:bg-surface-2"
+              className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-start active:bg-surface-2"
             >
               <span className="grid h-10 w-14 shrink-0 place-items-center rounded-xl bg-lift/12 text-xs font-bold text-lift">
-                {DAY_LABEL[w.day_type]}
+                {dayLabel(w.day_type)}
               </span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium">{relativeDay(w.date)}</div>
                 <div className="tabular truncate text-xs text-ink-3">
-                  {w.exerciseCount} exercises · {w.setCount} sets · {w.volumeKg.toLocaleString()} kg
+                  {tn(w.exerciseCount, '{n} exercise', '{n} exercises')} · {tn(w.setCount, '{n} set', '{n} sets')} · {w.volumeKg.toLocaleString()} kg
                 </div>
               </div>
               <span className="tabular text-sm text-ink-2">{formatClock(w.duration_seconds ?? 0)}</span>
-              <ChevronRight size={16} className="shrink-0 text-ink-3" />
+              <ChevronRight size={16} className="shrink-0 text-ink-3 rtl:-scale-x-100" />
             </button>
           </li>
         ))}

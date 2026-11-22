@@ -1,4 +1,5 @@
 import { Dumbbell, TrendingUp } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ChartTooltip, Legend } from '@/components/ui/ChartTooltip';
@@ -7,7 +8,7 @@ import { useExerciseProgress, useExercises } from '@/hooks/useWorkouts';
 import { CHART } from '@/lib/chartColors';
 import { shortDate } from '@/lib/date';
 import { round1 } from '@/lib/format';
-import { DAY_LABEL, DAY_TYPES } from '@/lib/split';
+import { dayLabel, DAY_TYPES } from '@/lib/split';
 
 export function StrengthChart() {
   const { data: exercises = [] } = useExercises();
@@ -22,8 +23,8 @@ export function StrengthChart() {
 
   if (!exercises.length)
     return (
-      <Empty icon={Dumbbell} title="No exercises yet">
-        Add exercises in Train to start tracking strength.
+      <Empty icon={Dumbbell} title={t('No exercises yet')}>
+        {t('Add exercises in Train to start tracking strength.')}
       </Empty>
     );
 
@@ -34,13 +35,13 @@ export function StrengthChart() {
   return (
     <div>
       <select
-        aria-label="Exercise"
+        aria-label={t('Exercise')}
         value={selected?.id ?? ''}
         onChange={(e) => setSelectedId(e.target.value)}
         className="mb-3 h-11 w-full rounded-2xl border border-line bg-surface-2 px-3 text-ink outline-none"
       >
         {grouped.map((g) => (
-          <optgroup key={g.d} label={DAY_LABEL[g.d]}>
+          <optgroup key={g.d} label={dayLabel(g.d)}>
             {g.items.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.name}
@@ -53,28 +54,28 @@ export function StrengthChart() {
       {isLoading ? (
         <Spinner />
       ) : points.length === 0 ? (
-        <Empty icon={TrendingUp} title="No sets logged for this exercise yet" />
+        <Empty icon={TrendingUp} title={t('No sets logged for this exercise yet')} />
       ) : (
         <>
           <div className="mb-2 flex items-baseline gap-3">
             <div className="tabular text-2xl font-bold">
               {round1(last.e1rm)}
-              <span className="text-sm font-medium text-ink-3"> kg est. 1RM</span>
+              <span className="text-sm font-medium text-ink-3"> {t('kg est. 1RM')}</span>
             </div>
             {gain !== null && (
               <span className="tabular text-sm font-semibold text-ink-2">
                 {gain >= 0 ? '+' : ''}
-                {gain} kg since {shortDate(first.date)}
+                {t('{gain} kg since {date}', { gain, date: shortDate(first.date) })}
               </span>
             )}
           </div>
           <Legend
             items={[
-              { label: 'Estimated 1RM', color: CHART.e1rm, kind: 'line' },
-              { label: 'Top set weight', color: CHART.topWeight, kind: 'line' },
+              { label: t('Estimated 1RM'), color: CHART.e1rm, kind: 'line' },
+              { label: t('Top set weight'), color: CHART.topWeight, kind: 'line' },
             ]}
           />
-          <div className="-ml-2 mt-2 h-52">
+          <div className="-ms-2 mt-2 h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                 <CartesianGrid stroke={CHART.grid} vertical={false} />
@@ -96,7 +97,7 @@ export function StrengthChart() {
                 />
                 <Tooltip content={<ChartTooltip />} cursor={{ stroke: CHART.axis, strokeDasharray: '3 3' }} />
                 <Line
-                  name="Est. 1RM"
+                  name={t('Est. 1RM')}
                   dataKey="e1rm"
                   stroke={CHART.e1rm}
                   strokeWidth={2}
@@ -104,7 +105,7 @@ export function StrengthChart() {
                   isAnimationActive={false}
                 />
                 <Line
-                  name="Top weight"
+                  name={t('Top weight')}
                   dataKey="topWeight"
                   stroke={CHART.topWeight}
                   strokeWidth={2}

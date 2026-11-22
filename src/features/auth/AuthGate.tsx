@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { t } from '@/lib/i18n';
 import { CloudOff, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Logo } from '@/components/Logo';
@@ -47,7 +48,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
         getProfile(); // first use of a brand-new account: create targets + default supplement shelf
         qc.invalidateQueries();
         setPhase('ready');
-        if (moved) toast.success(`Moved ${moved.toLocaleString()} entries from this phone into your account`);
+        if (moved) toast.success(t('Moved {n} entries from this phone into your account', { n: moved.toLocaleString() }));
       };
 
       if (hasSyncedBefore()) {
@@ -124,7 +125,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       return (
         <NewPasswordScreen
           onDone={() => {
-            toast.success('Password updated');
+            toast.success(t('Password updated'));
             const u = useSession.getState().user;
             if (u) setPhase('ready');
             else setPhase('signedOut');
@@ -135,7 +136,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       return (
         <Splash>
           <Spinner />
-          <p className="text-sm text-ink-2">Loading your data…</p>
+          <p className="text-sm text-ink-2">{t('Loading your data…')}</p>
         </Splash>
       );
     case 'needOnline':
@@ -145,11 +146,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
           {phase === 'needOnline' ? <CloudOff className="text-ink-3" /> : <TriangleAlert className="text-lift" />}
           <p className="text-sm text-ink-2">
             {phase === 'needOnline'
-              ? 'Connect to the internet once to load your account on this device. After that it works offline.'
-              : `Couldn't load your account: ${syncError ?? 'unknown error'}`}
+              ? t('Connect to the internet once to load your account on this device. After that it works offline.')
+              : t("Couldn't load your account: {error}", { error: syncError ?? t('unknown error') })}
           </p>
           <Button variant="secondary" onClick={retry}>
-            <RefreshCw size={16} /> Try again
+            <RefreshCw size={16} /> {t('Try again')}
           </Button>
         </Splash>
       );

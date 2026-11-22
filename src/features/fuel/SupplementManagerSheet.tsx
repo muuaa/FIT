@@ -1,4 +1,5 @@
 import { Check, Pencil, Plus, Trash2 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useState } from 'react';
 import { Button, IconButton } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -18,8 +19,8 @@ function Row({ s }: { s: Supplement }) {
   if (editing)
     return (
       <li className="space-y-2 rounded-2xl bg-surface-2 p-3">
-        <Field label="Name" value={name} onChange={(e) => setName(e.target.value)} />
-        <Field label="Dosage / notes" value={dosage} onChange={(e) => setDosage(e.target.value)} />
+        <Field label={t('Name')} value={name} onChange={(e) => setName(e.target.value)} />
+        <Field label={t('Dosage / notes')} value={dosage} onChange={(e) => setDosage(e.target.value)} />
         <div className="flex gap-2">
           <Button size="sm" variant="ghost" className="flex-1" onClick={() => setEditing(false)}>
             Cancel
@@ -35,14 +36,14 @@ function Row({ s }: { s: Supplement }) {
               setEditing(false);
             }}
           >
-            <Check size={16} /> Save
+            <Check size={16} /> {t('Save')}
           </Button>
         </div>
       </li>
     );
 
   return (
-    <li className="flex items-center gap-2 rounded-2xl bg-surface-2 py-2 pl-4 pr-2">
+    <li className="flex items-center gap-2 rounded-2xl bg-surface-2 py-2 ps-4 pe-2">
       <div className="min-w-0 flex-1">
         <div className={`truncate font-medium ${s.active ? '' : 'text-ink-2'}`}>{s.name}</div>
         <div className="truncate text-xs text-ink-3">{s.dosage || 'No dosage set'}</div>
@@ -58,17 +59,17 @@ function Row({ s }: { s: Supplement }) {
         </>
       ) : (
         <>
-          <IconButton label={`Edit ${s.name}`} onClick={() => setEditing(true)}>
+          <IconButton label={t('Edit {name}', { name: s.name })} onClick={() => setEditing(true)}>
             <Pencil size={16} />
           </IconButton>
-          <IconButton label={`Delete ${s.name}`} onClick={() => setConfirmDelete(true)}>
+          <IconButton label={t('Delete {name}', { name: s.name })} onClick={() => setConfirmDelete(true)}>
             <Trash2 size={16} />
           </IconButton>
           <Toggle
             checked={s.active}
             onChange={(active) => update.mutate({ id: s.id, active })}
             accent="var(--color-supp)"
-            label={`${s.name} active`}
+            label={t('{name} active', { name: s.name })}
           />
         </>
       )}
@@ -83,9 +84,9 @@ export function SupplementManagerSheet({ open, onClose }: { open: boolean; onClo
   const [dosage, setDosage] = useState('');
 
   return (
-    <Sheet open={open} onClose={onClose} title="Supplement shelf">
+    <Sheet open={open} onClose={onClose} title={t('Supplement shelf')}>
       <p className="mb-3 text-sm text-ink-3">
-        Switch on what you currently have. Only active supplements appear in your daily checklist.
+        {t('Switch on what you currently have. Only active supplements appear in your daily checklist.')}
       </p>
       <ul className="space-y-2">
         {list.map((s) => (
@@ -108,11 +109,11 @@ export function SupplementManagerSheet({ open, onClose }: { open: boolean; onClo
           );
         }}
       >
-        <div className="text-sm font-semibold">Add custom supplement</div>
-        <Field label="Name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Ashwagandha" />
-        <Field label="Dosage / notes" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g. 600 mg with dinner" />
+        <div className="text-sm font-semibold">{t('Add custom supplement')}</div>
+        <Field label={t('Name')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Ashwagandha')} />
+        <Field label={t('Dosage / notes')} value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder={t('e.g. 600 mg with dinner')} />
         <Button type="submit" variant="primary" accent="var(--color-supp)" block disabled={!name.trim() || add.isPending}>
-          <Plus size={18} /> Add to shelf
+          <Plus size={18} /> {t('Add to shelf')}
         </Button>
       </form>
     </Sheet>

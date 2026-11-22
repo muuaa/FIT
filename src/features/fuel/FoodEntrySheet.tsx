@@ -1,4 +1,5 @@
 import { BookmarkPlus, Plus, Zap } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -23,7 +24,7 @@ export function SavedMealList({ date, onLogged }: { date: string; onLogged?: () 
       { name: m.name, kcal: m.kcal, protein_g: m.protein_g, carbs_g: m.carbs_g, fat_g: m.fat_g },
       {
         onSuccess: () => {
-          toast.success(`Logged ${m.name}`);
+          toast.success(t('Logged {name}', { name: m.name }));
           onLogged?.();
         },
       },
@@ -31,8 +32,8 @@ export function SavedMealList({ date, onLogged }: { date: string; onLogged?: () 
   if (isLoading) return null;
   if (!meals.length)
     return (
-      <Empty icon={BookmarkPlus} title="No saved meals yet">
-        Log a meal with “Save to library” on and it'll appear here for one-tap logging.
+      <Empty icon={BookmarkPlus} title={t('No saved meals yet')}>
+        {t('Log a meal with “Save to library” on and it\'ll appear here for one-tap logging.')}
       </Empty>
     );
   return (
@@ -43,7 +44,7 @@ export function SavedMealList({ date, onLogged }: { date: string; onLogged?: () 
             type="button"
             onClick={() => log(m)}
             disabled={addFood.isPending}
-            className="flex w-full items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-left active:scale-[0.98] active:bg-surface-3"
+            className="flex w-full items-center gap-3 rounded-2xl bg-surface-2 px-4 py-3 text-start active:scale-[0.98] active:bg-surface-3"
           >
             <div className="min-w-0 flex-1">
               <div className="truncate font-medium">{m.name}</div>
@@ -119,7 +120,7 @@ export function FoodEntrySheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Log food"
+      title={t('Log food')}
       footer={
         tab === 'custom' ? (
           <Button
@@ -130,7 +131,7 @@ export function FoodEntrySheet({
             disabled={!valid || addFood.isPending}
             onClick={submit}
           >
-            <Zap size={18} /> Log {kcalValue !== null ? `${Math.round(kcalValue)} kcal` : ''}
+            <Zap size={18} /> {kcalValue !== null ? t('Log {n} kcal', { n: Math.round(kcalValue) }) : t('Log')}
           </Button>
         ) : undefined
       }
@@ -141,35 +142,35 @@ export function FoodEntrySheet({
         onChange={setTab}
         accent="var(--color-fuel)"
         options={[
-          { value: 'saved', label: 'Saved meals' },
-          { value: 'custom', label: 'Custom' },
+          { value: 'saved', label: t('Saved meals') },
+          { value: 'custom', label: t('Custom') },
         ]}
       />
       {tab === 'saved' ? (
         <SavedMealList date={date} onLogged={onClose} />
       ) : (
         <div className="space-y-3">
-          <Field label="Food / meal" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Oats + whey" autoFocus />
+          <Field label={t('Food / meal')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Oats + whey')} autoFocus />
           <div className="grid grid-cols-3 gap-2">
-            <Field label="Protein" inputMode="decimal" value={p} onChange={(e) => setP(e.target.value)} suffix="g" />
-            <Field label="Carbs" inputMode="decimal" value={c} onChange={(e) => setC(e.target.value)} suffix="g" />
-            <Field label="Fat" inputMode="decimal" value={f} onChange={(e) => setF(e.target.value)} suffix="g" />
+            <Field label={t('Protein')} inputMode="decimal" value={p} onChange={(e) => setP(e.target.value)} suffix="g" />
+            <Field label={t('Carbs')} inputMode="decimal" value={c} onChange={(e) => setC(e.target.value)} suffix="g" />
+            <Field label={t('Fat')} inputMode="decimal" value={f} onChange={(e) => setF(e.target.value)} suffix="g" />
           </div>
           <Field
-            label="Calories"
+            label={t('Calories')}
             inputMode="numeric"
             value={kcal}
             onChange={(e) => setKcal(e.target.value)}
             suffix="kcal"
             placeholder={derivedKcal > 0 ? String(derivedKcal) : ''}
-            hint={derivedKcal > 0 && kcal === '' ? `Auto from macros: ${derivedKcal} kcal` : undefined}
+            hint={derivedKcal > 0 && kcal === '' ? t('Auto from macros: {n} kcal', { n: derivedKcal }) : undefined}
           />
           <label className="flex items-center justify-between rounded-2xl bg-surface-2 px-4 py-3">
             <span>
-              <span className="block text-sm font-medium">Save to meal library</span>
-              <span className="block text-xs text-ink-3">One-tap log it next time</span>
+              <span className="block text-sm font-medium">{t('Save to meal library')}</span>
+              <span className="block text-xs text-ink-3">{t('One-tap log it next time')}</span>
             </span>
-            <Toggle checked={save} onChange={setSave} label="Save to meal library" />
+            <Toggle checked={save} onChange={setSave} label={t('Save to meal library')} />
           </label>
         </div>
       )}

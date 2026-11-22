@@ -1,4 +1,5 @@
 import { Flag, ListPlus, Trash2 } from 'lucide-react';
+import { t , tn} from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { WorkoutClock } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
@@ -13,7 +14,7 @@ import {
   usePreviousSets,
   useSessionSets,
 } from '@/hooks/useWorkouts';
-import { DAY_LABEL } from '@/lib/split';
+import { dayLabel } from '@/lib/split';
 import { toast } from '@/stores/toastStore';
 import { useRestStore, type ActiveWorkout as Active } from '@/stores/workoutStore';
 import { ExerciseEditor } from './ExerciseEditor';
@@ -45,22 +46,22 @@ export function ActiveWorkout({ active }: { active: Active }) {
   return (
     <div className="space-y-3">
       <section className="rounded-3xl border border-lift/25 bg-gradient-to-br from-lift/14 via-surface to-surface p-4">
-        <div className="text-xs font-medium uppercase tracking-wider text-lift">{DAY_LABEL[active.dayType]} day · in progress</div>
+        <div className="text-xs font-medium uppercase tracking-wider text-lift">{dayLabel(active.dayType)} day · in progress</div>
         <WorkoutClock className="mt-1 block text-5xl font-bold tracking-tight" />
         <div className="tabular mt-1 text-sm text-ink-3">
-          {targetSets > 0 ? `${doneSets} of ${targetSets} sets` : `${sets.length} ${sets.length === 1 ? 'set' : 'sets'}`} ·{' '}
+          {targetSets > 0 ? t('{done} of {total} sets', { done: doneSets, total: targetSets }) : tn(sets.length, '{n} set', '{n} sets')} ·{' '}
           {volume.toLocaleString()} kg volume
         </div>
         {targetSets > 0 && <ProgressBar className="mt-3" value={doneSets} max={targetSets} accent="var(--color-lift)" />}
         <div className="mt-4 flex gap-2">
-          <Button variant="danger" aria-label="Discard workout" onClick={() => setConfirm('discard')}>
+          <Button variant="danger" aria-label={t('Discard workout')} onClick={() => setConfirm('discard')}>
             <Trash2 size={16} />
           </Button>
           <Button variant="secondary" onClick={() => setEditOpen(true)}>
-            <ListPlus size={16} /> Edit
+            <ListPlus size={16} /> {t('Edit')}
           </Button>
           <Button variant="primary" accent="var(--color-lift)" className="flex-1" onClick={() => setConfirm('finish')}>
-            <Flag size={16} /> Finish
+            <Flag size={16} /> {t('Finish')}
           </Button>
         </div>
       </section>
@@ -71,7 +72,7 @@ export function ActiveWorkout({ active }: { active: Active }) {
         <Spinner />
       ) : exercises.length === 0 ? (
         <div className="rounded-3xl border border-line/70 bg-surface p-4">
-          <h3 className="mb-3 font-semibold">Build your {DAY_LABEL[active.dayType]} day</h3>
+          <h3 className="mb-3 font-semibold">Build your {dayLabel(active.dayType)} day</h3>
           <ExerciseEditor dayType={active.dayType} />
         </div>
       ) : (
@@ -88,18 +89,18 @@ export function ActiveWorkout({ active }: { active: Active }) {
 
       {orphanNames.map((name) => (
         <div key={name} className="rounded-2xl bg-surface p-3 text-sm text-ink-3">
-          {name}: {sets.filter((s) => s.exercise_name === name).length} sets logged (removed from template)
+          {t('{name}: {n} sets logged (removed from template)', { name, n: sets.filter((s) => s.exercise_name === name).length })}
         </div>
       ))}
 
-      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title={`${DAY_LABEL[active.dayType]} exercises`}>
+      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title={t('{day} exercises', { day: dayLabel(active.dayType) })}>
         <ExerciseEditor dayType={active.dayType} />
       </Sheet>
 
       <Sheet
         open={confirm !== null}
         onClose={() => setConfirm(null)}
-        title={confirm === 'finish' ? 'Finish workout?' : 'Discard workout?'}
+        title={confirm === 'finish' ? t('Finish workout?') : t('Discard workout?')}
         footer={
           <div className="flex gap-2">
             <Button variant="ghost" className="flex-1" onClick={() => setConfirm(null)}>
@@ -116,12 +117,12 @@ export function ActiveWorkout({ active }: { active: Active }) {
                     onSuccess: () => {
                       stopRest();
                       setConfirm(null);
-                      toast.success(sets.length ? 'Workout saved 💪' : 'Empty workout discarded');
+                      toast.success(sets.length ? t('Workout saved 💪') : t('Empty workout discarded'));
                     },
                   })
                 }
               >
-                Finish & save
+                {t('Finish & save')}
               </Button>
             ) : (
               <Button
@@ -146,9 +147,9 @@ export function ActiveWorkout({ active }: { active: Active }) {
         <p className="text-sm text-ink-2">
           {confirm === 'finish'
             ? sets.length
-              ? `${sets.length} sets and ${volume.toLocaleString()} kg of volume will be saved to your history.`
-              : 'No sets were logged, so nothing will be saved.'
-            : 'All sets logged in this session will be deleted. This cannot be undone.'}
+              ? t('{n} sets and {kg} kg of volume will be saved to your history.', { n: sets.length, kg: volume.toLocaleString() })
+              : t('No sets were logged, so nothing will be saved.')
+            : t('All sets logged in this session will be deleted. This cannot be undone.')}
         </p>
       </Sheet>
     </div>

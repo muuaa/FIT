@@ -1,4 +1,5 @@
-import { Dumbbell, House, LineChart, Utensils } from 'lucide-react';
+import { Dumbbell, House, LineChart, Sparkles, Utensils } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 
@@ -6,18 +7,20 @@ const TABS = [
   { to: '/', label: 'Today', icon: House, accent: 'var(--color-ink)' },
   { to: '/train', label: 'Train', icon: Dumbbell, accent: 'var(--color-lift)' },
   { to: '/fuel', label: 'Fuel', icon: Utensils, accent: 'var(--color-fuel)' },
+  { to: '/life', label: 'Life', icon: Sparkles, accent: 'var(--color-life)' },
   { to: '/progress', label: 'Progress', icon: LineChart, accent: 'var(--color-weight)' },
 ];
 
 export function BottomNav() {
   return (
     <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line/70 bg-bg/90 backdrop-blur-xl">
-      <ul className="mx-auto grid h-16 max-w-lg grid-cols-4">
+      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5">
         {TABS.map(({ to, label, icon: Icon, accent }) => (
           <li key={to}>
             <NavLink
               to={to}
               end={to === '/'}
+              aria-label={t(label)}
               className={({ isActive }) =>
                 cn(
                   'flex h-full flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
@@ -33,7 +36,7 @@ export function BottomNav() {
                   >
                     <Icon size={20} strokeWidth={isActive ? 2.4 : 2} />
                   </span>
-                  {label}
+                  {t(label)}
                 </>
               )}
             </NavLink>

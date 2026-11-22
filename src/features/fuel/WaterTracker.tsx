@@ -1,4 +1,5 @@
 import { Check, Minus, Plus } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useId } from 'react';
 import { nextWaterForBottleTap, useSetWater, useWater } from '@/hooks/useWater';
 import { tick } from '@/lib/alerts';
@@ -12,7 +13,7 @@ function Bottle({ fill, index, onTap, ml }: { fill: number; index: number; onTap
     <button
       type="button"
       onClick={onTap}
-      aria-label={`Bottle ${index + 1}, ${Math.round(fill * 100)}% full (${ml} ml)`}
+      aria-label={t('Bottle {n}, {pct}% full ({ml} ml)', { n: index + 1, pct: Math.round(fill * 100), ml })}
       className="group flex flex-1 flex-col items-center gap-1 transition active:scale-90"
     >
       <svg viewBox="0 0 40 90" className="h-20 w-full max-w-11">
@@ -70,7 +71,7 @@ export function WaterTracker({ profile, date }: { profile: Profile; date: string
         </div>
         {extra >= 0 ? (
           <span className="flex items-center gap-1 rounded-full bg-water/15 px-2.5 py-1 text-xs font-semibold text-water">
-            <Check size={13} strokeWidth={3} /> Goal hit{extra > 0 ? ` · +${extra.toLocaleString()} ml` : ''}
+            <Check size={13} strokeWidth={3} /> {t('Goal hit')}{extra > 0 ? ` · +${extra.toLocaleString()} ml` : ''}
           </span>
         ) : (
           <span className="tabular text-sm font-semibold text-water">{pct}%</span>
@@ -90,7 +91,7 @@ export function WaterTracker({ profile, date }: { profile: Profile; date: string
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          aria-label={`Remove ${step} ml`}
+          aria-label={t('Remove {n} ml', { n: step })}
           onClick={() => set(Math.max(0, ml - step))}
           disabled={ml === 0}
           className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-surface-2 text-sm font-medium text-ink-2 active:scale-95 disabled:opacity-40"
@@ -99,7 +100,7 @@ export function WaterTracker({ profile, date }: { profile: Profile; date: string
         </button>
         <button
           type="button"
-          aria-label={`Add ${step} ml`}
+          aria-label={t('Add {n} ml', { n: step })}
           onClick={() => set(ml + step)}
           className="flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-water/12 text-sm font-semibold text-water active:scale-95"
         >

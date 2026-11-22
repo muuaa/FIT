@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Check, Dumbbell, Pencil, Plus, Trash2 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useState } from 'react';
 import { Button, IconButton } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -11,7 +12,7 @@ import {
   useMoveExercise,
   useUpdateExercise,
 } from '@/hooks/useWorkouts';
-import { DAY_LABEL } from '@/lib/split';
+import { dayLabel } from '@/lib/split';
 import type { DayType, Exercise } from '@/types/db';
 
 function ExerciseForm({
@@ -42,10 +43,10 @@ function ExerciseForm({
         }
       }}
     >
-      <Field label="Exercise" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Incline DB press" />
+      <Field label={t('Exercise')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Incline DB press')} />
       <div className="grid grid-cols-2 gap-2">
-        <Field label="Sets" inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)} />
-        <Field label="Reps" value={reps} onChange={(e) => setReps(e.target.value)} placeholder="8-12" />
+        <Field label={t('Sets')} inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)} />
+        <Field label={t('Reps')} value={reps} onChange={(e) => setReps(e.target.value)} placeholder="8-12" />
       </div>
       <div className="flex gap-2">
         {onCancel && (
@@ -73,7 +74,7 @@ function ExerciseRow({ ex, index, total }: { ex: Exercise; index: number; total:
       <li className="rounded-2xl bg-surface-2 p-3">
         <ExerciseForm
           initial={ex}
-          submitLabel="Save"
+          submitLabel={t('Save')}
           onCancel={() => setEditing(false)}
           onSubmit={(v) => {
             update.mutate({ id: ex.id, ...v });
@@ -84,7 +85,7 @@ function ExerciseRow({ ex, index, total }: { ex: Exercise; index: number; total:
     );
 
   return (
-    <li className="flex items-center gap-1 rounded-2xl bg-surface-2 py-1.5 pl-3 pr-1">
+    <li className="flex items-center gap-1 rounded-2xl bg-surface-2 py-1.5 ps-3 pe-1">
       <span className="tabular w-5 text-xs text-ink-3">{index + 1}</span>
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium">{ex.name}</div>
@@ -103,20 +104,20 @@ function ExerciseRow({ ex, index, total }: { ex: Exercise; index: number; total:
         </>
       ) : (
         <>
-          <IconButton label="Move up" disabled={index === 0} onClick={() => move.mutate({ exercise: ex, direction: -1 })}>
+          <IconButton label={t('Move up')} disabled={index === 0} onClick={() => move.mutate({ exercise: ex, direction: -1 })}>
             <ArrowUp size={16} />
           </IconButton>
           <IconButton
-            label="Move down"
+            label={t('Move down')}
             disabled={index === total - 1}
             onClick={() => move.mutate({ exercise: ex, direction: 1 })}
           >
             <ArrowDown size={16} />
           </IconButton>
-          <IconButton label={`Edit ${ex.name}`} onClick={() => setEditing(true)}>
+          <IconButton label={t('Edit {name}', { name: ex.name })} onClick={() => setEditing(true)}>
             <Pencil size={16} />
           </IconButton>
-          <IconButton label={`Delete ${ex.name}`} onClick={() => setConfirm(true)}>
+          <IconButton label={t('Delete {name}', { name: ex.name })} onClick={() => setConfirm(true)}>
             <Trash2 size={16} />
           </IconButton>
         </>
@@ -133,8 +134,8 @@ export function ExerciseEditor({ dayType }: { dayType: DayType }) {
   return (
     <div className="space-y-3">
       {list.length === 0 ? (
-        <Empty icon={Dumbbell} title={`No ${DAY_LABEL[dayType]} exercises yet`}>
-          Add the movements you want to run on {DAY_LABEL[dayType]} days.
+        <Empty icon={Dumbbell} title={t('No {day} exercises yet', { day: dayLabel(dayType) })}>
+          {t('Add the movements you want to run on {day} days.', { day: dayLabel(dayType) })}
         </Empty>
       ) : (
         <ul className="space-y-1.5">
@@ -144,7 +145,7 @@ export function ExerciseEditor({ dayType }: { dayType: DayType }) {
         </ul>
       )}
       <div className="rounded-2xl border border-dashed border-line p-3">
-        <ExerciseForm submitLabel="Add exercise" onSubmit={(v) => add.mutate({ ...v, day_type: dayType })} />
+        <ExerciseForm submitLabel={t('Add exercise')} onSubmit={(v) => add.mutate({ ...v, day_type: dayType })} />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { Activity, Footprints, Trash2 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { IconButton } from '@/components/ui/Button';
 import { Empty, Spinner } from '@/components/ui/States';
 import { useCardio, useDeleteCardio } from '@/hooks/useCardio';
@@ -15,8 +16,8 @@ export function cardioSummary(c: CardioLog): string {
   }
   return [
     formatClock(c.duration_seconds),
-    c.rounds ? `${c.rounds} rounds` : null,
-    c.jump_count ? `${c.jump_count.toLocaleString()} skips` : null,
+    c.rounds ? t('{n} rounds', { n: c.rounds }) : null,
+    c.jump_count ? t('{n} skips', { n: c.jump_count.toLocaleString() }) : null,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -26,7 +27,7 @@ export function CardioList({ limit = 20 }: { limit?: number }) {
   const { data = [], isLoading } = useCardio(limit);
   const del = useDeleteCardio();
   if (isLoading) return <Spinner />;
-  if (!data.length) return <Empty icon={Activity} title="No cardio logged yet" />;
+  if (!data.length) return <Empty icon={Activity} title={t('No cardio logged yet')} />;
   return (
     <ul className="divide-y divide-line/60">
       {data.map((c) => {
@@ -38,12 +39,12 @@ export function CardioList({ limit = 20 }: { limit?: number }) {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium">
-                {CARDIO_LABEL[c.kind]} <span className="font-normal text-ink-3">· {relativeDay(c.date)}</span>
+                {t(CARDIO_LABEL[c.kind])} <span className="font-normal text-ink-3">· {relativeDay(c.date)}</span>
               </div>
               <div className="tabular truncate text-xs text-ink-3">{cardioSummary(c)}</div>
               {c.notes && <div className="truncate text-xs text-ink-3">{c.notes}</div>}
             </div>
-            <IconButton label="Delete cardio session" onClick={() => del.mutate(c.id)} className="-mr-2">
+            <IconButton label={t('Delete cardio session')} onClick={() => del.mutate(c.id)} className="-me-2">
               <Trash2 size={16} />
             </IconButton>
           </li>

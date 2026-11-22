@@ -1,4 +1,5 @@
 import { Check, History, Pencil, Trash2, X } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { IconButton } from '@/components/ui/Button';
 import { Stepper } from '@/components/ui/Stepper';
@@ -37,15 +38,15 @@ function LoggedSetRow({
     return (
       <li className="space-y-2 rounded-2xl bg-surface-2 p-2">
         <div className="flex gap-2">
-          <Stepper label="kg" value={w} onChange={setW} step={2.5} decimals={2} />
-          <Stepper label="reps" value={r} onChange={setR} step={1} inputMode="numeric" />
+          <Stepper label={t('kg')} value={w} onChange={setW} step={2.5} decimals={2} />
+          <Stepper label={t('reps')} value={r} onChange={setR} step={1} inputMode="numeric" />
         </div>
         <div className="flex justify-end gap-1">
-          <IconButton label="Cancel edit" onClick={() => setEditing(false)}>
+          <IconButton label={t('Cancel edit')} onClick={() => setEditing(false)}>
             <X size={18} />
           </IconButton>
           <IconButton
-            label="Save set"
+            label={t('Save set')}
             className="bg-lift text-bg"
             disabled={wn === null || rn === null}
             onClick={() => {
@@ -62,7 +63,7 @@ function LoggedSetRow({
   }
 
   return (
-    <li className="flex h-11 items-center gap-3 rounded-xl bg-lift/8 pl-3 pr-1">
+    <li className="flex h-11 items-center gap-3 rounded-xl bg-lift/8 ps-3 pe-1">
       <span className="grid size-6 place-items-center rounded-full bg-lift text-[11px] font-bold text-bg">{set.set_number}</span>
       <span className="tabular flex-1 font-semibold">
         {round1(set.weight_kg)} <span className="text-xs font-normal text-ink-3">kg</span> × {set.reps}
@@ -159,11 +160,11 @@ export function ExerciseLogCard({
         <History size={14} className="shrink-0 text-lift-2" />
         {previous?.length ? (
           <span className="tabular min-w-0 truncate text-ink-2">
-            <span className="text-ink-3">Last: </span>
+            <span className="text-ink-3">{t('Last:')} </span>
             {previous.map(fmtSet).join(' · ')}
           </span>
         ) : (
-          <span className="text-ink-3">No previous session — set your baseline today.</span>
+          <span className="text-ink-3">{t('No previous session — set your baseline today.')}</span>
         )}
       </div>
 
@@ -177,7 +178,7 @@ export function ExerciseLogCard({
 
       <div className="flex items-end gap-2">
         <Stepper label={`Set ${nextNumber} · kg`} value={w} onChange={setW} step={2.5} decimals={2} />
-        <Stepper label="reps" value={r} onChange={setR} step={1} inputMode="numeric" />
+        <Stepper label={t('reps')} value={r} onChange={setR} step={1} inputMode="numeric" />
         <button
           type="button"
           aria-label={`Log set ${nextNumber}`}
@@ -193,7 +194,7 @@ export function ExerciseLogCard({
       </div>
       {(exactPrev || done) && (
         <p className="tabular mt-1.5 text-[11px] text-ink-3">
-          {exactPrev ? `Set ${nextNumber} last time: ${fmtSet(exactPrev)}` : 'Target reached'}
+          {exactPrev ? t('Set {n} last time: {set}', { n: nextNumber, set: fmtSet(exactPrev) }) : t('Target reached')}
           {done && ' · this would be an extra set'}
         </p>
       )}

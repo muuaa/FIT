@@ -27,7 +27,7 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
           className="tabular h-full min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-3"
           {...rest}
         />
-        {suffix && <span className="ml-2 text-sm text-ink-3">{suffix}</span>}
+        {suffix && <span className="ms-2 text-sm text-ink-3">{suffix}</span>}
       </div>
       {hint && (
         <span id={hintId} className="mt-1 block text-xs text-ink-3">

@@ -1,4 +1,5 @@
 import { Footprints, Zap } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -67,7 +68,7 @@ export function CardioSheet({
       },
       {
         onSuccess: () => {
-          toast.success(`${CARDIO_LABEL[kind]} logged`);
+          toast.success(t('{kind} logged', { kind: t(CARDIO_LABEL[kind]) }));
           reset();
           onClose();
         },
@@ -79,10 +80,10 @@ export function CardioSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      title="Log cardio"
+      title={t('Log cardio')}
       footer={
         <Button variant="primary" accent="var(--color-cardio)" size="lg" block disabled={!valid || add.isPending} onClick={submit}>
-          <Zap size={18} /> Save {CARDIO_LABEL[kind].toLowerCase()}
+          <Zap size={18} /> Save {t(CARDIO_LABEL[kind]).toLowerCase()}
         </Button>
       }
     >
@@ -92,25 +93,25 @@ export function CardioSheet({
         onChange={setKind}
         accent="var(--color-cardio)"
         options={[
-          { value: 'running', label: 'Running' },
-          { value: 'jump_rope', label: 'Jump rope' },
+          { value: 'running', label: t('Running') },
+          { value: 'jump_rope', label: t('Jump rope') },
         ]}
       />
       <div className="space-y-3">
         <DurationField
-          label="Duration"
+          label={t('Duration')}
           minutes={mins}
           seconds={secs}
           onChange={(m, s) => {
             setMins(m);
             setSecs(s);
           }}
-          hint={secs !== '' && Number(secs) > 59 ? 'Seconds must be 0–59' : undefined}
+          hint={secs !== '' && Number(secs) > 59 ? t('Seconds must be 0–59') : undefined}
         />
         {kind === 'running' ? (
           <>
             <Field
-              label="Distance"
+              label={t('Distance')}
               inputMode="decimal"
               value={distance}
               onChange={(e) => setDistance(e.target.value)}
@@ -118,17 +119,17 @@ export function CardioSheet({
             />
             <div className="flex items-center gap-2 rounded-2xl bg-cardio/10 px-4 py-3 text-sm">
               <Footprints size={16} className="text-cardio" />
-              <span className="text-ink-2">Pace</span>
-              <span className="tabular ml-auto font-semibold">{seconds ? formatPace(seconds, km) : '—'}</span>
+              <span className="text-ink-2">{t('Pace')}</span>
+              <span className="tabular ms-auto font-semibold">{seconds ? formatPace(seconds, km) : '—'}</span>
             </div>
           </>
         ) : (
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Rounds" inputMode="numeric" value={rounds} onChange={(e) => setRounds(e.target.value)} />
-            <Field label="Total skips" inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
+            <Field label={t('Rounds')} inputMode="numeric" value={rounds} onChange={(e) => setRounds(e.target.value)} />
+            <Field label={t('Total skips')} inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value)} />
           </div>
         )}
-        <Field label="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
+        <Field label={t('Notes')} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('Optional')} />
       </div>
     </Sheet>
   );

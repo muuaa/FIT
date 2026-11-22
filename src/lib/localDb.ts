@@ -9,6 +9,17 @@
  * for the session and `storageAvailable` reports false so the UI can warn.
  */
 import type {
+  Attachment,
+  CheckIn,
+  Expense,
+  Habit,
+  HabitLog,
+  JournalEntry,
+  Measurement,
+  SleepLog,
+  StepsDay,
+  Todo,
+  TodoDone,
   BodyweightLog,
   CardioLog,
   Exercise,
@@ -41,6 +52,17 @@ export interface Tables {
   supplement_logs: SupplementLog;
   bodyweight_logs: BodyweightLog;
   cardio_logs: CardioLog;
+  sleep_logs: SleepLog;
+  checkins: CheckIn;
+  steps_days: StepsDay;
+  measurements: Measurement;
+  habits: Habit;
+  habit_logs: HabitLog;
+  todos: Todo;
+  todo_done: TodoDone;
+  expenses: Expense;
+  journal: JournalEntry;
+  attachments: Attachment;
 }
 export type TableName = keyof Tables;
 
@@ -55,6 +77,17 @@ export const TABLE_NAMES: TableName[] = [
   'supplement_logs',
   'bodyweight_logs',
   'cardio_logs',
+  'sleep_logs',
+  'checkins',
+  'steps_days',
+  'measurements',
+  'habits',
+  'habit_logs',
+  'todos',
+  'todo_done',
+  'expenses',
+  'journal',
+  'attachments',
 ];
 
 const BASE = 'fit.v1.';
@@ -136,12 +169,23 @@ export function all<T extends TableName>(t: T): Tables[T][] {
 
 // ---------------------------------------------------------------- change tracking (for sync)
 
+/** Tables with at most one row per day, keyed by that date. */
+const DATE_KEYED = new Set<TableName>(['water_days', 'bodyweight_logs', 'sleep_logs', 'checkins', 'steps_days', 'journal']);
+
 /** Stable id of a row within its table (some tables are keyed by date rather than an id). */
 export function rowKey<T extends TableName>(t: T, row: Tables[T]): string {
-  if (t === 'water_days' || t === 'bodyweight_logs') return (row as { date: string }).date;
+  if (DATE_KEYED.has(t)) return (row as { date: string }).date;
   if (t === 'supplement_logs') {
     const r = row as SupplementLog;
     return `${r.supplement_id}|${r.date}`;
+  }
+  if (t === 'habit_logs') {
+    const r = row as HabitLog;
+    return `${r.habit_id}|${r.date}`;
+  }
+  if (t === 'todo_done') {
+    const r = row as TodoDone;
+    return `${r.todo_id}|${r.date}`;
   }
   return (row as { id: string }).id;
 }
@@ -341,6 +385,12 @@ export const DEFAULT_PROFILE: Profile = {
   water_step_ml: 250,
   split_mode: 'PPL-UL',
   default_rest_seconds: 90,
+  steps_target: 10000,
+  sleep_target_h: 8,
+  monthly_budget: 0,
+  currency: 'USD',
+  language: 'en',
+  today_cards: ['workout', 'calories', 'water', 'weight', 'habits', 'todos', 'supplements', 'cardio'],
 };
 
 const DEFAULT_SUPPLEMENTS: [string, string][] = [

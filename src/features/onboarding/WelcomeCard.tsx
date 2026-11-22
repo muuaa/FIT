@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { t } from '@/lib/i18n';
 import { FlaskConical, TriangleAlert, X } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 import { useState } from 'react';
@@ -23,17 +24,16 @@ export function WelcomeCard() {
       <div className="flex gap-3 rounded-3xl border border-lift/40 bg-lift/10 p-4 text-sm">
         <TriangleAlert size={20} className="shrink-0 text-lift" />
         <p className="text-ink-2">
-          This browser is blocking storage here, so anything you log will be lost when you close the page. Open the app in a
-          normal (non-private) browser tab to keep your data.
+          {t('This browser is blocking storage here, so anything you log will be lost when you close the page. Open the app in a normal (non-private) browser tab to keep your data.')}
         </p>
       </div>
     );
 
   if (meta.sample)
     return (
-      <div className="flex items-center gap-3 rounded-3xl border border-lift-2/40 bg-lift-2/10 p-3 pl-4 text-sm">
+      <div className="flex items-center gap-3 rounded-3xl border border-lift-2/40 bg-lift-2/10 p-3 ps-4 text-sm">
         <FlaskConical size={18} className="shrink-0 text-lift-2" />
-        <p className="flex-1 text-ink-2">You're looking at sample data.</p>
+        <p className="flex-1 text-ink-2">{t('You\'re looking at sample data.')}</p>
         <Button
           size="sm"
           variant="secondary"
@@ -45,7 +45,7 @@ export function WelcomeCard() {
             refresh();
           }}
         >
-          Clear & start fresh
+          {t('Clear & start fresh')}
         </Button>
       </div>
     );
@@ -55,8 +55,8 @@ export function WelcomeCard() {
   return (
     <section className="relative rounded-3xl border border-line/70 bg-surface p-4">
       <IconButton
-        label="Dismiss"
-        className="absolute right-2 top-2"
+        label={t('Dismiss')}
+        className="absolute end-2 top-2"
         onClick={() => {
           setMeta({ welcomed: true });
           refresh();
@@ -64,17 +64,17 @@ export function WelcomeCard() {
       >
         <X size={18} />
       </IconButton>
-      <div className="flex items-center gap-3 pr-10">
+      <div className="flex items-center gap-3 pe-10">
         <Logo size={44} />
         <div>
-          <h2 className="text-lg font-bold tracking-tight">Welcome to Replete</h2>
-          <p className="text-xs text-ink-3">Train · Fuel · Hydrate · Recover</p>
+          <h2 className="text-lg font-bold tracking-tight">{t('Welcome to Replete')}</h2>
+          <p className="text-xs text-ink-3">{t('Train · Fuel · Hydrate · Recover')}</p>
         </div>
       </div>
       <p className="mt-2 text-sm text-ink-2">
         {cloudEnabled
-          ? 'Everything you log is saved to your private account and works offline. Try the sample data to look around, or start fresh.'
-          : "Everything you log is saved on this phone, in this browser. There's no account and nothing is uploaded. Make a backup now and then from Settings."}
+          ? t('Everything you log is saved to your private account and works offline. Try the sample data to look around, or start fresh.')
+          : t("Everything you log is saved on this phone, in this browser. There's no account and nothing is uploaded. Make a backup now and then from Settings.")}
       </p>
       <div className="mt-3 flex gap-2">
         <Button
@@ -85,7 +85,7 @@ export function WelcomeCard() {
             refresh();
           }}
         >
-          <FlaskConical size={16} /> Sample data
+          <FlaskConical size={16} /> {t('Sample data')}
         </Button>
         <Button
           variant="primary"
@@ -96,7 +96,7 @@ export function WelcomeCard() {
             refresh();
           }}
         >
-          Start fresh
+          {t('Start fresh')}
         </Button>
       </div>
     </section>

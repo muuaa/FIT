@@ -1,4 +1,5 @@
 import { Minus, Plus } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 interface StepperProps {
   label: string;
@@ -31,7 +32,7 @@ export function Stepper({ label, value, onChange, step, min = 0, decimals = 0, s
       <div className="flex h-12 items-center rounded-2xl border border-line bg-surface-2">
         <button
           type="button"
-          aria-label={`Decrease ${label}`}
+          aria-label={t('Decrease {label}', { label })}
           onClick={() => bump(-1)}
           className="grid h-full w-10 shrink-0 place-items-center text-ink-2 active:scale-90"
         >
@@ -45,10 +46,10 @@ export function Stepper({ label, value, onChange, step, min = 0, decimals = 0, s
           onFocus={(e) => e.target.select()}
           className="tabular h-full w-full min-w-0 bg-transparent text-center text-lg font-semibold outline-none"
         />
-        {suffix && <span className="-ml-1 mr-1 text-xs text-ink-3">{suffix}</span>}
+        {suffix && <span className="-ms-1 me-1 text-xs text-ink-3">{suffix}</span>}
         <button
           type="button"
-          aria-label={`Increase ${label}`}
+          aria-label={t('Increase {label}', { label })}
           onClick={() => bump(1)}
           className="grid h-full w-10 shrink-0 place-items-center text-ink-2 active:scale-90"
         >

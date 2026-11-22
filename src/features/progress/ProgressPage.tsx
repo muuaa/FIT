@@ -1,4 +1,5 @@
 import { Activity, Scale, Trash2, TrendingUp } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -29,22 +30,22 @@ function BodyweightSection() {
   const recent = [...logs].reverse();
 
   return (
-    <Card title="Bodyweight" icon={Scale} accent="var(--color-weight)">
+    <Card title={t('Bodyweight')} icon={Scale} accent="var(--color-weight)">
       <BodyweightQuick />
       <div className="my-4 h-px bg-line/60" />
       {isLoading ? (
         <Spinner />
       ) : logs.length === 0 ? (
-        <Empty icon={Scale} title="Log your first morning weigh-in above" />
+        <Empty icon={Scale} title={t('Log your first morning weigh-in above')} />
       ) : (
         <>
           <div className="mb-3 grid grid-cols-3 gap-2">
-            <Stat label="Latest" value={latest ? `${round1(latest.weight_kg)}` : '—'} sub={latest ? relativeDay(latest.date) : undefined} />
-            <Stat label="7-day avg" value={avgNow !== null ? `${round1(avgNow)}` : '—'} sub="kg" />
+            <Stat label={t('Latest')} value={latest ? `${round1(latest.weight_kg)}` : '—'} sub={latest ? relativeDay(latest.date) : undefined} />
+            <Stat label={t('7-day avg')} value={avgNow !== null ? `${round1(avgNow)}` : '—'} sub="kg" />
             <Stat
-              label="Weekly Δ"
+              label={t('Weekly Δ')}
               value={weekly !== null ? `${weekly > 0 ? '+' : ''}${weekly}` : '—'}
-              sub="kg / week"
+              sub={t('kg / week')}
             />
           </div>
           <Segmented<7 | 30 | 90>
@@ -54,20 +55,20 @@ function BodyweightSection() {
             onChange={setRange}
             accent="var(--color-weight)"
             options={[
-              { value: 7, label: '7 days' },
-              { value: 30, label: '30 days' },
-              { value: 90, label: '90 days' },
+              { value: 7, label: t('7 days') },
+              { value: 30, label: t('30 days') },
+              { value: 90, label: t('90 days') },
             ]}
           />
           <BodyweightChart data={series} />
           <details className="mt-3" open={showAll} onToggle={(e) => setShowAll((e.target as HTMLDetailsElement).open)}>
-            <summary className="cursor-pointer text-sm font-medium text-ink-2">All entries (table)</summary>
+            <summary className="cursor-pointer text-sm font-medium text-ink-2">{t('All entries (table)')}</summary>
             <ul className="mt-2 divide-y divide-line/60">
               {recent.map((l) => (
                 <li key={l.date} className="flex items-center py-1.5 text-sm">
                   <span className="flex-1 text-ink-2">{relativeDay(l.date)}</span>
                   <span className="tabular font-semibold">{round1(l.weight_kg)} kg</span>
-                  <IconButton label={`Delete ${l.date}`} onClick={() => del.mutate(l.date)} className="-mr-2 ml-1 size-9">
+                  <IconButton label={t('Delete {name}', { name: relativeDay(l.date) })} onClick={() => del.mutate(l.date)} className="-me-2 ms-1 size-9">
                     <Trash2 size={14} />
                   </IconButton>
                 </li>
@@ -84,19 +85,19 @@ export function ProgressPage() {
   const [cardioOpen, setCardioOpen] = useState(false);
   return (
     <>
-      <PageHeader title="Progress" subtitle="Bodyweight · Strength · Cardio" />
+      <PageHeader title={t('Progress')} subtitle={t('Bodyweight · Strength · Cardio')} />
       <div className="space-y-3">
         <BodyweightSection />
-        <Card title="Strength" icon={TrendingUp} accent="var(--color-lift)">
+        <Card title={t('Strength')} icon={TrendingUp} accent="var(--color-lift)">
           <StrengthChart />
         </Card>
         <Card
-          title="Cardio"
+          title={t('Cardio')}
           icon={Activity}
           accent="var(--color-cardio)"
           action={
             <Button size="sm" variant="primary" accent="var(--color-cardio)" onClick={() => setCardioOpen(true)}>
-              Log
+              {t('Log')}
             </Button>
           }
         >

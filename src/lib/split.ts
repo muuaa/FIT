@@ -1,4 +1,5 @@
 import type { DayType, SplitMode } from '@/types/db';
+import { t } from './i18n';
 
 /** Lifting days in program order: Thu, Fri, Sat, Mon, Tue (JS getDay numbers). */
 export const TRAINING_WEEKDAYS = [4, 5, 6, 1, 2] as const;
@@ -44,4 +45,9 @@ export function nextTrainingDay(mode: SplitMode, from: Date): { date: Date; dayT
     if (t) return { date: d, dayType: t };
   }
   throw new Error('No training days configured');
+}
+
+/** Translated day-type name. */
+export function dayLabel(d: DayType): string {
+  return t(DAY_LABEL[d]);
 }

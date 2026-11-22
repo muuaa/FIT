@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { t } from '@/lib/i18n';
 import { todayISO } from '@/lib/date';
 import { estimated1RM } from '@/lib/format';
 import { all, insert, remove, uid, update } from '@/lib/localDb';
@@ -248,7 +249,7 @@ export function useDeleteSet(sessionId: string | undefined) {
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ['sessionSets', sessionId] });
       if (row)
-        toast.undo(`Deleted set ${row.set_number}`, () => {
+        toast.undo(t('Deleted set {n}', { n: row.set_number }), () => {
           // Put it back in its old slot and shift later sets of the same exercise down one.
           const key = (s: SetLog) => (s.exercise_id ?? s.exercise_name) === (row.exercise_id ?? row.exercise_name);
           for (const s of all('set_logs').filter((x) => x.session_id === row.session_id && key(x) && x.set_number >= row.set_number))
@@ -366,7 +367,7 @@ export function useDeleteWorkout() {
     onSuccess: (deleted) => {
       invalidateTraining(qc);
       if (deleted)
-        toast.undo('Workout deleted', () => {
+        toast.undo(t('Workout deleted'), () => {
           insert('workout_sessions', deleted.session);
           for (const s of deleted.sets) insert('set_logs', s);
           invalidateTraining(qc);

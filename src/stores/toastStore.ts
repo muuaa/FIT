@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { t } from '@/lib/i18n';
 
 export interface ToastAction {
   label: string;
@@ -36,5 +37,5 @@ export const toast = {
   success: (m: string) => useToastStore.getState().push(m, 'success'),
   info: (m: string) => useToastStore.getState().push(m, 'info'),
   /** "Deleted X" with an Undo button. */
-  undo: (m: string, onUndo: () => void) => useToastStore.getState().push(m, 'info', { label: 'Undo', onClick: onUndo }),
+  undo: (m: string, onUndo: () => void) => useToastStore.getState().push(m, 'info', { label: t('Undo'), onClick: onUndo }),
 };

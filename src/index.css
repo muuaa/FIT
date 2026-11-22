@@ -22,6 +22,16 @@
   --color-weight: #60a5fa;   /* blue — bodyweight */
   --color-cardio: #fb7185;   /* rose — cardio */
   --color-danger: #f87171;
+  --color-life: #e879f9;     /* fuchsia — Life tab */
+  --color-habit: #a3e635;    /* lime — habits */
+  --color-todo: #818cf8;     /* indigo — to-dos */
+  --color-sleep: #c4b5fd;    /* lavender — sleep */
+  --color-mood: #fb923c;     /* orange — mood */
+  --color-steps: #2dd4bf;    /* teal — steps */
+  --color-body: #f472b6;     /* pink — measurements */
+  --color-money: #facc15;    /* yellow — money */
+  --color-journal: #f9a8d4;  /* light pink — journal */
+  --color-lists: #7dd3fc;    /* sky — shared lists */
 }
 
 @layer base {

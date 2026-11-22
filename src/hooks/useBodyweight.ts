@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { t } from '@/lib/i18n';
 import { addDays, todayISO } from '@/lib/date';
 import { all, remove, upsert } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
@@ -37,7 +38,7 @@ export function useDeleteBodyweight() {
     onSuccess: (row) => {
       qc.invalidateQueries({ queryKey: ['bodyweight'] });
       if (row)
-        toast.undo(`Deleted ${row.weight_kg} kg weigh-in`, () => {
+        toast.undo(t('Deleted {kg} kg weigh-in', { kg: row.weight_kg }), () => {
           upsert('bodyweight_logs', row, (l) => l.date === row.date);
           qc.invalidateQueries({ queryKey: ['bodyweight'] });
         });

@@ -1,4 +1,4 @@
-import { Droplets, Flame, Timer, User } from 'lucide-react';
+import { Droplets, Flame, LayoutList, Sparkles, Timer, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
@@ -8,14 +8,17 @@ import { Spinner } from '@/components/ui/States';
 import { SplitSwitcher } from '@/features/train/TrainPage';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { toast } from '@/stores/toastStore';
-import type { Profile } from '@/types/db';
+import type { Language, Profile } from '@/types/db';
+import { Segmented } from '@/components/ui/Segmented';
+import { TodayCardsEditor } from '@/features/today/TodayPage';
+import { t } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
 import { BackupCard } from './BackupCard';
 import { AccountCard } from './AccountCard';
 import { InstallCard } from './InstallCard';
 
 type Form = Record<
-  'display_name' | 'kcal_target' | 'protein_target_g' | 'carbs_target_g' | 'fat_target_g' | 'water_target_ml' | 'bottle_ml' | 'water_step_ml' | 'default_rest_seconds',
+  'display_name' | 'kcal_target' | 'protein_target_g' | 'carbs_target_g' | 'fat_target_g' | 'water_target_ml' | 'bottle_ml' | 'water_step_ml' | 'steps_target' | 'sleep_target_h' | 'monthly_budget' | 'default_rest_seconds',
   string
 >;
 
@@ -28,6 +31,9 @@ const toForm = (p: Profile): Form => ({
   water_target_ml: String(p.water_target_ml),
   bottle_ml: String(p.bottle_ml),
   water_step_ml: String(p.water_step_ml),
+  steps_target: String(p.steps_target),
+  sleep_target_h: String(p.sleep_target_h),
+  monthly_budget: String(p.monthly_budget),
   default_rest_seconds: String(p.default_rest_seconds),
 });
 
@@ -39,6 +45,9 @@ const LIMITS: Record<Exclude<keyof Form, 'display_name'>, [number, number]> = {
   water_target_ml: [250, 15000],
   bottle_ml: [100, 3000],
   water_step_ml: [50, 3000],
+  steps_target: [500, 100000],
+  sleep_target_h: [4, 12],
+  monthly_budget: [0, 10000000],
   default_rest_seconds: [10, 900],
 };
 
@@ -65,7 +74,7 @@ export function SettingsPage() {
   if (!profile || !form)
     return (
       <>
-        <PageHeader title="Settings" />
+        <PageHeader title={t('Settings')} />
         <Spinner />
       </>
     );
@@ -94,12 +103,15 @@ export function SettingsPage() {
         water_target_ml: Number(form.water_target_ml),
         bottle_ml: Number(form.bottle_ml),
         water_step_ml: Number(form.water_step_ml),
+        steps_target: Number(form.steps_target),
+        sleep_target_h: Number(form.sleep_target_h),
+        monthly_budget: Number(form.monthly_budget),
         default_rest_seconds: Number(form.default_rest_seconds),
       },
       {
         onSuccess: (p) => {
           setForm(toForm(p));
-          toast.success('Settings saved');
+          toast.success(t('Settings saved'));
         },
       },
     );
@@ -110,52 +122,63 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" subtitle="Targets · Split · Your data" />
+      <PageHeader title={t('Settings')} subtitle={t('Targets · Split · Your data')} />
       <div className="space-y-3">
         <AccountCard />
-        <Card title="Profile" icon={User}>
-          <Field label="Display name" value={form.display_name} onChange={set('display_name')} />
+        <Card title={t('Profile')} icon={User}>
+          <Field label={t('Display name')} value={form.display_name} onChange={set('display_name')} />
+          <div className="mt-3">
+            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Language')}</span>
+            <Segmented<Language>
+              value={profile.language}
+              onChange={(language) => update.mutate({ language })}
+              options={[
+                { value: 'en', label: 'English' },
+                { value: 'ar', label: 'العربية' },
+              ]}
+            />
+          </div>
         </Card>
 
-        <Card title="Nutrition targets" icon={Flame} accent="var(--color-fuel)">
+        <Card title={t('Nutrition targets')} icon={Flame} accent="var(--color-fuel)">
           <div className="space-y-3">
-            <Field label="Daily calories" inputMode="numeric" value={form.kcal_target} onChange={set('kcal_target')} suffix="kcal" hint={invalid('kcal_target')} />
+            <Field label={t('Daily calories')} inputMode="numeric" value={form.kcal_target} onChange={set('kcal_target')} suffix="kcal" hint={invalid('kcal_target')} />
             <div className="grid grid-cols-3 gap-2">
-              <Field label="Protein" inputMode="numeric" value={form.protein_target_g} onChange={set('protein_target_g')} suffix="g" />
-              <Field label="Carbs" inputMode="numeric" value={form.carbs_target_g} onChange={set('carbs_target_g')} suffix="g" />
-              <Field label="Fat" inputMode="numeric" value={form.fat_target_g} onChange={set('fat_target_g')} suffix="g" />
+              <Field label={t('Protein')} inputMode="numeric" value={form.protein_target_g} onChange={set('protein_target_g')} suffix="g" />
+              <Field label={t('Carbs')} inputMode="numeric" value={form.carbs_target_g} onChange={set('carbs_target_g')} suffix="g" />
+              <Field label={t('Fat')} inputMode="numeric" value={form.fat_target_g} onChange={set('fat_target_g')} suffix="g" />
             </div>
             {(['protein_target_g', 'carbs_target_g', 'fat_target_g'] as const).some((k) => errors.includes(k)) ? (
-              <p className="text-xs text-danger">Macro targets must be whole numbers of grams.</p>
+              <p className="text-xs text-danger">{t('Macro targets must be whole numbers of grams.')}</p>
             ) : (
               <p className={`tabular text-xs ${macroGap > 150 ? 'text-lift' : 'text-ink-3'}`}>
-                Macros add up to {Math.round(macroKcal).toLocaleString()} kcal
-                {macroGap > 150 && ` (${Math.round(macroGap).toLocaleString()} kcal away from your calorie target)`}
+                {t('Macros add up to {n} kcal', { n: Math.round(macroKcal).toLocaleString() })}
+                {macroGap > 150 && ` ${t('({n} kcal away from your calorie target)', { n: Math.round(macroGap).toLocaleString() })}`}
               </p>
             )}
           </div>
         </Card>
 
-        <Card title="Hydration" icon={Droplets} accent="var(--color-water)">
+        <Card title={t('Hydration')} icon={Droplets} accent="var(--color-water)">
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Daily goal" inputMode="numeric" value={form.water_target_ml} onChange={set('water_target_ml')} suffix="ml" hint={invalid('water_target_ml')} />
-            <Field label="Bottle size" inputMode="numeric" value={form.bottle_ml} onChange={set('bottle_ml')} suffix="ml" hint={invalid('bottle_ml')} />
+            <Field label={t('Daily goal')} inputMode="numeric" value={form.water_target_ml} onChange={set('water_target_ml')} suffix="ml" hint={invalid('water_target_ml')} />
+            <Field label={t('Bottle size')} inputMode="numeric" value={form.bottle_ml} onChange={set('bottle_ml')} suffix="ml" hint={invalid('bottle_ml')} />
           </div>
           <p className={`mt-2 text-xs ${tooManyBottles ? 'text-danger' : 'text-ink-3'}`}>
             {tooManyBottles
-              ? `That's ${bottles} bottles a day. Use a bigger bottle so it's 10 or fewer.`
+              ? t("That's {n} bottles a day. Use a bigger bottle so it's 10 or fewer.", { n: bottles })
               : Number.isFinite(bottles) && bottles > 0
-                ? `${bottles} bottles per day`
+                ? t('{n} bottles per day', { n: bottles })
                 : ''}
           </p>
           <Field
             className="mt-3"
-            label="+/− button amount"
+            label={t('+/− button amount')}
             inputMode="numeric"
             value={form.water_step_ml}
             onChange={set('water_step_ml')}
             suffix="ml"
-            hint={invalid('water_step_ml') ?? 'How much each tap of + or − adds or removes.'}
+            hint={invalid('water_step_ml') ?? t('How much each tap of + or − adds or removes.')}
           />
           <div className="mt-2 flex flex-wrap gap-1.5">
             {[...new Set([250, 500, Number(form.bottle_ml)])]
@@ -169,21 +192,51 @@ export function SettingsPage() {
                     form.water_step_ml === String(v) ? 'bg-water text-bg' : 'bg-surface-2 text-ink-2'
                   }`}
                 >
-                  {v} ml{v === Number(form.bottle_ml) ? ' (1 bottle)' : ''}
+                  {v} ml{v === Number(form.bottle_ml) ? ` (${t('1 bottle')})` : ''}
                 </button>
               ))}
           </div>
         </Card>
 
+        <Card title={t('Life targets')} icon={Sparkles} accent="var(--color-life)">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={t('Daily steps')} inputMode="numeric" value={form.steps_target} onChange={set('steps_target')} hint={invalid('steps_target')} />
+            <Field label={t('Sleep goal')} inputMode="numeric" value={form.sleep_target_h} onChange={set('sleep_target_h')} suffix={t('h')} hint={invalid('sleep_target_h')} />
+          </div>
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_6.5rem] gap-2">
+            <Field
+              label={t('Monthly budget')}
+              inputMode="numeric"
+              value={form.monthly_budget}
+              onChange={set('monthly_budget')}
+              hint={invalid('monthly_budget') ?? t('0 = no budget')}
+            />
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Currency')}</span>
+              <select
+                value={profile.currency}
+                onChange={(e) => update.mutate({ currency: e.target.value })}
+                className="h-12 w-full rounded-2xl border border-line bg-surface-2 px-3 text-ink outline-none"
+              >
+                {['USD', 'JOD', 'EUR', 'GBP', 'SAR', 'AED', 'KWD', 'QAR', 'EGP', 'TRY'].map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </Card>
+
         <SplitSwitcher />
 
-        <Card title="Rest timer" icon={Timer} accent="var(--color-lift)">
+        <Card title={t('Rest timer')} icon={Timer} accent="var(--color-lift)">
           <Field
-            label="Default rest"
+            label={t('Default rest')}
             inputMode="numeric"
             value={form.default_rest_seconds}
             onChange={set('default_rest_seconds')}
-            suffix="sec"
+            suffix={t('sec')}
             hint={invalid('default_rest_seconds')}
           />
         </Card>
@@ -200,15 +253,18 @@ export function SettingsPage() {
             disabled={!dirty || errors.length > 0 || tooManyBottles || update.isPending}
             onClick={save}
           >
-            {dirty ? 'Save changes' : 'All changes saved'}
+            {dirty ? t('Save changes') : t('All changes saved')}
           </Button>
         </div>
+        <Card title={t('Today screen')} icon={LayoutList}>
+          <TodayCardsEditor />
+        </Card>
         <InstallCard />
         <BackupCard />
         <div className="flex flex-col items-center gap-1 pb-2 pt-4 text-center">
           <Logo size={36} />
-          <div className="text-sm font-semibold">Replete</div>
-          <div className="text-xs text-ink-3">Train · Fuel · Hydrate · Recover</div>
+          <div className="text-sm font-semibold">{t('Replete')}</div>
+          <div className="text-xs text-ink-3">{t('Train · Fuel · Hydrate · Recover')}</div>
         </div>
       </div>
     </>

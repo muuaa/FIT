@@ -16,7 +16,7 @@ export function Toaster() {
             key={t.id}
             role={t.tone === 'error' ? 'alert' : 'status'}
             className={cn(
-              'animate-toast pointer-events-auto flex w-full max-w-sm items-center gap-2.5 rounded-2xl border bg-surface-2/95 py-2 pl-4 pr-2 text-sm shadow-2xl backdrop-blur',
+              'animate-toast pointer-events-auto flex w-full max-w-sm items-center gap-2.5 rounded-2xl border bg-surface-2/95 py-2 ps-4 pe-2 text-sm shadow-2xl backdrop-blur',
               t.tone === 'error' ? 'border-danger/40' : 'border-line',
             )}
           >
@@ -24,7 +24,7 @@ export function Toaster() {
               size={18}
               className={cn('shrink-0', t.tone === 'error' ? 'text-danger' : t.tone === 'success' ? 'text-fuel' : 'text-ink-2')}
             />
-            <button type="button" onClick={() => dismiss(t.id)} className="min-h-9 flex-1 py-1 text-left">
+            <button type="button" onClick={() => dismiss(t.id)} className="min-h-9 flex-1 py-1 text-start">
               {t.message}
             </button>
             {t.action && (

@@ -1,6 +1,21 @@
 export type SplitMode = 'PPL-UL' | 'UL-PPL';
 export type DayType = 'push' | 'pull' | 'legs' | 'upper' | 'lower';
 export type CardioKind = 'running' | 'jump_rope';
+export type Language = 'en' | 'ar';
+export type TodayCard =
+  | 'workout'
+  | 'calories'
+  | 'water'
+  | 'weight'
+  | 'supplements'
+  | 'cardio'
+  | 'habits'
+  | 'todos'
+  | 'sleep'
+  | 'checkin'
+  | 'steps'
+  | 'money'
+  | 'journal';
 
 export interface Profile {
   id: string;
@@ -13,6 +28,14 @@ export interface Profile {
   bottle_ml: number;
   /** Amount the water +/− buttons add or remove. */
   water_step_ml: number;
+  steps_target: number;
+  sleep_target_h: number;
+  /** Monthly spending budget in `currency` (0 = no budget). */
+  monthly_budget: number;
+  currency: string;
+  language: Language;
+  /** Today screen cards, in order. Cards not listed are hidden. */
+  today_cards: TodayCard[];
   split_mode: SplitMode;
   default_rest_seconds: number;
 }
@@ -93,3 +116,107 @@ export interface CardioLog {
 }
 
 export type Macros = { kcal: number; protein_g: number; carbs_g: number; fat_g: number };
+
+// ---------------------------------------------------------------- Life
+
+export interface SleepLog {
+  /** The morning you woke up (YYYY-MM-DD). */
+  date: string;
+  bed: string; // HH:MM
+  wake: string; // HH:MM
+  quality: number; // 1–5
+  nap_min: number;
+  note: string;
+}
+
+export interface CheckIn {
+  date: string;
+  mood: number; // 1–5
+  energy: number; // 1–5
+  stress: number; // 1–5
+  note: string;
+}
+
+export interface StepsDay {
+  date: string;
+  steps: number;
+}
+
+export interface Measurement {
+  id: string;
+  date: string;
+  waist_cm: number | null;
+  chest_cm: number | null;
+  arm_cm: number | null;
+  thigh_cm: number | null;
+  hips_cm: number | null;
+  neck_cm: number | null;
+  note: string;
+  created_at: string;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  emoji: string;
+  /** JS weekdays the habit is due (0 = Sunday). Empty = every day. */
+  days: number[];
+  position: number;
+  archived: boolean;
+  created_at: string;
+}
+
+export interface HabitLog {
+  habit_id: string;
+  date: string;
+}
+
+export type Repeat = 'none' | 'daily' | 'weekdays' | 'weekly';
+
+export interface Todo {
+  id: string;
+  title: string;
+  /** Day it's planned for (YYYY-MM-DD). For repeating to-dos, the first day. Null = someday. */
+  date: string | null;
+  repeat: Repeat;
+  /** One-off to-dos: when it was done. */
+  done_at: string | null;
+  note: string;
+  created_at: string;
+}
+
+export interface TodoDone {
+  todo_id: string;
+  date: string;
+}
+
+export interface Expense {
+  id: string;
+  date: string;
+  amount: number;
+  category: string;
+  note: string;
+  created_at: string;
+}
+
+export interface JournalEntry {
+  date: string;
+  gratitude: string[];
+  text: string;
+  updated_at: string;
+}
+
+export type AttachmentKind = 'photo' | 'file' | 'drawing' | 'progress';
+
+export interface Attachment {
+  id: string;
+  /** Day it belongs to (journal day, or progress-photo day). */
+  date: string;
+  kind: AttachmentKind;
+  /** Path in the private file storage. */
+  path: string;
+  name: string;
+  mime: string;
+  size: number;
+  created_at: string;
+}

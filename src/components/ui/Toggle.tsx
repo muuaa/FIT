@@ -23,8 +23,8 @@ export function Toggle({
     >
       <span
         className={cn(
-          'absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform',
-          checked ? 'translate-x-[22px]' : 'translate-x-0.5',
+          'absolute start-0 top-0.5 size-6 rounded-full bg-white shadow transition-transform',
+          checked ? 'translate-x-[22px] rtl:-translate-x-[22px]' : 'translate-x-0.5 rtl:-translate-x-0.5',
         )}
       />
     </button>

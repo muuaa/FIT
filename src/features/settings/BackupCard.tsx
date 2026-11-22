@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { t } from '@/lib/i18n';
 import { ClipboardCopy, Download, HardDrive, Trash2, Upload } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -33,9 +34,9 @@ export function BackupCard() {
       afterChange();
       setPasted('');
       setPasteOpen(false);
-      toast.success('Backup restored');
+      toast.success(t('Backup restored'));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not restore that backup');
+      toast.error(e instanceof Error ? e.message : t('Could not restore that backup'));
     }
   };
 
@@ -45,7 +46,7 @@ export function BackupCard() {
     const text = backupText();
     try {
       await navigator.clipboard.writeText(text);
-      toast.success('Backup copied. Paste it into Notes or a message to yourself.');
+      toast.success(t('Backup copied. Paste it into Notes or a message to yourself.'));
     } catch {
       setCopyFallback(text);
     }
@@ -61,34 +62,34 @@ export function BackupCard() {
   }
 
   return (
-    <Card title="Your data" icon={HardDrive} accent="var(--color-water)">
+    <Card title={t('Your data')} icon={HardDrive} accent="var(--color-water)">
       <p className="text-sm text-ink-2">
         {cloudEnabled
-          ? `${rowCount.toLocaleString()} entries, saved to your account. You can also keep your own copy as a file.`
+          ? t('{n} entries, saved to your account. You can also keep your own copy as a file.', { n: rowCount.toLocaleString() })
           : storageAvailable
-            ? `Stored only in this browser on this device (${rowCount.toLocaleString()} entries). Clearing browser data or uninstalling the browser deletes it, so keep a backup.`
-            : 'Storage is blocked in this browser, so nothing will be kept after you close the page.'}
+            ? t('Stored only in this browser on this device ({n} entries). Clearing browser data or uninstalling the browser deletes it, so keep a backup.', { n: rowCount.toLocaleString() })
+            : t('Storage is blocked in this browser, so nothing will be kept after you close the page.')}
       </p>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={copy}>
-          <ClipboardCopy size={16} /> Copy backup
+          <ClipboardCopy size={16} /> {t('Copy backup')}
         </Button>
         {!embedded ? (
           <Button variant="secondary" onClick={download}>
-            <Download size={16} /> Download
+            <Download size={16} /> {t('Download')}
           </Button>
         ) : (
           <Button variant="secondary" onClick={() => setPasteOpen((v) => !v)}>
-            <Upload size={16} /> Paste backup
+            <Upload size={16} /> {t('Paste backup')}
           </Button>
         )}
         <Button variant="secondary" className={embedded ? 'col-span-2' : ''} onClick={() => fileRef.current?.click()}>
-          <Upload size={16} /> Restore from file
+          <Upload size={16} /> {t('Restore from file')}
         </Button>
         {!embedded && (
           <Button variant="secondary" onClick={() => setPasteOpen((v) => !v)}>
-            <ClipboardCopy size={16} /> Paste backup
+            <ClipboardCopy size={16} /> {t('Paste backup')}
           </Button>
         )}
       </div>
@@ -109,7 +110,7 @@ export function BackupCard() {
 
       {copyFallback && (
         <div className="mt-3">
-          <p className="mb-1 text-xs text-ink-3">Copying isn't allowed here. Select all of the text below and copy it yourself:</p>
+          <p className="mb-1 text-xs text-ink-3">{t('Copying isn\'t allowed here. Select all of the text below and copy it yourself:')}</p>
           <textarea
             id="backup-copy"
             readOnly
@@ -129,12 +130,12 @@ export function BackupCard() {
             id="backup-paste"
             value={pasted}
             onChange={(e) => setPasted(e.target.value)}
-            placeholder="Paste a Replete backup here"
+            placeholder={t('Paste a Replete backup here')}
             className="h-28 w-full rounded-2xl border border-line bg-surface-2 p-3 font-mono text-xs text-ink outline-none"
           />
           <p className="text-xs text-ink-3">Restoring replaces everything currently in {cloudEnabled ? "your account" : "this app on this device"}.</p>
           <Button block variant="primary" accent="var(--color-water)" disabled={!pasted.trim()} onClick={() => restore(pasted)}>
-            Restore this backup
+            {t('Restore this backup')}
           </Button>
         </div>
       )}
@@ -157,16 +158,16 @@ export function BackupCard() {
                   setMeta({ welcomed: true });
                   afterChange();
                   setConfirmErase(false);
-                  toast.success('All data erased');
+                  toast.success(t('All data erased'));
                 }}
               >
-                Erase everything
+                {t('Erase everything')}
               </Button>
             </div>
           </div>
         ) : (
           <Button variant="danger" block onClick={() => setConfirmErase(true)}>
-            <Trash2 size={16} /> Erase all data
+            <Trash2 size={16} /> {t('Erase all data')}
           </Button>
         )}
       </div>

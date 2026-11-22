@@ -1,4 +1,5 @@
 import { Minus, Plus, Timer, X } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import { useEffect, useRef } from 'react';
 import { restFinishedAlert } from '@/lib/alerts';
 import { formatClock } from '@/lib/format';
@@ -21,7 +22,7 @@ export function RestTimerBar() {
       // reopening it should quietly clear the old timer rather than beep at you.
       if (now - endsAt < 15_000) {
         restFinishedAlert();
-        toast.info('Rest over. Next set!');
+        toast.info(t('Rest over. Next set!'));
       }
       stop();
     }
@@ -32,19 +33,19 @@ export function RestTimerBar() {
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2">
-      <div className="animate-fade relative mx-auto flex max-w-lg items-center gap-2 overflow-hidden rounded-2xl border border-lift/30 bg-surface-2/95 py-2 pl-4 pr-2 shadow-2xl backdrop-blur">
+      <div className="animate-fade relative mx-auto flex max-w-lg items-center gap-2 overflow-hidden rounded-2xl border border-lift/30 bg-surface-2/95 py-2 ps-4 pe-2 shadow-2xl backdrop-blur">
         <div
-          className="absolute inset-y-0 left-0 bg-lift/12 transition-[width] duration-200"
+          className="absolute inset-y-0 start-0 bg-lift/12 transition-[width] duration-200"
           style={{ width: `${pct}%` }}
         />
         <Timer size={18} className="relative text-lift" />
         <div className="relative flex-1">
-          <div className="text-[11px] uppercase tracking-wider text-ink-3">Rest</div>
+          <div className="text-[11px] uppercase tracking-wider text-ink-3">{t('Rest')}</div>
           <div className="tabular text-xl font-bold leading-none text-lift">{formatClock(Math.ceil(remaining))}</div>
         </div>
         <button
           type="button"
-          aria-label="Subtract 15 seconds"
+          aria-label={t('Subtract 15 seconds')}
           onClick={() => extend(-15)}
           className="relative grid h-10 w-12 place-items-center rounded-xl bg-surface-3 text-xs font-semibold active:scale-95"
         >
@@ -52,7 +53,7 @@ export function RestTimerBar() {
         </button>
         <button
           type="button"
-          aria-label="Add 15 seconds"
+          aria-label={t('Add 15 seconds')}
           onClick={() => extend(15)}
           className="relative grid h-10 w-12 place-items-center rounded-xl bg-surface-3 text-xs font-semibold active:scale-95"
         >
@@ -60,7 +61,7 @@ export function RestTimerBar() {
         </button>
         <button
           type="button"
-          aria-label="Skip rest"
+          aria-label={t('Skip rest')}
           onClick={stop}
           className="relative grid size-10 place-items-center rounded-xl text-ink-2 active:scale-95"
         >
