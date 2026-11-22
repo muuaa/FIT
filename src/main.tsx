@@ -23,6 +23,21 @@ const queryClient = new QueryClient({
 });
 
 requestPersistence();
+
+// Installed apps keep an offline copy. Check for a new version whenever the app is opened or brought
+// back to the front, and reload once the new version takes over, so updates show up right away.
+if ('serviceWorker' in navigator && !import.meta.env.VITE_EMBEDDED) {
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloaded) return; // first install: nothing to refresh
+    reloaded = true;
+    window.location.reload();
+  });
+  const check = () => void navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => undefined);
+  document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());
+  window.setTimeout(check, 3000);
+}
 restoreLanguage();
 
 /** Embedded single-file builds (VITE_EMBEDDED=1) can't rely on URL paths, so they route in memory. */
