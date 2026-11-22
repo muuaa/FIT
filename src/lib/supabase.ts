@@ -9,11 +9,11 @@ const PROJECT_URL = import.meta.env.VITE_SUPABASE_URL ?? 'https://kpppglfhwbcztc
 const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? 'sb_publishable_j03ypo-DaeRdoxUK9UYOTg_ByOHr2Sf';
 
 /**
- * Accounts + cloud sync are switched on per build with VITE_CLOUD=1 while they're being rolled out.
- * Without it (and always in single-file preview builds) the app runs fully on-device, as before.
+ * Accounts + cloud sync are on by default. VITE_CLOUD=0 builds (and single-file preview builds)
+ * run fully on-device with no account.
  */
 export const cloudEnabled =
-  import.meta.env.VITE_CLOUD === '1' && !import.meta.env.VITE_EMBEDDED && Boolean(PROJECT_URL && PUBLISHABLE_KEY);
+  import.meta.env.VITE_CLOUD !== '0' && !import.meta.env.VITE_EMBEDDED && Boolean(PROJECT_URL && PUBLISHABLE_KEY);
 
 export const supabase: SupabaseClient | null = cloudEnabled
   ? createClient(PROJECT_URL, PUBLISHABLE_KEY, {

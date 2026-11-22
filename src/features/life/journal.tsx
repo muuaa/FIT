@@ -40,9 +40,10 @@ function EntryEditor({ date }: { date: string }) {
     const d = draft.current;
     draft.current = null;
     if (!d) return;
-    const gratitude = d.g.map((x) => x.trim());
-    const body = d.text.trimEnd();
-    if (!gratitude.some(Boolean) && !body) {
+    // Keep text exactly as typed (trimming here would eat a space you just typed before pausing).
+    const gratitude = d.g;
+    const body = d.text;
+    if (!gratitude.some((x) => x.trim()) && !body.trim()) {
       if (saved) actions.remove(date);
       return;
     }

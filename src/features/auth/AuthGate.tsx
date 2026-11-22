@@ -8,7 +8,7 @@ import { Spinner } from '@/components/ui/States';
 import { getProfile, setNamespace } from '@/lib/localDb';
 import { migrateLegacyIntoAccount } from '@/lib/migrate';
 import { cloudEnabled, supabase } from '@/lib/supabase';
-import { hasSyncedBefore, startSync, syncNow, useSyncStore } from '@/lib/sync';
+import { hasSyncedBefore, startSync, stopSync, syncNow, useSyncStore } from '@/lib/sync';
 import { toast } from '@/stores/toastStore';
 import { AuthScreen, NewPasswordScreen } from './AuthScreen';
 import { useSession } from './session';
@@ -88,7 +88,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
       const u = session?.user;
       if (u) void enter(u.id, u.email ?? '');
       else if (event === 'SIGNED_OUT') {
+        // Also covers a session that expired on its own: stop syncing and leave the account's space.
         activeUser.current = null;
+        stopSync();
+        setNamespace(null);
+        useSession.setState({ user: null });
         qc.clear();
         setPhase('signedOut');
       }

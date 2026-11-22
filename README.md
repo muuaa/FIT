@@ -6,9 +6,9 @@
 
 A mobile-first, installable PWA for lifting, nutrition, hydration, supplements, bodyweight and cardio.
 
-**Storage: on your device.** Everything is saved in the browser of the phone you use it on (`localStorage`). There's no account or server, and nothing is uploaded. Each phone keeps its own separate data, so you and your partner can each use your own phone. Back up from **Settings → Your data** (copy, download or restore a backup).
+**Storage: your private account, offline-first.** Each person signs in with their own email and password (Supabase Auth). Everything is saved on the phone first, so the app works offline, and syncs to a private account when there's internet. Sign in on another phone or tablet to see the same data. The data you and your partner keep is completely separate, except for lists you choose to share. Data that was on a phone before accounts existed moves into the account at first sign-in.
 
-**Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · TanStack Query · Zustand · Recharts · Lucide. Costs $0 to host on Vercel's free Hobby plan, or any static host.
+**Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · TanStack Query · Zustand · Recharts · Lucide · Supabase (free plan). Hosted free on GitHub Pages. English and Arabic (right-to-left).
 
 ---
 
@@ -19,10 +19,11 @@ A mobile-first, installable PWA for lifting, nutrition, hydration, supplements, 
 | **Today** | Today's workout or rest status with one-tap start, calories remaining with macro bars, tap-to-fill water bottles, morning weigh-in with a 7-day sparkline, supplement checklist, and quick cardio logging (Run / Jump rope). |
 | **Train** | PPL·UL ⇄ UL·PPL split switch, the week's schedule (Thu, Fri, Sat, Mon, Tue), exercises for each day type (add, edit, reorder, delete), live workout timer, previous session's weight × reps shown for every exercise and set, auto rest timer after each logged set (60/90/120/180 s or custom) with sound and vibration, a progress bar for the session, the screen kept awake during a workout, and workout history (tap a workout to see every set, or delete it). |
 | **Fuel** | Look back at any day. Log calories and macros (kcal can be calculated from macros), a saved-meals library (tap a meal to log it, edit or delete meals), hydration, and the supplement shelf (turn items on or off, add custom items with dosage, edit, delete). |
+| **Life** | Habits (tap to tick, streaks, a monthly calendar to fix past days, choose the weekdays), to-dos (today's plan, future days, repeating chores, a Someday list, overdue items carried to today), sleep (bedtime, wake time, quality, naps, weekly chart against your goal), mood / energy / stress check-ins (2-week trend), steps (typed in, with goal and 7-day chart), body measurements and private progress photos, money (expenses in USD or another currency, categories, monthly budget with a daily allowance), a journal (3 gratitude lines, notes that save as you type, photos, files and a handwriting page that supports Apple Pencil pressure and ignores a resting palm), and shared lists (create a list, share its 8-character code, both people can add and tick items). |
 | **Progress** | Bodyweight chart with daily weigh-ins and a 7-day rolling average (7/30/90 days), latest / average / weekly-change stats, a table of all entries, strength progress per exercise (estimated 1RM and top set), and cardio history with pace. |
-| **Settings** (⚙ in the header) | Calorie and macro targets, water goal and bottle size, split, default rest time, install-to-home-screen help, and your data (backup copy/download, restore from file or pasted text, erase everything). |
+| **Settings** (⚙ in the header) | Account (sync status, sync now, sign out), name and **language (English / العربية)**, calorie and macro targets, water goal, bottle size and +/− amount, steps and sleep goals, monthly budget and currency, split, default rest time, which cards Today shows and their order, install-to-home-screen help, and your data (backup copy/download, restore from file or pasted text, erase everything). |
 
-Deleting a meal, set, workout, weigh-in or cardio session shows an **Undo** button for a few seconds. Sheets close with a swipe down. Units are **kg** and **km**. Exercise templates and saved meals start empty. The seven default supplements are created on first launch, all switched **off**. On first launch you can choose **Try sample data** (clearly labelled, removed with one tap) or **Start fresh**.
+**Today** can be customized: choose any of 13 cards (workout, calories, water, weigh-in, supplements, cardio, habits, to-dos, sleep, mood, steps, money, journal) and put them in your order. Deleting a meal, set, workout, weigh-in, cardio session, expense or to-do shows an **Undo** button for a few seconds. Sheets close with a swipe down. Units are **kg** and **km**. Exercise templates and saved meals start empty. The seven default supplements are created on first launch, all switched **off**. On first launch you can choose **Try sample data** (clearly labelled, removed with one tap) or **Start fresh**.
 
 ---
 
@@ -58,11 +59,21 @@ FIT/
         └── settings/
 ```
 
-## Data model (on-device)
+## Data and sync
 
-`src/lib/localDb.ts` keeps one JSON array per table in `localStorage` under `fit.v1.<table>`, plus the profile under `fit.v1.profile`. The tables are `exercises`, `workout_sessions`, `set_logs`, `food_entries`, `saved_meals`, `water_days`, `supplements`, `supplement_logs`, `bodyweight_logs` and `cardio_logs`. If the browser blocks storage (private browsing), the app still works for that visit and shows a warning that nothing will be kept. The app also asks the browser for persistent storage so the data isn't cleared to free up space.
+`src/lib/localDb.ts` keeps one JSON array per table in `localStorage` (per signed-in user: `fit.v1.u.<userId>.<table>`). Every write is recorded as a row change; `src/lib/sync.ts` queues changes in a persistent outbox, pushes them to the Supabase `records` table and pulls changes from other devices (on open, when the app comes back to the foreground, when the connection returns and every 2 minutes). The server timestamps every write, and the last write to reach it wins per row.
 
-`supabase/migrations/0001_init.sql` holds a tested Postgres schema with per-user Row Level Security, kept for a future optional cloud sync. The app doesn't use it right now.
+Photos, files and handwriting are stored in a private Supabase Storage bucket under the user's own folder; shared lists live in their own tables, readable only by the list's members.
+
+### One-time Supabase setup
+
+1. Create a free project at supabase.com.
+2. In **SQL Editor**, run `supabase/migrations/0001_sync.sql`, then `supabase/migrations/0002_files_and_shared_lists.sql`.
+3. **Authentication → URL Configuration:** set Site URL to the app's address (e.g. `https://muuaa.github.io/FIT/`) and add it with `**` to Redirect URLs.
+4. Optional: turn off **Confirm email** (Authentication → Sign In / Providers) so sign-up is instant.
+5. Put the project URL and publishable key in `src/lib/supabase.ts` (or set `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`). Both are public by design; Row Level Security keeps each person's data private.
+
+`VITE_CLOUD=0 npm run build` (and the single-file `build:embedded`) produce a version without accounts that stores everything in the browser only.
 
 ## Install on your phone
 
@@ -71,7 +82,7 @@ The app is hosted free on **GitHub Pages** at **https://muuaa.github.io/FIT/**. 
 - **iPhone:** open the link in **Safari** → Share → **Add to Home Screen** → Add.
 - **Android:** open the link in **Chrome** → ⋮ → **Install app** (or **Add to Home screen**).
 
-It then opens full-screen from its own icon and works offline. Data belongs to the browser it was entered in, so the home-screen app keeps its own data, separate from a normal browser tab. To move data across, use **Settings → Your data → Copy backup / Paste backup**.
+It then opens full-screen from its own icon and works offline. Sign in once in the installed app; your data comes with your account.
 
 One-time setup: in the repo go to **Settings → Pages → Build and deployment → Source** and choose **GitHub Actions**.
 
