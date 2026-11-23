@@ -33,6 +33,8 @@ interface Sub {
 
 // ---------------------------------------------------------------- Firebase (native Android app)
 
+const SITE_ORIGIN = 'https://muuaa.github.io';
+
 const FCM_ACCOUNT = (() => {
   try {
     const raw = Deno.env.get('FCM_SERVICE_ACCOUNT');
@@ -76,6 +78,8 @@ async function sendFcm(token: string, payload: Record<string, unknown>): Promise
   if (!FCM_ACCOUNT) return 'error';
   const data: Record<string, string> = {};
   for (const [k, v] of Object.entries(payload)) data[k] = String(v ?? '');
+  // The app only opens full links, so turn '/FIT/plan' into 'https://muuaa.github.io/FIT/plan'.
+  if (data.url) data.url = new URL(data.url, SITE_ORIGIN).href;
   const res = await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_ACCOUNT.project_id}/messages:send`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${await fcmAccessToken()}`, 'Content-Type': 'application/json' },

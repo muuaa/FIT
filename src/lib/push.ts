@@ -9,6 +9,7 @@ export const VAPID_PUBLIC_KEY = 'BG2av39pT1D3UAbeksM8hZeDUDf3866YWzfzcy29fViVF-B
 
 const FCM_KEY = 'fit.fcmToken';
 const NATIVE_KEY = 'fit.native';
+const FCM_PREV_KEY = 'fit.fcmPrev';
 
 /** The Android app opens the site with ?app=1&fcm=<token>; remember it and tidy the address. */
 export function captureNativeLaunch() {
@@ -17,6 +18,8 @@ export function captureNativeLaunch() {
     if (!url.searchParams.has('app')) return;
     sessionStorage.setItem(NATIVE_KEY, '1');
     const token = url.searchParams.get('fcm');
+    const prev = localStorage.getItem(FCM_KEY);
+    if (token && prev && prev !== token) localStorage.setItem(FCM_PREV_KEY, prev); // Firebase rotated it
     if (token) localStorage.setItem(FCM_KEY, token);
     url.searchParams.delete('app');
     url.searchParams.delete('fcm');
@@ -43,6 +46,15 @@ async function saveNative(token: string): Promise<boolean> {
     { onConflict: 'endpoint' },
   );
   if (error) return false;
+  try {
+    const prev = localStorage.getItem(FCM_PREV_KEY);
+    if (prev) {
+      await supabase.from('push_subscriptions').delete().eq('endpoint', `fcm:${prev}`);
+      localStorage.removeItem(FCM_PREV_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
   // The app shows its own notifications now, so drop Chrome's copy on this phone to avoid doubles.
   const reg = await registration();
   const sub = await reg?.pushManager.getSubscription();
