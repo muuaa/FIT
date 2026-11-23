@@ -49,7 +49,7 @@ export function BottomNav() {
   const current = tabFor(pathname);
   return (
     <nav className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden">
-      <ul className="glass-strong pointer-events-auto mx-auto mb-2 grid h-[66px] max-w-lg grid-cols-5 rounded-[26px] px-1">
+      <ul className="glass-strong pointer-events-auto mx-auto mb-2 grid h-[66px] max-w-lg grid-cols-5 rounded-[26px] px-1 md:mb-4 md:max-w-xl">
         {TABS.map(({ to, label, icon: Icon, accent }) => {
           const active = current === to;
           return (

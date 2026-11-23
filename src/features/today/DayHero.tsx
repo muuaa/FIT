@@ -13,6 +13,9 @@ import { cn } from '@/lib/cn';
 import { t } from '@/lib/i18n';
 import { habitDueOn, todosFor } from '@/lib/life';
 import { dayLabel, dayTypeForDate } from '@/lib/split';
+import { choreStatus, daysUntil } from '@/lib/plan';
+import { usePartnerStore } from '@/lib/partner';
+import { useSession } from '@/features/auth/session';
 
 interface Item {
   key: string;
@@ -36,6 +39,11 @@ function useDayItems(): Item[] {
   const { data: supps = [] } = useSupplements();
   const { data: taken = [] } = useSupplementLogs(today);
   const { data: sessions = [] } = useTodaySessions();
+  const { data: bills = [] } = useTable('bills');
+  const { data: chores = [] } = useTable('chores');
+  const choreActions = useTableActions('chores');
+  const me = useSession((st) => st.user);
+  const partner = usePartnerStore((st) => st.partner);
   const habitActions = useTableActions('habit_logs');
   const todoActions = useTableActions('todos');
   const doneActions = useTableActions('todo_done');
@@ -91,8 +99,23 @@ function useDayItems(): Item[] {
               ? doneActions.remove(`${it.todo.id}|${today}`)
               : doneActions.put({ todo_id: it.todo.id, date: today }),
       });
+    for (const b of bills.filter((x) => daysUntil(x.next_due, today) <= 0))
+      out.push({ key: `b-${b.id}`, label: t('Pay {name}', { name: `${b.emoji} ${b.name}` }), done: false, accent: 'var(--color-money)', act: () => navigate('/life/bills') });
+    const meId = me?.id ?? 'me';
+    for (const c of chores) {
+      const st = choreStatus(c, today, meId, partner?.id ?? null);
+      const doneToday = c.last_done === today;
+      if ((st.days <= 0 && (st.turn === null || st.turn === meId)) || (doneToday && c.last_by === meId))
+        out.push({
+          key: `c-${c.id}`,
+          label: `${c.emoji} ${c.name}`,
+          done: doneToday,
+          accent: 'var(--color-steps)',
+          act: () => (doneToday ? undefined : choreActions.put({ ...c, last_done: today, last_by: meId })),
+        });
+    }
     return out;
-  }, [profile, sessions, ml, supps, taken, habits, habitLogs, todos, todoDone, today, navigate, setWater, habitActions, todoActions, doneActions]);
+  }, [bills, chores, choreActions, me, partner, profile, sessions, ml, supps, taken, habits, habitLogs, todos, todoDone, today, navigate, setWater, habitActions, todoActions, doneActions]);
 }
 
 export function DayHero() {

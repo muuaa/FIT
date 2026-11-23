@@ -27,6 +27,11 @@ const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage').th
 const PlanPage = lazy(() => import('@/features/plan/PlanPage').then((m) => ({ default: m.PlanPage })));
 const HealthPage = lazy(() => import('@/features/health/HealthPage').then((m) => ({ default: m.HealthPage })));
 const UsPage = lazy(() => import('@/features/us/UsPage').then((m) => ({ default: m.UsPage })));
+const BillsPage = lazy(() => import('@/features/admin/bills').then((m) => ({ default: m.BillsPage })));
+const MealsPage = lazy(() => import('@/features/admin/meals').then((m) => ({ default: m.MealsPage })));
+const ChoresPage = lazy(() => import('@/features/admin/chores').then((m) => ({ default: m.ChoresPage })));
+const NotesPage = lazy(() => import('@/features/admin/notes').then((m) => ({ default: m.NotesPage })));
+const InsightsPage = lazy(() => import('@/features/admin/insights').then((m) => ({ default: m.InsightsPage })));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 
 export default function App() {
@@ -68,6 +73,11 @@ export default function App() {
             <Route path="/life/money" element={<MoneyPage />} />
             <Route path="/life/journal" element={<JournalPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
+            <Route path="/life/bills" element={<BillsPage />} />
+            <Route path="/life/meals" element={<MealsPage />} />
+            <Route path="/life/chores" element={<ChoresPage />} />
+            <Route path="/life/notes" element={<NotesPage />} />
+            <Route path="/life/insights" element={<InsightsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/settings/reminders" element={<RemindersPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

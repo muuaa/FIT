@@ -44,3 +44,35 @@ export function nextCountdown(c: Countdown, today: string): { date: string; days
   const days = Math.round((parseISODate(target).getTime() - parseISODate(today).getTime()) / 86_400_000);
   return { date: target, days };
 }
+
+// ---------------------------------------------------------------- bills & chores
+
+import type { Bill, Chore } from '@/types/db';
+
+/** The due date after `from` for a billing cycle (month-end safe). */
+export function advanceDue(from: string, cycle: Bill['cycle']): string {
+  const d = parseISODate(from);
+  if (cycle === 'weekly') return addDays(from, 7);
+  const months = cycle === 'monthly' ? 1 : 12;
+  const day = d.getDate();
+  const target = new Date(d.getFullYear(), d.getMonth() + months, 1);
+  const last = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(day, last));
+  return toISODate(target);
+}
+
+export function daysUntil(date: string, today: string): number {
+  return Math.round((parseISODate(date).getTime() - parseISODate(today).getTime()) / 86_400_000);
+}
+
+/** Monthly cost of a bill, for totals. */
+export function monthlyCost(b: Bill): number {
+  return b.cycle === 'monthly' ? b.amount : b.cycle === 'yearly' ? b.amount / 12 : (b.amount * 52) / 12;
+}
+
+/** When a chore is next due, and whose turn it is. */
+export function choreStatus(c: Chore, today: string, me: string, partner: string | null): { due: string; days: number; turn: string | null } {
+  const due = c.last_done ? addDays(c.last_done, c.every_days) : today;
+  const turn = c.assignee === 'alternate' ? (c.last_by ? (c.last_by === me ? partner : me) : me) : c.assignee;
+  return { due, days: daysUntil(due, today), turn };
+}

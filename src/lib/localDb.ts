@@ -10,6 +10,10 @@
  */
 import { t } from './i18n';
 import type {
+  Bill,
+  Chore,
+  Note,
+  PlannedMeal,
   CalEvent,
   Countdown,
   FocusSession,
@@ -84,6 +88,10 @@ export interface Tables {
   routines: Routine;
   routine_logs: RoutineLog;
   focus_sessions: FocusSession;
+  bills: Bill;
+  meal_plan: PlannedMeal;
+  chores: Chore;
+  notes: Note;
 }
 export type TableName = keyof Tables;
 
@@ -116,6 +124,10 @@ export const TABLE_NAMES: TableName[] = [
   'routines',
   'routine_logs',
   'focus_sessions',
+  'bills',
+  'meal_plan',
+  'chores',
+  'notes',
 ];
 
 const BASE = 'fit.v1.';

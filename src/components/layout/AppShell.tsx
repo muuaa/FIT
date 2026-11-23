@@ -56,7 +56,7 @@ export function PageHeader({
     <>
       <header
         className={cn(
-          'pt-safe sticky top-0 z-30 -mx-4 px-4 transition-[background,border-color,backdrop-filter] duration-300',
+          'pt-safe sticky top-0 z-30 -mx-4 px-4 transition-[background,border-color,backdrop-filter] duration-300 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8',
           compact ? 'border-b border-white/[0.06] bg-bg/70 backdrop-blur-2xl' : 'border-b border-transparent',
         )}
       >
@@ -157,7 +157,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-full lg:ps-64">
       <main
-        className="mx-auto max-w-lg px-4 lg:max-w-3xl lg:px-8"
+        className="mx-auto max-w-lg px-4 md:max-w-2xl md:px-6 lg:max-w-3xl lg:px-8"
         style={{
           paddingBottom: `calc(${resting || viewing ? '11rem' : '7.5rem'} + env(safe-area-inset-bottom))`,
         }}

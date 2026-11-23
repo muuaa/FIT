@@ -286,3 +286,56 @@ export interface FocusSession {
   label: string;
   created_at: string;
 }
+
+// ---------------------------------------------------------------- Life admin
+
+export type BillCycle = 'weekly' | 'monthly' | 'yearly';
+
+/** A bill or subscription (joint). */
+export interface Bill {
+  id: string;
+  name: string;
+  emoji: string;
+  amount: number;
+  cycle: BillCycle;
+  /** Next due date (YYYY-MM-DD); moves forward when marked paid. */
+  next_due: string;
+  category: string;
+  /** Add an expense automatically when marked paid. */
+  log_expense: boolean;
+  created_at: string;
+}
+
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner';
+
+/** A planned meal (joint). */
+export interface PlannedMeal {
+  id: string;
+  date: string;
+  slot: MealSlot;
+  title: string;
+  ingredients: string[];
+  created_at: string;
+}
+
+/** A recurring chore (joint), optionally alternating between the two of you. */
+export interface Chore {
+  id: string;
+  name: string;
+  emoji: string;
+  every_days: number;
+  /** 'alternate' takes turns; otherwise a user id. */
+  assignee: 'alternate' | string;
+  last_done: string | null;
+  last_by: string | null;
+  created_at: string;
+}
+
+/** Personal note (readable by your partner, like the rest of your data). */
+export interface Note {
+  id: string;
+  title: string;
+  body: string;
+  pinned: boolean;
+  updated_at: string;
+}
