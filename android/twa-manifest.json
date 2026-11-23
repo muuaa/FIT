@@ -1,0 +1,43 @@
+{
+  "packageId": "io.github.muuaa.bettertogether",
+  "host": "muuaa.github.io",
+  "name": "Better Together",
+  "launcherName": "Better Together",
+  "display": "standalone",
+  "themeColor": "#07080D",
+  "themeColorDark": "#07080D",
+  "navigationColor": "#07080D",
+  "navigationColorDark": "#07080D",
+  "navigationDividerColor": "#07080D",
+  "navigationDividerColorDark": "#07080D",
+  "backgroundColor": "#07080D",
+  "enableNotifications": true,
+  "startUrl": "/FIT/",
+  "iconUrl": "https://muuaa.github.io/FIT/pwa-512.png",
+  "maskableIconUrl": "https://muuaa.github.io/FIT/pwa-maskable-512.png",
+  "monochromeIconUrl": "https://muuaa.github.io/FIT/badge-96.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "/root/apkbuild/keys/better-together.keystore",
+    "alias": "better-together"
+  },
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-core",
+  "webManifestUrl": "https://muuaa.github.io/FIT/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": false,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://muuaa.github.io/FIT/",
+  "minSdkVersion": 21,
+  "orientation": "default",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "displayOverride": []
+}
