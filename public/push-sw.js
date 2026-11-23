@@ -7,8 +7,7 @@ self.addEventListener('push', (event) => {
     data = { title: 'Better Together', body: event.data ? event.data.text() : '' };
   }
   const scope = self.registration.scope;
-  // Android already shows the installed app's icon next to its name, so a big picture would just repeat it.
-  const android = /Android/i.test(self.navigator.userAgent);
+  // Always send the app icon: without one, Chrome on Android draws a grey letter from the site address.
   const options = {
     body: data.body || '',
     tag: data.tag || 'better-together',
@@ -16,8 +15,8 @@ self.addEventListener('push', (event) => {
     // Status-bar icon: must be white on transparent, or Android draws a white square.
     badge: scope + 'badge-96.png',
     data: { url: data.url || scope },
+    icon: scope + 'pwa-192.png',
   };
-  if (!android) options.icon = scope + 'pwa-192.png';
   event.waitUntil(self.registration.showNotification(data.title || 'Better Together', options));
 });
 
