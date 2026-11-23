@@ -10,6 +10,12 @@
  */
 import { t } from './i18n';
 import type {
+  CalEvent,
+  Countdown,
+  FocusSession,
+  Goal,
+  Routine,
+  RoutineLog,
   Attachment,
   CheckIn,
   Expense,
@@ -72,6 +78,12 @@ export interface Tables {
   journal: JournalEntry;
   attachments: Attachment;
   home_settings: HomeSettings;
+  events: CalEvent;
+  countdowns: Countdown;
+  goals: Goal;
+  routines: Routine;
+  routine_logs: RoutineLog;
+  focus_sessions: FocusSession;
 }
 export type TableName = keyof Tables;
 
@@ -98,6 +110,12 @@ export const TABLE_NAMES: TableName[] = [
   'journal',
   'attachments',
   'home_settings',
+  'events',
+  'countdowns',
+  'goals',
+  'routines',
+  'routine_logs',
+  'focus_sessions',
 ];
 
 const BASE = 'fit.v1.';
@@ -227,6 +245,10 @@ export function rowKey<T extends TableName>(t: T, row: Tables[T]): string {
   if (t === 'habit_logs') {
     const r = row as HabitLog;
     return `${r.habit_id}|${r.date}`;
+  }
+  if (t === 'routine_logs') {
+    const r = row as RoutineLog;
+    return `${r.routine_id}|${r.date}`;
   }
   if (t === 'todo_done') {
     const r = row as TodoDone;

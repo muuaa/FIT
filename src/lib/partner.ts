@@ -71,3 +71,52 @@ export function viewMe(): void {
   usePartnerStore.setState({ viewing: false });
   pauseSync(false);
 }
+
+export interface DaySnapshot {
+  waterMl: number;
+  waterTarget: number;
+  habitsDone: number;
+  habitsDue: number;
+  mood: number;
+  sleepMin: number | null;
+  trained: boolean;
+  steps: number;
+}
+
+/** A person's day from their synced rows (works for the partner, whose rows we can read). */
+export async function fetchDaySnapshot(userId: string, date: string): Promise<DaySnapshot> {
+  if (!supabase) throw new Error('offline');
+  const base = () => supabase!.from('records').select('tbl,data').eq('user_id', userId).eq('deleted', false);
+  const [small, day] = await Promise.all([
+    base().in('tbl', ['profile', 'habits']),
+    base().in('tbl', ['water_days', 'habit_logs', 'checkins', 'sleep_logs', 'workout_sessions', 'steps_days']).eq('data->>date', date),
+  ]);
+  if (small.error) throw new Error(small.error.message);
+  if (day.error) throw new Error(day.error.message);
+  const rows = [...(small.data ?? []), ...(day.data ?? [])];
+  const of = (t: string) => rows.filter((r) => r.tbl === t).map((r) => r.data as Record<string, unknown>);
+  const profile = (of('profile')[0] ?? {}) as Record<string, unknown>;
+  const wd = new Date(`${date}T12:00:00`).getDay();
+  const due = of('habits').filter(
+    (h) => !h.archived && String(h.created_at ?? '').slice(0, 10) <= date && (!(h.days as number[])?.length || (h.days as number[]).includes(wd)),
+  );
+  const logged = new Set(of('habit_logs').map((l) => l.habit_id));
+  const sleep = of('sleep_logs')[0];
+  let sleepMin: number | null = null;
+  if (sleep) {
+    const [bh, bm] = String(sleep.bed).split(':').map(Number);
+    const [wh, wm] = String(sleep.wake).split(':').map(Number);
+    sleepMin = wh * 60 + wm - (bh * 60 + bm);
+    if (sleepMin <= 0) sleepMin += 1440;
+  }
+  return {
+    waterMl: Number(of('water_days')[0]?.ml ?? 0),
+    waterTarget: Number(profile.water_target_ml ?? 4000),
+    habitsDone: due.filter((h) => logged.has(h.id)).length,
+    habitsDue: due.length,
+    mood: Number(of('checkins')[0]?.mood ?? 0),
+    sleepMin,
+    trained: of('workout_sessions').some((r) => r.ended_at),
+    steps: Number(of('steps_days')[0]?.steps ?? 0),
+  };
+}

@@ -91,7 +91,7 @@ function schedulePush(delay = 800) {
  * Tables both people edit together (one joint copy). They live in `household_records`; everything
  * else is personal and lives in `records` under the user's id (readable, not writable, by the partner).
  */
-export const JOINT_TABLES = new Set(['todos', 'todo_done', 'expenses', 'home_settings']);
+export const JOINT_TABLES = new Set(['todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals']);
 
 async function push(uid: string): Promise<void> {
   if (!supabase) return;

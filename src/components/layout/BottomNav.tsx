@@ -1,6 +1,7 @@
 import { CalendarCheck, HeartHandshake, House, Leaf, Sparkles, type LucideIcon } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
+import { Logo } from '@/components/Logo';
 import { tick } from '@/lib/alerts';
 import { t } from '@/lib/i18n';
 
@@ -47,7 +48,7 @@ export function BottomNav() {
   const { pathname } = useLocation();
   const current = tabFor(pathname);
   return (
-    <nav className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3">
+    <nav className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden">
       <ul className="glass-strong pointer-events-auto mx-auto mb-2 grid h-[66px] max-w-lg grid-cols-5 rounded-[26px] px-1">
         {TABS.map(({ to, label, icon: Icon, accent }) => {
           const active = current === to;
@@ -79,6 +80,39 @@ export function BottomNav() {
           );
         })}
       </ul>
+    </nav>
+  );
+}
+
+/** Desktop / wide-window navigation (Windows): a frosted sidebar. */
+export function SideNav() {
+  const { pathname } = useLocation();
+  const current = tabFor(pathname);
+  return (
+    <nav className="glass-strong fixed inset-y-3 start-3 z-40 hidden w-60 flex-col rounded-[28px] p-3 lg:flex">
+      <div className="mb-4 flex items-center gap-2.5 px-2 pt-2">
+        <Logo size={36} />
+        <div className="text-[15px] font-bold leading-tight tracking-tight">Better Together</div>
+      </div>
+      <ul className="space-y-1">
+        {TABS.map(({ to, label, icon: Icon, accent }) => {
+          const active = current === to;
+          return (
+            <li key={to}>
+              <NavLink
+                to={to}
+                aria-current={active ? 'page' : undefined}
+                className={cn('press flex h-11 items-center gap-3 rounded-2xl px-3 text-[15px] font-semibold transition-colors', active ? 'text-ink' : 'text-ink-3 hover:bg-white/[0.04] hover:text-ink-2')}
+                style={active ? { background: `color-mix(in oklab, ${accent} 16%, transparent)` } : undefined}
+              >
+                <Icon size={20} strokeWidth={active ? 2.4 : 2} style={active ? { color: accent } : undefined} />
+                {t(label)}
+              </NavLink>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="mt-auto px-2 pb-1 text-[11px] text-ink-3">{t('Everything, together')}</div>
     </nav>
   );
 }

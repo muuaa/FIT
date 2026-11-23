@@ -142,7 +142,7 @@ export function QuickAdd() {
           tick();
           setOpen(true);
         }}
-        className="press fixed end-4 z-40 grid size-14 place-items-center rounded-full text-bg transition-[bottom] duration-300"
+        className="press fixed end-4 z-40 grid size-14 place-items-center rounded-full text-bg transition-[bottom] duration-300 lg:end-8 lg:!bottom-8"
         style={{
           bottom: `calc(${resting ? '10.4rem' : '5.9rem'} + env(safe-area-inset-bottom))`,
           background: 'linear-gradient(145deg, color-mix(in oklab, var(--color-accent) 80%, white), var(--color-accent) 55%, color-mix(in oklab, var(--color-us) 70%, var(--color-accent)))',

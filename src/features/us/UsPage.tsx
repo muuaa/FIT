@@ -10,6 +10,7 @@ import { t } from '@/lib/i18n';
 import { usePartnerStore, viewPartner } from '@/lib/partner';
 import { getProfile } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
+import { Countdowns, Goals, NudgeBar, SideBySide } from './Together';
 
 function Avatar({ name, accent }: { name: string; accent: string }) {
   return (
@@ -61,6 +62,10 @@ export function UsPage() {
           )}
         </section>
 
+        <NudgeBarCard />
+        <SideBySide />
+        <Countdowns />
+        <Goals />
         <Card title={t('Our to-dos today')} icon={ListTodo} accent="var(--color-todo)" action={<Link to="/plan" className="text-xs font-semibold text-todo">{t('All')}</Link>}>
           <TodosToday limit={6} />
         </Card>
@@ -77,5 +82,15 @@ export function UsPage() {
         </Card>
       </div>
     </>
+  );
+}
+
+function NudgeBarCard() {
+  const partner = usePartnerStore((s) => s.partner);
+  if (!partner) return null;
+  return (
+    <section className="glass animate-page rounded-[28px] p-4">
+      <NudgeBar />
+    </section>
   );
 }

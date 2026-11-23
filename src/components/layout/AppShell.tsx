@@ -9,8 +9,9 @@ import { formatClock } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { dayLabel } from '@/lib/split';
 import { useActiveWorkout, useRestStore } from '@/stores/workoutStore';
-import { BottomNav } from './BottomNav';
+import { BottomNav, SideNav } from './BottomNav';
 import { QuickAdd } from './QuickAdd';
+import { FocusWatcher } from '@/features/plan/Focus';
 import { RestTimerBar } from './RestTimerBar';
 
 export function WorkoutClock({ className = '' }: { className?: string }) {
@@ -136,7 +137,7 @@ function ViewingBanner() {
   const { partner, viewing } = usePartnerStore();
   if (!viewing || !partner) return null;
   return (
-    <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2">
+    <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2 lg:bottom-4 lg:ps-64">
       <div className="mx-auto flex max-w-lg items-center gap-2 glass-strong rounded-2xl border-life/40 py-2 ps-4 pe-2">
         <Eye size={16} className="shrink-0 text-life" />
         <span className="min-w-0 flex-1 truncate text-sm">
@@ -154,9 +155,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   const viewing = usePartnerStore((s) => s.viewing);
   const resting = useRestStore((s) => s.endsAt !== null) && !viewing;
   return (
-    <div className="min-h-full">
+    <div className="min-h-full lg:ps-64">
       <main
-        className="mx-auto max-w-lg px-4"
+        className="mx-auto max-w-lg px-4 lg:max-w-3xl lg:px-8"
         style={{
           paddingBottom: `calc(${resting || viewing ? '11rem' : '7.5rem'} + env(safe-area-inset-bottom))`,
         }}
@@ -165,7 +166,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
       {viewing ? <ViewingBanner /> : <RestTimerBar />}
       {!viewing && <QuickAdd />}
+      <FocusWatcher />
       <BottomNav />
+      <SideNav />
     </div>
   );
 }

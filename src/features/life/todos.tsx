@@ -325,3 +325,26 @@ export function useTodosSummary(): string {
   const items = todosFor(todos, doneKeys, today, today);
   return items.length ? `${items.filter((i) => i.done).length}/${items.length}` : t('Clear');
 }
+
+/** To-dos for any day, with quick add. Used on the Plan tab. */
+export function TodosForDay({ date }: { date: string }) {
+  const today = useToday();
+  const { todos, doneKeys } = useTodoData();
+  const items = todosFor(todos, doneKeys, date, today);
+  const [open, setOpen] = useState<Todo | null>(null);
+  return (
+    <div className="space-y-2">
+      <QuickAdd date={date} placeholder={date === today ? t('Add a to-do for today') : t('Add a to-do for this day')} />
+      {items.length > 0 ? (
+        <ul className="space-y-1.5">
+          {items.map((it) => (
+            <TodoRow key={it.todo.id} item={it} date={date} onOpen={() => setOpen(it.todo)} />
+          ))}
+        </ul>
+      ) : (
+        <p className="py-1 text-center text-sm text-ink-3">{t('Nothing planned. Add something above.')}</p>
+      )}
+      <TodoSheet todo={open ? (todos.find((x) => x.id === open.id) ?? null) : null} onClose={() => setOpen(null)} />
+    </div>
+  );
+}

@@ -101,3 +101,15 @@ export async function sendTestPush(): Promise<number> {
   if (error) throw error;
   return (data as { sent?: number })?.sent ?? 0;
 }
+
+/** Send a quick notification to your partner. */
+export async function sendNudge(text: string): Promise<number> {
+  if (!supabase) throw new Error('Not signed in');
+  const { data, error } = await supabase.functions.invoke('send-reminders', { body: { nudge: text } });
+  if (error) {
+    const status = (error as { context?: { status?: number } }).context?.status;
+    if (status === 429) throw new Error(t('Give it a few seconds before the next nudge.'));
+    throw error;
+  }
+  return (data as { sent?: number })?.sent ?? 0;
+}

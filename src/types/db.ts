@@ -220,3 +220,69 @@ export interface Attachment {
   size: number;
   created_at: string;
 }
+
+// ---------------------------------------------------------------- Plan & Us
+
+export type EventRepeat = 'none' | 'weekly' | 'monthly' | 'yearly';
+
+/** A calendar event (joint: both of you see and edit it). */
+export interface CalEvent {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD (first occurrence)
+  time: string | null; // HH:MM, null = all day
+  emoji: string;
+  /** Who it's for. */
+  who: 'both' | string; // 'both' or a user id
+  repeat: EventRepeat;
+  note: string;
+  created_at: string;
+}
+
+/** Joint countdown to a date (trip, anniversary, birthday). */
+export interface Countdown {
+  id: string;
+  title: string;
+  emoji: string;
+  date: string;
+  yearly: boolean;
+  created_at: string;
+}
+
+/** A goal you work on together, with a numeric target. */
+export interface Goal {
+  id: string;
+  title: string;
+  emoji: string;
+  target: number;
+  progress: number;
+  unit: string;
+  due: string | null;
+  done_at: string | null;
+  created_at: string;
+}
+
+/** Personal routine (morning / evening) with checklist steps. */
+export interface Routine {
+  id: string;
+  name: string;
+  emoji: string;
+  part: 'morning' | 'evening' | 'any';
+  steps: string[];
+  position: number;
+  created_at: string;
+}
+
+export interface RoutineLog {
+  routine_id: string;
+  date: string;
+  done: number[]; // indexes of finished steps
+}
+
+export interface FocusSession {
+  id: string;
+  date: string;
+  minutes: number;
+  label: string;
+  created_at: string;
+}

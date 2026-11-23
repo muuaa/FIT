@@ -49,10 +49,10 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
 
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center lg:items-center lg:p-6" role="dialog" aria-modal="true" aria-label={title}>
       <div className="animate-fade absolute inset-0 bg-black/55 backdrop-blur-[3px]" onClick={onClose} />
       <div
-        className="animate-sheet glass-strong relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[32px] border-b-0"
+        className="animate-sheet glass-strong relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[32px] border-b-0 lg:max-h-[85vh] lg:rounded-[28px] lg:border-b"
         style={drag ? { transform: `translateY(${drag}px)` } : { transition: 'transform 200ms ease' }}
       >
         <div

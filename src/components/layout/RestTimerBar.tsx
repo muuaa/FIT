@@ -32,7 +32,7 @@ export function RestTimerBar() {
   const pct = duration > 0 ? (remaining / duration) * 100 : 0;
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2">
+    <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-30 px-3 pb-2 lg:bottom-4 lg:ps-64">
       <div className="animate-fade relative mx-auto flex max-w-lg items-center gap-2 overflow-hidden glass-strong rounded-2xl border-lift/30 py-2 ps-4 pe-2">
         <div
           className="absolute inset-y-0 start-0 bg-lift/12 transition-[width] duration-200"

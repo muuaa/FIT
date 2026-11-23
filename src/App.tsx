@@ -24,6 +24,7 @@ const MoneyPage = lazy(() => import('@/features/life/money').then((m) => ({ defa
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
 const ListsPage = lazy(() => import('@/features/life/lists').then((m) => ({ default: m.ListsPage })));
 const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage').then((m) => ({ default: m.RemindersPage })));
+const PlanPage = lazy(() => import('@/features/plan/PlanPage').then((m) => ({ default: m.PlanPage })));
 const HealthPage = lazy(() => import('@/features/health/HealthPage').then((m) => ({ default: m.HealthPage })));
 const UsPage = lazy(() => import('@/features/us/UsPage').then((m) => ({ default: m.UsPage })));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
@@ -55,7 +56,7 @@ export default function App() {
             <Route path="/train" element={<TrainPage />} />
             <Route path="/fuel" element={<FuelPage />} />
             <Route path="/progress" element={<ProgressPage />} />
-            <Route path="/plan" element={<TodosPage asTab />} />
+            <Route path="/plan" element={<PlanPage />} />
             <Route path="/health" element={<HealthPage />} />
             <Route path="/us" element={<UsPage />} />
             <Route path="/life" element={<LifePage />} />

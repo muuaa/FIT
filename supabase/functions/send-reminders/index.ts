@@ -190,10 +190,32 @@ Deno.serve(async (req) => {
       const sent = await runDue();
       return Response.json({ ok: true, sent });
     }
-    // A signed-in user asking for a test notification.
+    // A signed-in user: a test notification, or a nudge to their partner.
     const token = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
     const { data } = token ? await db.auth.getUser(token) : { data: { user: null } };
     if (!data.user) return Response.json({ error: 'unauthorized' }, { status: 401, headers: cors });
+    const reqBody = await req.json().catch(() => ({}));
+    if (reqBody?.nudge) {
+      const text = String(reqBody.nudge).trim().slice(0, 120);
+      if (!text) return Response.json({ error: 'empty' }, { status: 400, headers: cors });
+      // At most one nudge every 15 seconds per person.
+      const { data: recent } = await db
+        .from('nudge_log')
+        .select('id')
+        .eq('from_user', data.user.id)
+        .gt('created_at', new Date(Date.now() - 15_000).toISOString())
+        .limit(1);
+      if (recent?.length) return Response.json({ error: 'slow down' }, { status: 429, headers: cors });
+      await db.from('nudge_log').insert({ from_user: data.user.id, text });
+      // The app is limited to two accounts: the partner is the other one.
+      const { data: users } = await db.auth.admin.listUsers({ perPage: 10 });
+      const partner = users?.users.find((u) => u.id !== data.user!.id);
+      if (!partner) return Response.json({ ok: true, sent: 0, reason: 'no partner' }, { headers: cors });
+      const { data: prof } = await db.from('records').select('data').eq('user_id', data.user.id).eq('tbl', 'profile').maybeSingle();
+      const name = String((prof?.data as { display_name?: string })?.display_name ?? '').trim() || (data.user.email ?? '').split('@')[0];
+      const sent = await sendTo(partner.id, { title: `💌 ${name}`, body: text, tag: `nudge-${Date.now()}`, url: '/FIT/us' });
+      return Response.json({ ok: true, sent }, { headers: cors });
+    }
     const st = await userState(data.user.id, localNow('UTC').date);
     const [title, body] = TEXT[st.lang].test;
     const sent = await sendTo(data.user.id, { title, body, tag: 'replete-test', url: '/FIT/settings/reminders' });
