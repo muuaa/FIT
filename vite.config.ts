@@ -21,11 +21,11 @@ export default defineConfig({
     !embedded &&
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'push-sw.js'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'push-sw.js', 'badge-96.png'],
       manifest: {
         id: 'replete', // internal id: kept so installed copies update in place
         name: 'Better Together',
-        short_name: 'Together',
+        short_name: 'Better Together',
         description: 'Your days, plans, health, money and home, shared by two.',
         theme_color: '#07080d',
         background_color: '#07080d',
