@@ -1,4 +1,5 @@
 import { CalendarClock, Check, ListTodo, Plus, Repeat as RepeatIcon, Trash2 } from 'lucide-react';
+import { sendActivity } from '@/lib/activity';
 import { useMemo, useState, type FormEvent } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -47,6 +48,7 @@ function useTodoActions() {
     },
     add(title: string, date: string | null, repeat: Repeat = 'none') {
       todos.insert({ id: uid(), title, date, repeat, done_at: null, note: '', created_at: new Date().toISOString() });
+      sendActivity('todo', { title });
     },
     patch: todos.patch,
     remove(tdo: Todo) {

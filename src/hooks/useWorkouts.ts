@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { sendActivity } from '@/lib/activity';
 import { usePartnerStore } from '@/lib/partner';
 import { t } from '@/lib/i18n';
 import { todayISO } from '@/lib/date';
@@ -119,6 +120,7 @@ export function useFinishWorkout() {
         ended_at: new Date(ended).toISOString(),
         duration_seconds: Math.round((ended - active.startedAt) / 1000),
       });
+      sendActivity('workout', { day: active.dayType, min: Math.max(1, Math.round((ended - active.startedAt) / 60000)) });
     },
     onSuccess: () => {
       setActive(null);

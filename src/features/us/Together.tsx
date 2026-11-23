@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { sendActivity } from '@/lib/activity';
 import { CalendarHeart, Minus, Plus, Send, Target, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -259,7 +260,10 @@ export function Goals() {
     tick();
     const progress = Math.max(0, Math.round((g.progress + d) * 100) / 100);
     actions.put({ ...g, progress, done_at: progress >= g.target ? new Date().toISOString() : null });
-    if (progress >= g.target && g.progress < g.target) toast.success(t('Goal reached: {title} 🎉', { title: g.title }));
+    if (progress >= g.target && g.progress < g.target) {
+      toast.success(t('Goal reached: {title} 🎉', { title: g.title }));
+      sendActivity('goal', { title: g.title });
+    }
   };
   const add = () => {
     const n = Number(target);

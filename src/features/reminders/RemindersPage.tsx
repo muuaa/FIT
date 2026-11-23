@@ -1,5 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, BellOff, BellRing, Plus, Send, Trash2, X } from 'lucide-react';
+import { Bell, BellOff, BellRing, HeartHandshake, Plus, Send, Trash2, X } from 'lucide-react';
+import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { usePartnerStore } from '@/lib/partner';
 import { useEffect, useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -274,6 +276,44 @@ function DeviceCard() {
   );
 }
 
+const ACTIVITY_KINDS: { kind: string; emoji: string; label: string }[] = [
+  { kind: 'workout', emoji: '🏋️', label: 'Finishes a workout' },
+  { kind: 'habits', emoji: '🔥', label: 'Finishes all habits for the day' },
+  { kind: 'event', emoji: '📅', label: 'Adds an event' },
+  { kind: 'todo', emoji: '✅', label: 'Adds a shared to-do' },
+  { kind: 'expense', emoji: '💸', label: 'Adds an expense' },
+  { kind: 'bill', emoji: '🧾', label: 'Pays a bill' },
+  { kind: 'goal', emoji: '🎯', label: 'Reaches a shared goal' },
+  { kind: 'chore', emoji: '🧹', label: 'Does a chore' },
+  { kind: 'list', emoji: '🛒', label: 'Adds to a shared list' },
+];
+
+function PartnerActivity() {
+  const partner = usePartnerStore((s) => s.partner);
+  const { data: profile } = useProfile();
+  const update = useUpdateProfile();
+  const prefs = profile?.activity_prefs ?? {};
+  return (
+    <Card title={partner ? t('When {name}…', { name: partner.name }) : t('Partner activity')} icon={HeartHandshake} accent="var(--color-us)">
+      <p className="mb-3 text-xs text-ink-3">{t('Get a notification when your partner does these. Switch off anything you don’t want.')}</p>
+      <ul className="space-y-1.5">
+        {ACTIVITY_KINDS.map((a) => (
+          <li key={a.kind} className="flex items-center gap-3 rounded-2xl bg-white/[0.035] py-2.5 ps-3 pe-2">
+            <span className="text-lg">{a.emoji}</span>
+            <span className="min-w-0 flex-1 text-sm">{t(a.label)}</span>
+            <Toggle
+              checked={prefs[a.kind] !== false}
+              label={t(a.label)}
+              accent="var(--color-us)"
+              onChange={(v) => update.mutate({ activity_prefs: { ...prefs, [a.kind]: v } })}
+            />
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export function RemindersPage() {
   const { data, isLoading, error } = useReminders();
   if (!cloudEnabled)
@@ -305,6 +345,7 @@ export function RemindersPage() {
             </ul>
           )}
         </Card>
+        <PartnerActivity />
         <Card title={t('Your own reminders')} icon={Plus} accent="var(--color-life)">
           <CustomReminders rows={rows.filter((r) => r.kind === 'custom')} />
         </Card>

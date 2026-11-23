@@ -1,4 +1,5 @@
 import { Check, Plus, Receipt, Trash2 } from 'lucide-react';
+import { sendActivity } from '@/lib/activity';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -136,6 +137,7 @@ export function useBillsDue(withinDays = 7) {
 
 export function usePayBill() {
   const today = useToday();
+  const home = useHomeSettings();
   const bills = useTableActions('bills');
   const expenses = useTableActions('expenses');
   return (b: Bill) => {
@@ -143,6 +145,7 @@ export function usePayBill() {
     bills.put({ ...b, next_due: advanceDue(b.next_due, b.cycle) });
     if (b.log_expense && b.amount > 0)
       expenses.insert({ id: uid(), date: today, amount: b.amount, category: 'Bills', note: b.name, created_at: new Date().toISOString() });
+    sendActivity('bill', { what: b.name, amount: money(b.amount, home.currency) });
     toast.success(t('{name} paid. Next due {date}', { name: b.name, date: shortDate(advanceDue(b.next_due, b.cycle)) }));
   };
 }

@@ -1,3 +1,4 @@
+import { sendActivity } from '@/lib/activity';
 import {
   Activity,
   BedDouble,
@@ -60,6 +61,7 @@ function TodoQuick({ onDone }: { onDone: () => void }) {
     e.preventDefault();
     if (!text.trim()) return;
     todos.insert({ id: uid(), title: text.trim().slice(0, 200), date: today, repeat: 'none', done_at: null, note: '', created_at: new Date().toISOString() });
+    sendActivity('todo', { title: text.trim().slice(0, 80) });
     toast.success(t('Added to today'));
     onDone();
   };

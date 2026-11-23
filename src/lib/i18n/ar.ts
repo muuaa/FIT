@@ -1,5 +1,17 @@
 /** Arabic translations, keyed by the English text used in the code. */
 export const AR: Record<string, string> = {
+  "Finishes a workout": "ينهي تمرينًا",
+  "Finishes all habits for the day": "ينجز كل عادات اليوم",
+  "Adds an event": "يضيف موعدًا",
+  "Adds a shared to-do": "يضيف مهمة مشتركة",
+  "Adds an expense": "يضيف مصروفًا",
+  "Pays a bill": "يدفع فاتورة",
+  "Reaches a shared goal": "يحقق هدفًا مشتركًا",
+  "Does a chore": "ينجز مهمة منزلية",
+  "Adds to a shared list": "يضيف إلى قائمة مشتركة",
+  "When {name}…": "عندما {name}…",
+  "Partner activity": "نشاط الشريك",
+  "Get a notification when your partner does these. Switch off anything you don’t want.": "احصل على إشعار عندما يقوم شريكك بهذه الأشياء. أوقف ما لا تريده.",
   "Last 7 days": "آخر 7 أيام",
   "vs week before": "مقارنة بالأسبوع السابق",
   "Habits done": "العادات المنجزة",

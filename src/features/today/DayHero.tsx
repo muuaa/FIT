@@ -1,4 +1,5 @@
 import { Check, ChevronRight, Sparkles } from 'lucide-react';
+import { sendActivity } from '@/lib/activity';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Ring } from '@/components/ui/Progress';
@@ -111,7 +112,11 @@ function useDayItems(): Item[] {
           label: `${c.emoji} ${c.name}`,
           done: doneToday,
           accent: 'var(--color-steps)',
-          act: () => (doneToday ? undefined : choreActions.put({ ...c, last_done: today, last_by: meId })),
+          act: () => {
+            if (doneToday) return;
+            choreActions.put({ ...c, last_done: today, last_by: meId });
+            sendActivity('chore', { title: c.name });
+          },
         });
     }
     return out;

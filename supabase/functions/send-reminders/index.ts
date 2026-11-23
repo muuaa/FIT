@@ -57,6 +57,19 @@ const DAY: Record<Lang, Record<string, string>> = {
   en: { push: 'Push', pull: 'Pull', legs: 'Legs', upper: 'Upper', lower: 'Lower' },
   ar: { push: 'دفع', pull: 'سحب', legs: 'أرجل', upper: 'علوي', lower: 'سفلي' },
 };
+/** Partner activity notifications: text per language, where tapping goes, and a per-kind cooldown. */
+const ACTIVITY: Record<string, { emoji: string; text: Record<Lang, string>; url: string; cooldownSec: number }> = {
+  workout: { emoji: '🏋️', text: { en: 'Finished a {day} workout · {min} min', ar: 'أنهى تمرين {day} · {min} دقيقة' }, url: '/FIT/us', cooldownSec: 600 },
+  habits: { emoji: '🔥', text: { en: 'Did all their habits today', ar: 'أنجز كل عاداته اليوم' }, url: '/FIT/us', cooldownSec: 3600 },
+  event: { emoji: '📅', text: { en: 'Added “{title}” · {when}', ar: 'أضاف «{title}» · {when}' }, url: '/FIT/plan', cooldownSec: 30 },
+  expense: { emoji: '💸', text: { en: 'Spent {amount} on {what}', ar: 'صرف {amount} على {what}' }, url: '/FIT/life/money', cooldownSec: 60 },
+  bill: { emoji: '🧾', text: { en: 'Paid {what} · {amount}', ar: 'دفع {what} · {amount}' }, url: '/FIT/life/bills', cooldownSec: 30 },
+  goal: { emoji: '🎯', text: { en: 'Goal reached: {title} 🎉', ar: 'تحقق الهدف: {title} 🎉' }, url: '/FIT/us', cooldownSec: 30 },
+  chore: { emoji: '🧹', text: { en: 'Did {title} ✓', ar: 'أنجز {title} ✓' }, url: '/FIT/life/chores', cooldownSec: 60 },
+  list: { emoji: '🛒', text: { en: 'Added {item} to {list}', ar: 'أضاف {item} إلى {list}' }, url: '/FIT/life/lists', cooldownSec: 120 },
+  todo: { emoji: '✅', text: { en: 'Added a to-do: {title}', ar: 'أضاف مهمة: {title}' }, url: '/FIT/plan', cooldownSec: 60 },
+};
+
 const SPLITS: Record<string, string[]> = { 'PPL-UL': ['push', 'pull', 'legs', 'upper', 'lower'], 'UL-PPL': ['upper', 'lower', 'push', 'pull', 'legs'] };
 const TRAINING = [4, 5, 6, 1, 2];
 
@@ -195,6 +208,42 @@ Deno.serve(async (req) => {
     const { data } = token ? await db.auth.getUser(token) : { data: { user: null } };
     if (!data.user) return Response.json({ error: 'unauthorized' }, { status: 401, headers: cors });
     const reqBody = await req.json().catch(() => ({}));
+    if (reqBody?.activity) {
+      // Something the user did that their partner may want to hear about.
+      const kind = String(reqBody.activity.kind ?? '');
+      const params = (reqBody.activity.params ?? {}) as Record<string, string | number>;
+      const spec = ACTIVITY[kind];
+      if (!spec) return Response.json({ error: 'unknown kind' }, { status: 400, headers: cors });
+      const { data: recent } = await db
+        .from('nudge_log')
+        .select('id')
+        .eq('from_user', data.user.id)
+        .eq('text', `activity:${kind}`)
+        .gt('created_at', new Date(Date.now() - spec.cooldownSec * 1000).toISOString())
+        .limit(1);
+      if (recent?.length) return Response.json({ ok: true, sent: 0, reason: 'cooldown' }, { headers: cors });
+      await db.from('nudge_log').insert({ from_user: data.user.id, text: `activity:${kind}` });
+      const { data: users } = await db.auth.admin.listUsers({ perPage: 10 });
+      const partner = users?.users.find((u) => u.id !== data.user!.id);
+      if (!partner) return Response.json({ ok: true, sent: 0, reason: 'no partner' }, { headers: cors });
+      const { data: profs } = await db.from('records').select('user_id,data').eq('tbl', 'profile').in('user_id', [data.user.id, partner.id]);
+      const mine = (profs?.find((r) => r.user_id === data.user!.id)?.data ?? {}) as Record<string, unknown>;
+      const theirs = (profs?.find((r) => r.user_id === partner.id)?.data ?? {}) as Record<string, unknown>;
+      const prefs = (theirs.activity_prefs ?? {}) as Record<string, boolean>;
+      if (prefs[kind] === false) return Response.json({ ok: true, sent: 0, reason: 'muted' }, { headers: cors });
+      const lang: Lang = theirs.language === 'ar' ? 'ar' : 'en';
+      const name = String(mine.display_name ?? '').trim() || (data.user.email ?? '').split('@')[0];
+      const clean: Record<string, string> = {};
+      for (const [k, v] of Object.entries(params)) clean[k] = String(v).slice(0, 80);
+      if (kind === 'workout' && clean.day) clean.day = DAY[lang][clean.day] ?? clean.day;
+      const sent = await sendTo(partner.id, {
+        title: `${spec.emoji} ${name}`,
+        body: fill(spec.text[lang], clean),
+        tag: `activity-${kind}`,
+        url: spec.url,
+      });
+      return Response.json({ ok: true, sent }, { headers: cors });
+    }
     if (reqBody?.nudge) {
       const text = String(reqBody.nudge).trim().slice(0, 120);
       if (!text) return Response.json({ error: 'empty' }, { status: 400, headers: cors });

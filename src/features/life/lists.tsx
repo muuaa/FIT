@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { sendActivity } from '@/lib/activity';
 import { Check, Copy, LogOut, Plus, RefreshCw, Share2, Trash2, Users } from 'lucide-react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
@@ -71,6 +72,7 @@ function ListCard({ list, items, members }: { list: SharedList; items: SharedIte
     setText('');
     const temp: SharedItem = { id: `tmp-${Date.now()}`, list_id: list.id, text: v, done: false, created_by: me?.id ?? '', created_at: new Date().toISOString() };
     void mutate(() => addItem(list.id, v.slice(0, 200)), (d) => ({ ...d, items: [...d.items, temp] }));
+    sendActivity('list', { item: v.slice(0, 60), list: list.name });
   };
 
   const toggle = (i: SharedItem) => {

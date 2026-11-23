@@ -1,4 +1,5 @@
 import { Check, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { sendActivity } from '@/lib/activity';
 import { useState } from 'react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -43,6 +44,7 @@ export function ChoresPage() {
   const done = (c: Chore) => {
     tick();
     actions.put({ ...c, last_done: today, last_by: meId });
+    sendActivity('chore', { title: c.name });
     toast.success(t('{name} done ✓', { name: c.name }));
   };
   const add = () => {

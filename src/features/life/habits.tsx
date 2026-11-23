@@ -14,7 +14,8 @@ import { cn } from '@/lib/cn';
 import { addMonths, monthLabel, toISODate, weekdayNarrow } from '@/lib/date';
 import { t, tn } from '@/lib/i18n';
 import { bestStreak, HABIT_EMOJI, habitDueOn, habitStreak } from '@/lib/life';
-import { uid } from '@/lib/localDb';
+import { all, uid } from '@/lib/localDb';
+import { sendActivity } from '@/lib/activity';
 import type { Habit } from '@/types/db';
 
 const ACCENT = 'var(--color-habit)';
@@ -36,10 +37,19 @@ function useHabits() {
 
 function useToggleHabit() {
   const logs = useTableActions('habit_logs');
+  const today = useToday();
   return (h: Habit, date: string, done: boolean) => {
     tick();
     if (done) logs.remove(`${h.id}|${date}`);
-    else logs.put({ habit_id: h.id, date });
+    else {
+      logs.put({ habit_id: h.id, date });
+      if (date === today) {
+        // Last one of the day? Let the partner know.
+        const due = all('habits').filter((x) => habitDueOn(x, today));
+        const logged = new Set(all('habit_logs').filter((l) => l.date === today).map((l) => l.habit_id));
+        if (due.length > 1 && due.every((x) => logged.has(x.id))) sendActivity('habits');
+      }
+    }
   };
 }
 

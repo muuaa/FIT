@@ -477,6 +477,7 @@ export const DEFAULT_PROFILE: Profile = {
   currency: 'USD',
   language: 'en',
   today_cards: ['todos', 'water', 'habits', 'money', 'checkin', 'weight'],
+  activity_prefs: {},
 };
 
 const DEFAULT_SUPPLEMENTS: [string, string][] = [

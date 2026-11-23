@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Plus, Trash2, Wallet } from 'lucide-react';
+import { sendActivity } from '@/lib/activity';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/AppShell';
@@ -47,6 +48,7 @@ export function ExpenseSheet({ open, onClose, date }: { open: boolean; onClose: 
   const save = () => {
     if (!valid) return;
     actions.insert({ id: uid(), date: day, amount: Math.round(n! * 100) / 100, category, note: note.trim(), created_at: new Date().toISOString() });
+    sendActivity('expense', { amount: money(n!, currency), what: note.trim() || category });
     toast.success(t('Added {amount}', { amount: money(n!, currency) }));
     onClose();
   };

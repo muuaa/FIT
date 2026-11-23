@@ -36,6 +36,8 @@ export interface Profile {
   language: Language;
   /** Today screen cards, in order. Cards not listed are hidden. */
   today_cards: TodayCard[];
+  /** Partner activity notifications to receive (missing = on). */
+  activity_prefs: Record<string, boolean>;
   split_mode: SplitMode;
   default_rest_seconds: number;
 }

@@ -1,4 +1,6 @@
 import { Trash2 } from 'lucide-react';
+import { sendActivity } from '@/lib/activity';
+import { shortDate } from '@/lib/date';
 import { useState } from 'react';
 import { Button, IconButton } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -67,6 +69,7 @@ export function EventSheet({ event, date, open, onClose }: { event: CalEvent | n
       created_at: event?.created_at ?? new Date().toISOString(),
     };
     actions.put(row);
+    if (!event) sendActivity('event', { title: row.title, when: `${shortDate(row.date)}${row.time ? ` ${row.time}` : ''}` });
     onClose();
   };
   return (
