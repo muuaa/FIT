@@ -5,6 +5,60 @@ import { supabase } from './supabase';
 
 export const VAPID_PUBLIC_KEY = 'BG2av39pT1D3UAbeksM8hZeDUDf3866YWzfzcy29fViVF-B5V9jQ4JM4w2ZZCyfcCJn0xuHy9z1oXQDDssKe7Us';
 
+// ---------------------------------------------------------------- native Android app (Firebase)
+
+const FCM_KEY = 'fit.fcmToken';
+const NATIVE_KEY = 'fit.native';
+
+/** The Android app opens the site with ?app=1&fcm=<token>; remember it and tidy the address. */
+export function captureNativeLaunch() {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('app')) return;
+    sessionStorage.setItem(NATIVE_KEY, '1');
+    const token = url.searchParams.get('fcm');
+    if (token) localStorage.setItem(FCM_KEY, token);
+    url.searchParams.delete('app');
+    url.searchParams.delete('fcm');
+    window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  } catch {
+    /* storage blocked: fall back to web push */
+  }
+}
+
+/** Firebase token when running inside the Android app (null in a browser or the old app). */
+function nativeToken(): string | null {
+  try {
+    const native = sessionStorage.getItem(NATIVE_KEY) === '1' || document.referrer.startsWith('android-app://io.github.muuaa.bettertogether');
+    return native ? localStorage.getItem(FCM_KEY) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveNative(token: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    { endpoint: `fcm:${token}`, kind: 'fcm', fcm_token: token, p256dh: '', auth: '', user_agent: navigator.userAgent.slice(0, 200) },
+    { onConflict: 'endpoint' },
+  );
+  if (error) return false;
+  // The app shows its own notifications now, so drop Chrome's copy on this phone to avoid doubles.
+  const reg = await registration();
+  const sub = await reg?.pushManager.getSubscription();
+  if (sub) {
+    await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+    await sub.unsubscribe().catch(() => undefined);
+  }
+  return true;
+}
+
+async function nativeSaved(token: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { data } = await supabase.from('push_subscriptions').select('id').eq('endpoint', `fcm:${token}`).maybeSingle();
+  return Boolean(data);
+}
+
 export type PushStatus = 'unsupported' | 'needs-install' | 'blocked' | 'off' | 'on';
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -30,6 +84,8 @@ export async function pushStatus(): Promise<PushStatus> {
   if (isIOS() && !isStandalone()) return 'needs-install';
   if (!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)) return 'unsupported';
   if (Notification.permission === 'denied') return 'blocked';
+  const token = nativeToken();
+  if (token) return Notification.permission === 'granted' && (await nativeSaved(token)) ? 'on' : 'off';
   const reg = await registration();
   const sub = await reg?.pushManager.getSubscription();
   if (!sub || Notification.permission !== 'granted') return 'off';
@@ -71,6 +127,8 @@ async function savedForMe(sub: PushSubscription): Promise<boolean> {
 export async function enablePush(): Promise<PushStatus> {
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') return perm === 'denied' ? 'blocked' : 'off';
+  const token = nativeToken();
+  if (token && (await saveNative(token))) return 'on';
   const reg = await registration();
   if (!reg) throw new Error(t('The app is still installing its offline files. Try again in a few seconds.'));
   let sub = await reg.pushManager.getSubscription();
@@ -80,6 +138,8 @@ export async function enablePush(): Promise<PushStatus> {
 }
 
 export async function disablePush(): Promise<void> {
+  const token = nativeToken();
+  if (token) await supabase?.from('push_subscriptions').delete().eq('endpoint', `fcm:${token}`);
   const reg = await registration();
   const sub = await reg?.pushManager.getSubscription();
   if (!sub) return;
@@ -90,6 +150,8 @@ export async function disablePush(): Promise<void> {
 /** Re-save this device's subscription (it can rotate); harmless if unchanged. */
 export async function refreshPush(): Promise<void> {
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const token = nativeToken();
+  if (token && (await saveNative(token).catch(() => false))) return;
   const reg = await registration();
   const sub = await reg?.pushManager.getSubscription();
   if (reg && sub) await save(reg, sub).catch(() => undefined);

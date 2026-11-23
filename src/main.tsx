@@ -8,10 +8,10 @@ import { AuthGate } from './features/auth/AuthGate';
 import './lib/install';
 import { restoreLanguage } from './lib/i18n';
 import { requestPersistence } from './lib/localDb';
+import { captureNativeLaunch } from './lib/push';
 import './index.css';
 
-
-
+captureNativeLaunch();
 requestPersistence();
 
 // Installed apps keep an offline copy. Check for a new version whenever the app is opened or brought

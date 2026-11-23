@@ -6,3 +6,4 @@ dev-dist
 *.tsbuildinfo
 .DS_Store
 dist-embedded
+google-services.json

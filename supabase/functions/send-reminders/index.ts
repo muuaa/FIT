@@ -27,6 +27,65 @@ interface Sub {
   endpoint: string;
   p256dh: string;
   auth: string;
+  kind: 'web' | 'fcm';
+  fcm_token: string | null;
+}
+
+// ---------------------------------------------------------------- Firebase (native Android app)
+
+const FCM_ACCOUNT = (() => {
+  try {
+    const raw = Deno.env.get('FCM_SERVICE_ACCOUNT');
+    return raw ? (JSON.parse(raw) as { project_id: string; client_email: string; private_key: string }) : null;
+  } catch {
+    console.error('FCM_SERVICE_ACCOUNT is not valid JSON');
+    return null;
+  }
+})();
+let fcmToken: { value: string; expires: number } | null = null;
+
+const b64url = (data: ArrayBuffer | string) =>
+  btoa(typeof data === 'string' ? data : String.fromCharCode(...new Uint8Array(data))).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+/** OAuth access token for the Firebase service account (cached ~50 minutes). */
+async function fcmAccessToken(): Promise<string> {
+  if (fcmToken && fcmToken.expires > Date.now()) return fcmToken.value;
+  const acct = FCM_ACCOUNT!;
+  const now = Math.floor(Date.now() / 1000);
+  const head = b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claims = b64url(
+    JSON.stringify({ iss: acct.client_email, scope: 'https://www.googleapis.com/auth/firebase.messaging', aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 }),
+  );
+  const pem = acct.private_key.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
+  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${head}.${claims}`));
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${head}.${claims}.${b64url(sig)}` }),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.access_token) throw new Error(`fcm auth failed: ${JSON.stringify(json).slice(0, 200)}`);
+  fcmToken = { value: json.access_token, expires: Date.now() + 50 * 60_000 };
+  return fcmToken.value;
+}
+
+/** Send a data message to the Android app, which shows it as a native notification. */
+async function sendFcm(token: string, payload: Record<string, unknown>): Promise<'ok' | 'gone' | 'error'> {
+  if (!FCM_ACCOUNT) return 'error';
+  const data: Record<string, string> = {};
+  for (const [k, v] of Object.entries(payload)) data[k] = String(v ?? '');
+  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${FCM_ACCOUNT.project_id}/messages:send`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await fcmAccessToken()}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: { token, data, android: { priority: 'HIGH', ttl: '3600s' } } }),
+  });
+  if (res.ok) return 'ok';
+  const text = await res.text();
+  if (res.status === 404 || /UNREGISTERED|INVALID_ARGUMENT.*registration/i.test(text)) return 'gone';
+  console.error('fcm send failed', res.status, text.slice(0, 300));
+  return 'error';
 }
 
 const TEXT: Record<Lang, Record<string, [string, string]>> = {
@@ -132,9 +191,20 @@ async function userState(userId: string, date: string) {
 }
 
 async function sendTo(userId: string, payload: Record<string, unknown>) {
-  const { data: subs } = await db.from('push_subscriptions').select('id,endpoint,p256dh,auth').eq('user_id', userId);
+  const { data: subs } = await db.from('push_subscriptions').select('id,endpoint,p256dh,auth,kind,fcm_token').eq('user_id', userId);
   let sent = 0;
   for (const s of (subs ?? []) as Sub[]) {
+    if (s.kind === 'fcm') {
+      if (!s.fcm_token) continue;
+      try {
+        const r = await sendFcm(s.fcm_token, payload);
+        if (r === 'ok') sent++;
+        else if (r === 'gone') await db.from('push_subscriptions').delete().eq('id', s.id); // app uninstalled
+      } catch (e) {
+        console.error('fcm error', (e as Error).message);
+      }
+      continue;
+    }
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), { TTL: 3600, urgency: 'normal' });
       sent++;
