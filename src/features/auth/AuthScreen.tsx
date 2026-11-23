@@ -10,6 +10,8 @@ import { appUrl, supabase } from '@/lib/supabase';
 type Mode = 'signin' | 'signup' | 'reset';
 
 function friendly(message: string): string {
+  if (/sign-ups are closed|database error saving new user|signups not allowed/i.test(message))
+    return t('Replete is private to two people, and both accounts already exist. Sign in instead.');
   if (/invalid login credentials/i.test(message)) return t('Wrong email or password.');
   if (/email not confirmed/i.test(message)) return t('Confirm your email first: open the link we sent you, then sign in.');
   if (/already registered|already been registered/i.test(message)) return t('There is already an account with this email. Sign in instead.');

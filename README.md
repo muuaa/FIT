@@ -6,6 +6,8 @@
 
 A mobile-first, installable PWA for lifting, nutrition, hydration, supplements, bodyweight and cardio.
 
+**For two people.** Replete is set up for exactly two accounts (a database rule blocks a third sign-up). To-dos, money (expenses, budget, currency) and shared lists are one joint copy you both edit. Everything else is personal: each of you logs your own, and the switch at the top of every screen shows the other person's data, view-only.
+
 **Storage: your private account, offline-first.** Each person signs in with their own email and password (Supabase Auth). Everything is saved on the phone first, so the app works offline, and syncs to a private account when there's internet. Sign in on another phone or tablet to see the same data. The data you and your partner keep is completely separate, except for lists you choose to share. Data that was on a phone before accounts existed moves into the account at first sign-in.
 
 **Stack:** React 19 · TypeScript · Vite · Tailwind CSS 4 · TanStack Query · Zustand · Recharts · Lucide · Supabase (free plan). Hosted free on GitHub Pages. English and Arabic (right-to-left).
@@ -68,7 +70,7 @@ Photos, files and handwriting are stored in a private Supabase Storage bucket un
 ### One-time Supabase setup
 
 1. Create a free project at supabase.com.
-2. In **SQL Editor**, run `supabase/migrations/0001_sync.sql`, then `supabase/migrations/0002_files_and_shared_lists.sql`.
+2. In **SQL Editor**, run `supabase/migrations/0001_sync.sql`, then `supabase/migrations/0002_files_and_shared_lists.sql`, `0003_reminders.sql`, `0004_reminders_schedule.sql` and `0005_household.sql`. Deploy `supabase/functions/send-reminders` and set its secrets (VAPID keys, CRON_SECRET).
 3. **Authentication → URL Configuration:** set Site URL to the app's address (e.g. `https://muuaa.github.io/FIT/`) and add it with `**` to Redirect URLs.
 4. Optional: turn off **Confirm email** (Authentication → Sign In / Providers) so sign-up is instant.
 5. Put the project URL and publishable key in `src/lib/supabase.ts` (or set `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY`). Both are public by design; Row Level Security keeps each person's data private.

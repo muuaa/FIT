@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { usePartnerStore } from '@/lib/partner';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { Spinner } from '@/components/ui/States';
@@ -33,8 +34,10 @@ export default function App() {
   const today = useToday();
   const { data: profile } = useProfile();
   // Switch language before rendering so every string and the layout direction match.
-  if (profile && profile.language !== language()) setLanguage(profile.language);
-  const lang = profile?.language ?? language();
+  const viewing = usePartnerStore((s) => s.viewing);
+  // Keep your own language while looking at your partner's data.
+  if (profile && !viewing && profile.language !== language()) setLanguage(profile.language);
+  const lang = language();
   return (
     <>
       <AppShell key={lang}>
@@ -45,7 +48,7 @@ export default function App() {
             </div>
           }
         >
-          <Routes key={`${today}-${lang}`}>
+          <Routes key={`${today}-${lang}-${viewing ? 'partner' : 'me'}`}>
             <Route path="/" element={<TodayPage />} />
             <Route path="/train" element={<TrainPage />} />
             <Route path="/fuel" element={<FuelPage />} />

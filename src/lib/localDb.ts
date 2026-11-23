@@ -8,6 +8,7 @@
  * If storage is blocked (private window, sandboxed preview) the app keeps working in memory
  * for the session and `storageAvailable` reports false so the UI can warn.
  */
+import { t } from './i18n';
 import type {
   Attachment,
   CheckIn,
@@ -35,6 +36,13 @@ export interface WaterDay {
   date: string;
   ml: number;
 }
+/** Joint settings for the two of you (one row, id 'main'). */
+export interface HomeSettings {
+  id: 'main';
+  monthly_budget: number;
+  currency: string;
+}
+
 export interface SupplementLog {
   supplement_id: string;
   date: string;
@@ -63,6 +71,7 @@ export interface Tables {
   expenses: Expense;
   journal: JournalEntry;
   attachments: Attachment;
+  home_settings: HomeSettings;
 }
 export type TableName = keyof Tables;
 
@@ -88,6 +97,7 @@ export const TABLE_NAMES: TableName[] = [
   'expenses',
   'journal',
   'attachments',
+  'home_settings',
 ];
 
 const BASE = 'fit.v1.';
@@ -108,7 +118,41 @@ function probeStorage(): boolean {
 
 export const storageAvailable = probeStorage();
 
+// ---------------------------------------------------------------- partner view (read-only)
+
+let viewOnly = false;
+let savedPrefix = BASE;
+
+class ViewOnlyError extends Error {}
+
+function guardWrite(): void {
+  if (viewOnly) throw new ViewOnlyError(t("You're looking at your partner's data. Switch back to yourself to make changes."));
+}
+
+export function isViewingPartner(): boolean {
+  return viewOnly;
+}
+
+/** Show someone else's data (kept in memory only). Every write is refused until exitView(). */
+export function enterView(tables: Partial<Record<TableName, unknown[]>>, profile: Partial<Profile> | null): void {
+  if (!viewOnly) savedPrefix = PREFIX;
+  viewOnly = true;
+  PREFIX = `${BASE}view.`;
+  cache.clear();
+  for (const t of TABLE_NAMES) cache.set(t, (tables[t] ?? []) as unknown[]);
+  profileCache = { ...DEFAULT_PROFILE, ...(profile ?? {}), id: 'local' };
+}
+
+export function exitView(): void {
+  if (!viewOnly) return;
+  viewOnly = false;
+  PREFIX = savedPrefix;
+  cache.clear();
+  profileCache = null;
+}
+
 function readRaw(key: string): string | null {
+  if (viewOnly) return null;
   if (storageAvailable) {
     try {
       return localStorage.getItem(PREFIX + key);
@@ -120,6 +164,7 @@ function readRaw(key: string): string | null {
 }
 
 function writeRaw(key: string, value: string): void {
+  guardWrite();
   memory.set(PREFIX + key, value);
   if (!storageAvailable) return;
   try {
@@ -237,6 +282,7 @@ export function replaceTable<T extends TableName>(t: T, rows: Tables[T][]): void
 
 /** Apply a row that came from the cloud. Does not notify change listeners. */
 export function applyRemote(tbl: string, rowId: string, data: unknown | null): void {
+  if (viewOnly) return;
   if (tbl === 'profile') {
     if (data === null) {
       removeRaw('profile');
@@ -413,6 +459,7 @@ let profileCache: Profile | null = null;
 
 export function getProfile(): Profile {
   if (profileCache) return profileCache;
+  if (viewOnly) return DEFAULT_PROFILE;
   let stored: Partial<Profile> | null = null;
   try {
     const raw = readRaw('profile');
@@ -497,6 +544,7 @@ export function eraseAll(): void {
 // ---------------------------------------------------------------- meta flags
 
 export function getMeta(): { welcomed?: boolean; sample?: boolean } {
+  if (viewOnly) return { welcomed: true };
   try {
     return JSON.parse(readRaw('meta') ?? '{}');
   } catch {

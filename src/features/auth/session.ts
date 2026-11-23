@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { usePartnerStore, viewMe } from '@/lib/partner';
 import { setNamespace } from '@/lib/localDb';
 import { disablePush } from '@/lib/push';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +19,8 @@ export function pendingChanges(): number {
 }
 
 export async function signOut(): Promise<void> {
+  viewMe();
+  usePartnerStore.setState({ partner: null });
   // Stop this phone getting the account's reminders (while still signed in, so the delete is allowed).
   await disablePush().catch(() => undefined);
   stopSync();

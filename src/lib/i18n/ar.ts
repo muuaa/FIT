@@ -1,5 +1,16 @@
 /** Arabic translations, keyed by the English text used in the code. */
 export const AR: Record<string, string> = {
+  "Replete is private to two people, and both accounts already exist. Sign in instead.": "Replete خاص بشخصين، والحسابان موجودان بالفعل. سجّل الدخول بدلًا من ذلك.",
+  "Shared with your partner · 0 = no budget": "مشتركة مع شريكك · 0 = بدون ميزانية",
+  "Partner": "الشريك",
+  "Me": "أنا",
+  "Back to my data": "العودة إلى بياناتي",
+  "View {name}": "عرض {name}",
+  "Could not load": "تعذر التحميل",
+  "{name}'s data": "بيانات {name}",
+  "view only": "للعرض فقط",
+  "Back to me": "عودة لي",
+  "You're looking at your partner's data. Switch back to yourself to make changes.": "أنت تشاهد بيانات شريكك. عُد إلى بياناتك لإجراء التغييرات.",
   "You already have a reminder with that name.": "لديك تذكير بهذا الاسم بالفعل.",
   "Drink water": "اشرب الماء",
   "Stop once you hit your water goal": "توقف عند بلوغ هدف الماء",

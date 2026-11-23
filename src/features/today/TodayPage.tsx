@@ -43,7 +43,7 @@ import { todayISO } from '@/lib/date';
 import { formatClock } from '@/lib/format';
 import { dayLabel, dayTypeForDate, nextTrainingDay } from '@/lib/split';
 import { weekdayShort } from '@/lib/date';
-import { useWorkoutStore } from '@/stores/workoutStore';
+import { useActiveWorkout } from '@/stores/workoutStore';
 import type { CardioKind, Profile, TodayCard } from '@/types/db';
 import { Sheet } from '@/components/ui/Sheet';
 import { Toggle } from '@/components/ui/Toggle';
@@ -67,7 +67,7 @@ function greeting(): string {
 
 function WorkoutCard({ profile }: { profile: Profile }) {
   const navigate = useNavigate();
-  const active = useWorkoutStore((s) => s.active);
+  const active = useActiveWorkout();
   const { data: exercises } = useExercises();
   const { data: doneToday = [] } = useTodaySessions();
   const start = useStartWorkout();

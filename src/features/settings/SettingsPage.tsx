@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/Card';
 import { Field } from '@/components/ui/Field';
 import { Spinner } from '@/components/ui/States';
 import { SplitSwitcher } from '@/features/train/TrainPage';
+import { useHomeSettings } from '@/hooks/useHome';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
 import { toast } from '@/stores/toastStore';
 import type { Language, Profile } from '@/types/db';
@@ -24,7 +25,7 @@ type Form = Record<
   string
 >;
 
-const toForm = (p: Profile): Form => ({
+const toForm = (p: Profile, budget: number): Form => ({
   display_name: p.display_name,
   kcal_target: String(p.kcal_target),
   protein_target_g: String(p.protein_target_g),
@@ -35,7 +36,7 @@ const toForm = (p: Profile): Form => ({
   water_step_ml: String(p.water_step_ml),
   steps_target: String(p.steps_target),
   sleep_target_h: String(p.sleep_target_h),
-  monthly_budget: String(p.monthly_budget),
+  monthly_budget: String(budget),
   default_rest_seconds: String(p.default_rest_seconds),
 });
 
@@ -56,6 +57,7 @@ const LIMITS: Record<Exclude<keyof Form, 'display_name'>, [number, number]> = {
 export function SettingsPage() {
   const { data: profile } = useProfile();
   const update = useUpdateProfile();
+  const home = useHomeSettings();
   const [form, setForm] = useState<Form | null>(null);
   const base = useRef<Form | null>(null);
 
@@ -63,7 +65,7 @@ export function SettingsPage() {
   // only for fields the user hasn't edited, so unsaved changes aren't wiped.
   useEffect(() => {
     if (!profile) return;
-    const next = toForm(profile);
+    const next = toForm(profile, home.monthly_budget);
     setForm((cur) => {
       if (!cur || !base.current) return next;
       const merged = { ...next };
@@ -71,7 +73,7 @@ export function SettingsPage() {
       return merged;
     });
     base.current = next;
-  }, [profile]);
+  }, [profile, home.monthly_budget]);
 
   if (!profile || !form)
     return (
@@ -91,10 +93,11 @@ export function SettingsPage() {
   const tooManyBottles = Number.isFinite(bottles) && bottles > 10;
   const macroKcal = Number(form.protein_target_g) * 4 + Number(form.carbs_target_g) * 4 + Number(form.fat_target_g) * 9;
   const macroGap = Number.isFinite(macroKcal) ? Math.abs(macroKcal - Number(form.kcal_target)) : 0;
-  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile));
+  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(profile, home.monthly_budget));
 
   function save() {
     if (errors.length || !form) return;
+    if (Number(form.monthly_budget) !== home.monthly_budget) home.save({ monthly_budget: Number(form.monthly_budget) });
     update.mutate(
       {
         display_name: form.display_name.trim(),
@@ -107,12 +110,11 @@ export function SettingsPage() {
         water_step_ml: Number(form.water_step_ml),
         steps_target: Number(form.steps_target),
         sleep_target_h: Number(form.sleep_target_h),
-        monthly_budget: Number(form.monthly_budget),
         default_rest_seconds: Number(form.default_rest_seconds),
       },
       {
         onSuccess: (p) => {
-          setForm(toForm(p));
+          setForm(toForm(p, Number(form.monthly_budget)));
           toast.success(t('Settings saved'));
         },
       },
@@ -221,13 +223,13 @@ export function SettingsPage() {
               inputMode="numeric"
               value={form.monthly_budget}
               onChange={set('monthly_budget')}
-              hint={invalid('monthly_budget') ?? t('0 = no budget')}
+              hint={invalid('monthly_budget') ?? t('Shared with your partner · 0 = no budget')}
             />
             <label className="block">
               <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Currency')}</span>
               <select
-                value={profile.currency}
-                onChange={(e) => update.mutate({ currency: e.target.value })}
+                value={home.currency}
+                onChange={(e) => home.save({ currency: e.target.value })}
                 className="h-12 w-full rounded-2xl border border-line bg-surface-2 px-3 text-ink outline-none"
               >
                 {['USD', 'JOD', 'EUR', 'GBP', 'SAR', 'AED', 'KWD', 'QAR', 'EGP', 'TRY'].map((c) => (

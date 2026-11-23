@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { usePartnerStore } from '@/lib/partner';
 import { t } from '@/lib/i18n';
 import { todayISO } from '@/lib/date';
 import { estimated1RM } from '@/lib/format';
@@ -145,9 +146,10 @@ export function useDiscardWorkout() {
 /** Clears a persisted active workout whose session no longer exists (e.g. after erasing data). */
 export function useValidateActiveWorkout() {
   const { active, setActive } = useWorkoutStore();
+  const viewing = usePartnerStore((s) => s.viewing);
   return useQuery({
     queryKey: ['activeCheck', active?.sessionId],
-    enabled: Boolean(active),
+    enabled: Boolean(active) && !viewing,
     queryFn: async () => {
       const row = all('workout_sessions').find((s) => s.id === active!.sessionId);
       if (!row || row.ended_at) setActive(null);

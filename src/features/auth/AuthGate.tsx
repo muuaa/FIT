@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
+import { findPartner, usePartnerStore, viewMe } from '@/lib/partner';
 import { t } from '@/lib/i18n';
 import { CloudOff, RefreshCw, TriangleAlert } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
@@ -48,6 +49,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
         const moved = migrateLegacyIntoAccount();
         getProfile(); // first use of a brand-new account: create targets + default supplement shelf
         void refreshPush();
+        void findPartner(uid);
         qc.invalidateQueries();
         setPhase('ready');
         if (moved) toast.success(t('Moved {n} entries from this phone into your account', { n: moved.toLocaleString() }));
@@ -91,6 +93,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       if (u) void enter(u.id, u.email ?? '');
       else if (event === 'SIGNED_OUT') {
         // Also covers a session that expired on its own: stop syncing and leave the account's space.
+        viewMe();
         activeUser.current = null;
         stopSync();
         setNamespace('signed-out');
@@ -104,6 +107,16 @@ export function AuthGate({ children }: { children: ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, [enter, qc]);
+
+  // The partner may sign up after us: look again whenever the app comes back to the front.
+  useEffect(() => {
+    const again = () => {
+      const u = useSession.getState().user;
+      if (document.visibilityState === 'visible' && u && !usePartnerStore.getState().partner) void findPartner(u.id);
+    };
+    document.addEventListener('visibilitychange', again);
+    return () => document.removeEventListener('visibilitychange', again);
+  }, []);
 
   // Sign-out from Settings clears the session store; follow it here.
   const user = useSession((s) => s.user);

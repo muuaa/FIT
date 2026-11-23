@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { usePartnerStore } from '@/lib/partner';
 import type { DayType } from '@/types/db';
 
 export interface ActiveWorkout {
@@ -45,3 +46,10 @@ export const useRestStore = create<RestState>()(
     { name: 'fit.restTimer' },
   ),
 );
+
+/** The in-progress workout, or null while looking at the partner's data (it's yours, not theirs). */
+export function useActiveWorkout(): ActiveWorkout | null {
+  const active = useWorkoutStore((s) => s.active);
+  const viewing = usePartnerStore((s) => s.viewing);
+  return viewing ? null : active;
+}

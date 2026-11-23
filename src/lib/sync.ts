@@ -40,6 +40,13 @@ let running: Promise<boolean> | null = null;
 let rerun = false;
 let unsubscribe: (() => void) | null = null;
 let onRemoteApplied: (() => void) | null = null;
+let paused = false;
+
+/** Pause while showing the partner's data, so nothing is pulled into the wrong place. */
+export function pauseSync(p: boolean): void {
+  paused = p;
+  if (!p) void syncNow();
+}
 
 const k = (tbl: string, row: string) => `${tbl}\u0000${row}`;
 
@@ -80,15 +87,32 @@ function schedulePush(delay = 800) {
   }, delay);
 }
 
+/**
+ * Tables both people edit together (one joint copy). They live in `household_records`; everything
+ * else is personal and lives in `records` under the user's id (readable, not writable, by the partner).
+ */
+export const JOINT_TABLES = new Set(['todos', 'todo_done', 'expenses', 'home_settings']);
+
 async function push(uid: string): Promise<void> {
   if (!supabase) return;
   while (outbox.size) {
     const batch = [...outbox.values()].slice(0, 500);
-    const { error } = await supabase.from('records').upsert(
-      batch.map((e) => ({ user_id: uid, tbl: e.tbl, row_id: e.row_id, data: e.data, deleted: e.data === null })),
-      { onConflict: 'user_id,tbl,row_id' },
-    );
-    if (error) throw error;
+    const mine = batch.filter((e) => !JOINT_TABLES.has(e.tbl));
+    const joint = batch.filter((e) => JOINT_TABLES.has(e.tbl));
+    if (mine.length) {
+      const { error } = await supabase.from('records').upsert(
+        mine.map((e) => ({ user_id: uid, tbl: e.tbl, row_id: e.row_id, data: e.data, deleted: e.data === null })),
+        { onConflict: 'user_id,tbl,row_id' },
+      );
+      if (error) throw error;
+    }
+    if (joint.length) {
+      const { error } = await supabase.from('household_records').upsert(
+        joint.map((e) => ({ tbl: e.tbl, row_id: e.row_id, data: e.data, deleted: e.data === null })),
+        { onConflict: 'tbl,row_id' },
+      );
+      if (error) throw error;
+    }
     if (uid !== userId) return; // signed out mid-push
     for (const e of batch) {
       const cur = outbox.get(k(e.tbl, e.row_id));
@@ -98,22 +122,24 @@ async function push(uid: string): Promise<void> {
   }
 }
 
-/** Pull everything changed since the last pull. Returns how many rows were applied. */
-async function pull(uid: string): Promise<number> {
+/** Pull rows changed since the last pull from one server table. Returns how many were applied. */
+async function pullFrom(uid: string, table: 'records' | 'household_records', cursorKey: string): Promise<number> {
   if (!supabase) return 0;
-  const cursor = readKey('cursor');
+  const cursor = readKey(cursorKey);
   const since = cursor ? new Date(new Date(cursor).getTime() - OVERLAP_MS).toISOString() : null;
   let applied = 0;
   let newest = cursor;
   let from = 0;
   for (;;) {
     let q = supabase
-      .from('records')
+      .from(table)
       .select('tbl,row_id,data,deleted,updated_at')
       .order('updated_at', { ascending: true })
       .order('tbl', { ascending: true })
       .order('row_id', { ascending: true })
       .range(from, from + PAGE - 1);
+    // The partner's personal rows are readable too; only pull our own into our space.
+    if (table === 'records') q = q.eq('user_id', uid);
     if (since) q = q.gt('updated_at', since);
     const { data, error } = await q;
     if (error) throw error;
@@ -128,8 +154,14 @@ async function pull(uid: string): Promise<number> {
     if (!data || data.length < PAGE) break;
     from += PAGE;
   }
-  if (newest) writeKey('cursor', newest);
+  if (newest) writeKey(cursorKey, newest);
   return applied;
+}
+
+async function pull(uid: string): Promise<number> {
+  const a = await pullFrom(uid, 'records', 'cursor');
+  const b = await pullFrom(uid, 'household_records', 'cursor_home');
+  return a + b;
 }
 
 function describe(e: unknown): string {
@@ -141,7 +173,7 @@ function describe(e: unknown): string {
 
 /** Push local changes, then pull remote ones. Safe to call any time; calls are merged. */
 export function syncNow(): Promise<boolean> {
-  if (!userId || !supabase) return Promise.resolve(false);
+  if (!userId || !supabase || paused) return Promise.resolve(false);
   if (running) {
     rerun = true;
     return running;
@@ -211,6 +243,7 @@ export function stopSync(): void {
   if (pushTimer !== null) window.clearTimeout(pushTimer);
   pushTimer = null;
   userId = null;
+  paused = false;
   onRemoteApplied = null;
   outbox = new Map();
   useSyncStore.setState({ status: 'idle', pending: 0, lastSyncedAt: null, error: null });
@@ -219,4 +252,5 @@ export function stopSync(): void {
 /** Forget this device's sync position (used when the outbox is cleared on sign-out). */
 export function resetSyncState(): void {
   removeKey('cursor');
+  removeKey('cursor_home');
 }

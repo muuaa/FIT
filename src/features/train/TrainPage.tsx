@@ -11,7 +11,7 @@ import { exercisesFor, useExercises, useStartWorkout } from '@/hooks/useWorkouts
 import { cn } from '@/lib/cn';
 import { dayLabel, DAY_TYPES, dayTypeForDate, weekSchedule } from '@/lib/split';
 import { weekdayShort } from '@/lib/date';
-import { useWorkoutStore } from '@/stores/workoutStore';
+import { useActiveWorkout } from '@/stores/workoutStore';
 import type { DayType, SplitMode } from '@/types/db';
 import { ActiveWorkout } from './ActiveWorkout';
 import { ExerciseEditor } from './ExerciseEditor';
@@ -119,7 +119,7 @@ function TemplatesCard() {
 }
 
 export function TrainPage() {
-  const active = useWorkoutStore((s) => s.active);
+  const active = useActiveWorkout();
   const { data: profile } = useProfile();
   return (
     <>

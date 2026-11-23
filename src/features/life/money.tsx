@@ -8,7 +8,7 @@ import { Field } from '@/components/ui/Field';
 import { ProgressBar } from '@/components/ui/Progress';
 import { Sheet } from '@/components/ui/Sheet';
 import { Empty } from '@/components/ui/States';
-import { useProfile } from '@/hooks/useProfile';
+import { useHomeSettings } from '@/hooks/useHome';
 import { useTable, useTableActions } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { cn } from '@/lib/cn';
@@ -23,7 +23,7 @@ const ACCENT = 'var(--color-money)';
 
 export function ExpenseSheet({ open, onClose, date }: { open: boolean; onClose: () => void; date: string }) {
   const actions = useTableActions('expenses');
-  const { data: profile } = useProfile();
+  const home = useHomeSettings();
   const { data: all = [] } = useTable('expenses');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('Food');
@@ -43,7 +43,7 @@ export function ExpenseSheet({ open, onClose, date }: { open: boolean; onClose: 
   }
   const n = num(amount);
   const valid = n !== null && n > 0 && n < 1_000_000;
-  const currency = profile?.currency ?? 'USD';
+  const currency = home.currency;
   const save = () => {
     if (!valid) return;
     actions.insert({ id: uid(), date: day, amount: Math.round(n! * 100) / 100, category, note: note.trim(), created_at: new Date().toISOString() });
@@ -108,13 +108,13 @@ export function ExpenseSheet({ open, onClose, date }: { open: boolean; onClose: 
 export function MoneyToday() {
   const today = useToday();
   const { data: all = [] } = useTable('expenses');
-  const { data: profile } = useProfile();
+  const home = useHomeSettings();
   const [open, setOpen] = useState(false);
   const month = monthOf(today);
-  const currency = profile?.currency ?? 'USD';
+  const currency = home.currency;
   const spentToday = sumAmount(all.filter((e) => e.date === today));
   const spentMonth = sumAmount(all.filter((e) => monthOf(e.date) === month));
-  const budget = profile?.monthly_budget ?? 0;
+  const budget = home.monthly_budget;
   return (
     <div>
       <div className="mb-2 flex items-end justify-between gap-2">
@@ -140,11 +140,11 @@ export function MoneyPage() {
   const today = useToday();
   const [month, setMonth] = useState(monthOf(today));
   const { data: all = [] } = useTable('expenses');
-  const { data: profile } = useProfile();
+  const home = useHomeSettings();
   const actions = useTableActions('expenses');
   const [open, setOpen] = useState(false);
-  const currency = profile?.currency ?? 'USD';
-  const budget = profile?.monthly_budget ?? 0;
+  const currency = home.currency;
+  const budget = home.monthly_budget;
   const list = useMemo(
     () => all.filter((e) => monthOf(e.date) === month).sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at)),
     [all, month],
@@ -263,6 +263,6 @@ export function MoneyPage() {
 export function useMoneySummary(): string {
   const today = useToday();
   const { data: all = [] } = useTable('expenses');
-  const { data: profile } = useProfile();
-  return money(sumAmount(all.filter((e) => e.date === today)), profile?.currency ?? 'USD');
+  const home = useHomeSettings();
+  return money(sumAmount(all.filter((e) => e.date === today)), home.currency);
 }

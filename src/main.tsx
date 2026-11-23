@@ -1,5 +1,5 @@
-import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { t } from './lib/i18n';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
@@ -8,19 +8,9 @@ import { AuthGate } from './features/auth/AuthGate';
 import './lib/install';
 import { restoreLanguage } from './lib/i18n';
 import { requestPersistence } from './lib/localDb';
-import { toast } from './stores/toastStore';
 import './index.css';
 
-const queryClient = new QueryClient({
-  queryCache: new QueryCache({
-    onError: (err) => toast.error(err instanceof Error ? err.message : t('Could not read your data')),
-  }),
-  mutationCache: new MutationCache({
-    onError: (err) => toast.error(err instanceof Error ? err.message : t('Could not save')),
-  }),
-  // Data is on-device, so it is always fresh: no refetch timers needed.
-  defaultOptions: { queries: { staleTime: Infinity, retry: false, refetchOnWindowFocus: false } },
-});
+
 
 requestPersistence();
 
