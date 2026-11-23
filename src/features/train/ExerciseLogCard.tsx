@@ -138,7 +138,7 @@ export function ExerciseLogCard({
   }
 
   return (
-    <section className={cn('rounded-3xl border bg-surface p-4', done ? 'border-lift/30' : 'border-line/70')}>
+    <section className={cn('glass rounded-[28px] p-4', done ? 'border-lift/30' : 'border-line/70')}>
       <header className="mb-2 flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold">{exercise.name}</h3>

@@ -254,11 +254,11 @@ function DeviceCard() {
         </div>
       ) : status === 'needs-install' ? (
         <p className="text-sm text-ink-2">
-          {t('On iPhone and iPad, notifications only work in the installed app. Add Replete to your Home Screen (Settings → Install on your phone), open it from there, then come back here.')}
+          {t('On iPhone and iPad, notifications only work in the installed app. Add Better Together to your Home Screen (Settings → Install on your phone), open it from there, then come back here.')}
         </p>
       ) : status === 'blocked' ? (
         <p className="text-sm text-ink-2">
-          {t('Notifications are blocked for this app. Allow them in your phone’s settings (Settings → Notifications → Replete, or the browser’s site settings), then come back here.')}
+          {t('Notifications are blocked for this app. Allow them in your phone’s settings (Settings → Notifications → Better Together, or the browser’s site settings), then come back here.')}
         </p>
       ) : status === 'unsupported' ? (
         <p className="text-sm text-ink-2">{t('This browser can’t show notifications. On iPhone, use the app installed from Safari; on Android, use Chrome.')}</p>

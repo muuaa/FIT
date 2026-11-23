@@ -1,4 +1,4 @@
-// Replete: sends due reminders as web push notifications.
+// Better Together: sends due reminders as web push notifications.
 // Called every minute by pg_cron (header x-cron-secret), or by a signed-in user with {"test": true}
 // to send themselves a test notification.
 import { createClient } from 'npm:@supabase/supabase-js@2.49.4';
@@ -39,7 +39,7 @@ const TEXT: Record<Lang, Record<string, [string, string]>> = {
     bedtime: ['😴 Bedtime', 'Time to wind down for a good night’s sleep.'],
     habits: ['🎯 Habits', '{left} habit(s) left today.'],
     custom: ['🔔 Reminder', ''],
-    test: ['✅ Notifications are on', 'This is how Replete reminders will look.'],
+    test: ['✅ Notifications are on', 'This is how Better Together reminders will look.'],
   },
   ar: {
     water: ['💧 اشرب الماء', 'شربت {ml} من {target} مل اليوم.'],
@@ -50,7 +50,7 @@ const TEXT: Record<Lang, Record<string, [string, string]>> = {
     bedtime: ['😴 وقت النوم', 'حان وقت الاسترخاء لنوم جيد.'],
     habits: ['🎯 العادات', 'متبقٍ {left} عادة اليوم.'],
     custom: ['🔔 تذكير', ''],
-    test: ['✅ الإشعارات مفعّلة', 'هكذا ستبدو تذكيرات Replete.'],
+    test: ['✅ الإشعارات مفعّلة', 'هكذا ستبدو تذكيرات Better Together.'],
   },
 };
 const DAY: Record<Lang, Record<string, string>> = {

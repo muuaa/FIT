@@ -11,7 +11,7 @@ type Mode = 'signin' | 'signup' | 'reset';
 
 function friendly(message: string): string {
   if (/sign-ups are closed|database error saving new user|signups not allowed/i.test(message))
-    return t('Replete is private to two people, and both accounts already exist. Sign in instead.');
+    return t('Better Together is private to two people, and both accounts already exist. Sign in instead.');
   if (/invalid login credentials/i.test(message)) return t('Wrong email or password.');
   if (/email not confirmed/i.test(message)) return t('Confirm your email first: open the link we sent you, then sign in.');
   if (/already registered|already been registered/i.test(message)) return t('There is already an account with this email. Sign in instead.');
@@ -71,8 +71,8 @@ export function AuthScreen() {
     <div className="pt-safe pb-safe mx-auto flex min-h-full max-w-sm flex-col justify-center px-5 py-10">
       <div className="mb-8 flex flex-col items-center text-center">
         <Logo size={64} />
-        <h1 className="mt-4 text-2xl font-bold tracking-tight">{t('Replete')}</h1>
-        <p className="mt-1 text-sm text-ink-3">{t('Train · Fuel · Hydrate · Recover')}</p>
+        <h1 className="mt-4 text-2xl font-bold tracking-tight">{t('Better Together')}</h1>
+        <p className="mt-1 text-sm text-ink-3">{t('Everything, together')}</p>
       </div>
 
       {mode !== 'reset' && (

@@ -56,7 +56,7 @@ export function BackupCard() {
     const blob = new Blob([backupText()], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `replete-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `better-together-backup-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
@@ -130,7 +130,7 @@ export function BackupCard() {
             id="backup-paste"
             value={pasted}
             onChange={(e) => setPasted(e.target.value)}
-            placeholder={t('Paste a Replete backup here')}
+            placeholder={t('Paste a Better Together backup here')}
             className="h-28 w-full rounded-2xl border border-line bg-surface-2 p-3 font-mono text-xs text-ink outline-none"
           />
           <p className="text-xs text-ink-3">Restoring replaces everything currently in {cloudEnabled ? "your account" : "this app on this device"}.</p>

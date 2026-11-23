@@ -1,14 +1,14 @@
-/* Replete push notifications (loaded into the service worker). */
+/* Better Together push notifications (loaded into the service worker). */
 self.addEventListener('push', (event) => {
   let data = {};
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'Replete', body: event.data ? event.data.text() : '' };
+    data = { title: 'Better Together', body: event.data ? event.data.text() : '' };
   }
   const scope = self.registration.scope;
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Replete', {
+    self.registration.showNotification(data.title || 'Better Together', {
       body: data.body || '',
       tag: data.tag || 'replete',
       renotify: true,

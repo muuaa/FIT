@@ -442,7 +442,7 @@ export const DEFAULT_PROFILE: Profile = {
   monthly_budget: 0,
   currency: 'USD',
   language: 'en',
-  today_cards: ['workout', 'calories', 'water', 'weight', 'habits', 'todos', 'supplements', 'cardio'],
+  today_cards: ['todos', 'water', 'habits', 'money', 'checkin', 'weight'],
 };
 
 const DEFAULT_SUPPLEMENTS: [string, string][] = [
@@ -517,10 +517,10 @@ export function importAll(json: string): void {
   try {
     data = JSON.parse(json) as Backup;
   } catch {
-    throw new Error('That file is not a Replete backup (invalid JSON).');
+    throw new Error('That file is not a Better Together backup (invalid JSON).');
   }
   if (data?.app !== 'fit' || data.version !== 1 || typeof data.tables !== 'object') {
-    throw new Error('That file is not a Replete backup.');
+    throw new Error('That file is not a Better Together backup.');
   }
   for (const t of TABLE_NAMES) {
     const rows = data.tables[t];

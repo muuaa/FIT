@@ -297,7 +297,7 @@ export function BodyPage() {
   const logged = vals.filter((v): v is number => v !== null);
   return (
     <>
-      <PageHeader title={t('Steps & body')} back="/life" />
+      <PageHeader title={t('Steps & body')} back="/health" />
       <div className="space-y-3">
         <Card title={t('Steps today')} icon={Footprints} accent="var(--color-steps)">
           <StepsToday />

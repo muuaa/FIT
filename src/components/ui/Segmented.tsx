@@ -18,7 +18,7 @@ export function Segmented<T extends string | number>({
   size = 'md',
 }: SegmentedProps<T>) {
   return (
-    <div className={cn('flex rounded-2xl bg-surface-2 p-1', className)} role="tablist">
+    <div className={cn('flex rounded-[18px] border border-white/[0.06] bg-white/[0.04] p-1', className)} role="tablist">
       {options.map((o) => {
         const active = o.value === value;
         return (
@@ -29,9 +29,9 @@ export function Segmented<T extends string | number>({
             aria-selected={active}
             onClick={() => onChange(o.value)}
             className={cn(
-              'flex-1 rounded-xl font-semibold transition-colors',
+              'flex-1 rounded-[14px] font-semibold transition-all duration-300',
               size === 'sm' ? 'h-8 text-xs' : 'h-10 text-sm',
-              active ? 'text-bg' : 'text-ink-2',
+              active ? 'text-bg shadow-[0_6px_18px_-8px_rgb(0_0_0/0.6)]' : 'text-ink-2',
             )}
             style={active ? { background: accent } : undefined}
           >

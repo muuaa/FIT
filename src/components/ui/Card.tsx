@@ -14,18 +14,22 @@ interface CardProps {
 
 export function Card({ title, icon: Icon, accent = 'var(--color-ink-2)', action, className, children }: CardProps) {
   return (
-    <section className={cn('rounded-3xl border border-line/70 bg-surface p-4', className)}>
+    <section className={cn('glass animate-page rounded-[28px] p-4', className)}>
       {(title || action) && (
-        <header className="mb-3 flex items-center gap-2.5">
+        <header className="mb-3 flex min-h-8 items-center gap-2.5">
           {Icon && (
             <span
-              className="grid size-8 shrink-0 place-items-center rounded-xl"
-              style={{ background: `color-mix(in oklab, ${accent} 16%, transparent)`, color: accent }}
+              className="grid size-8 shrink-0 place-items-center rounded-[11px]"
+              style={{
+                background: `linear-gradient(145deg, color-mix(in oklab, ${accent} 30%, transparent), color-mix(in oklab, ${accent} 12%, transparent))`,
+                color: accent,
+                boxShadow: `inset 0 1px 0 rgb(255 255 255 / 0.08)`,
+              }}
             >
-              <Icon size={17} strokeWidth={2.25} />
+              <Icon size={16} strokeWidth={2.3} />
             </span>
           )}
-          {title && <h2 className="flex-1 text-[15px] font-semibold tracking-tight">{title}</h2>}
+          {title && <h2 className="flex-1 text-[15px] font-semibold tracking-tight text-ink">{title}</h2>}
           {action}
         </header>
       )}

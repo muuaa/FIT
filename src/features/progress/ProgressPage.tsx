@@ -85,7 +85,7 @@ export function ProgressPage() {
   const [cardioOpen, setCardioOpen] = useState(false);
   return (
     <>
-      <PageHeader title={t('Progress')} subtitle={t('Bodyweight · Strength · Cardio')} />
+      <PageHeader title={t('Progress')} subtitle={t('Bodyweight · Strength · Cardio')} back="/health" />
       <div className="space-y-3">
         <BodyweightSection />
         <Card title={t('Strength')} icon={TrendingUp} accent="var(--color-lift)">

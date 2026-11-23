@@ -25,7 +25,7 @@ export function RestPresets() {
   const parsed = durationSeconds(cm, cs);
 
   return (
-    <div className="rounded-3xl border border-line/70 bg-surface p-3">
+    <div className="glass rounded-[28px] p-3">
       <div className="mb-2 flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wider text-ink-3">
         <Timer size={14} className="text-lift" /> {t('Auto rest after each set')}
       </div>

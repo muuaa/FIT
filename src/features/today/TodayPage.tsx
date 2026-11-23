@@ -35,6 +35,7 @@ import { SupplementChecklist } from '@/features/fuel/SupplementChecklist';
 import { SupplementManagerSheet } from '@/features/fuel/SupplementManagerSheet';
 import { WaterTracker } from '@/features/fuel/WaterTracker';
 import { WelcomeCard } from '@/features/onboarding/WelcomeCard';
+import { DayHero } from './DayHero';
 import { BodyweightQuick } from '@/features/progress/BodyweightQuick';
 import { useCardio } from '@/hooks/useCardio';
 import { useProfile } from '@/hooks/useProfile';
@@ -73,7 +74,7 @@ function WorkoutCard({ profile }: { profile: Profile }) {
   const start = useStartWorkout();
   const scheduled = dayTypeForDate(profile.split_mode, new Date());
 
-  const shell = 'rounded-3xl border p-4';
+  const shell = 'glass rounded-[28px] p-4';
 
   if (active)
     return (
@@ -360,6 +361,7 @@ export function TodayPage() {
       ) : (
         <div className="space-y-3">
           <WelcomeCard />
+          <DayHero />
           {profile.today_cards
             .filter((c) => c in cards)
             .map((c) => (

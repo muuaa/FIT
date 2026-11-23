@@ -1,12 +1,12 @@
-# Replete
+# Better Together
 
-<img src="public/favicon.svg" width="96" alt="Replete logo">
+<img src="public/favicon.svg" width="96" alt="Better Together logo">
 
-**Train · Fuel · Hydrate · Recover.**
+**Everything, together.**
 
 A mobile-first, installable PWA for lifting, nutrition, hydration, supplements, bodyweight and cardio.
 
-**For two people.** Replete is set up for exactly two accounts (a database rule blocks a third sign-up). To-dos, money (expenses, budget, currency) and shared lists are one joint copy you both edit. Everything else is personal: each of you logs your own, and the switch at the top of every screen shows the other person's data, view-only.
+**For two people.** Better Together is set up for exactly two accounts (a database rule blocks a third sign-up). To-dos, money (expenses, budget, currency) and shared lists are one joint copy you both edit. Everything else is personal: each of you logs your own, and the switch at the top of every screen shows the other person's data, view-only.
 
 **Storage: your private account, offline-first.** Each person signs in with their own email and password (Supabase Auth). Everything is saved on the phone first, so the app works offline, and syncs to a private account when there's internet. Sign in on another phone or tablet to see the same data. The data you and your partner keep is completely separate, except for lists you choose to share. Data that was on a phone before accounts existed moves into the account at first sign-in.
 

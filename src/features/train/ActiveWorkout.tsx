@@ -45,7 +45,7 @@ export function ActiveWorkout({ active }: { active: Active }) {
 
   return (
     <div className="space-y-3">
-      <section className="rounded-3xl border border-lift/25 bg-gradient-to-br from-lift/14 via-surface to-surface p-4">
+      <section className="glass rounded-[28px] bg-gradient-to-br from-lift/16 via-transparent to-transparent p-4">
         <div className="text-xs font-medium uppercase tracking-wider text-lift">{dayLabel(active.dayType)} day · in progress</div>
         <WorkoutClock className="mt-1 block text-5xl font-bold tracking-tight" />
         <div className="tabular mt-1 text-sm text-ink-3">
@@ -71,7 +71,7 @@ export function ActiveWorkout({ active }: { active: Active }) {
       {isLoading ? (
         <Spinner />
       ) : exercises.length === 0 ? (
-        <div className="rounded-3xl border border-line/70 bg-surface p-4">
+        <div className="glass rounded-[28px] p-4">
           <h3 className="mb-3 font-semibold">Build your {dayLabel(active.dayType)} day</h3>
           <ExerciseEditor dayType={active.dayType} />
         </div>

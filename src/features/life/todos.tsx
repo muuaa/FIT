@@ -245,7 +245,7 @@ export function TodosToday({ limit }: { limit?: number }) {
   );
 }
 
-export function TodosPage() {
+export function TodosPage({ asTab = false }: { asTab?: boolean }) {
   const today = useToday();
   const [date, setDate] = useState(today);
   const { todos, doneKeys } = useTodoData();
@@ -258,7 +258,7 @@ export function TodosPage() {
 
   return (
     <>
-      <PageHeader title={t('To-dos')} back="/life" />
+      {asTab ? <PageHeader title={t('Plan')} subtitle={t('To-dos & your day')} /> : <PageHeader title={t('To-dos')} back="/plan" />}
       <DayPicker date={date} onChange={setDate} allowFuture />
       <div className="space-y-3">
         <Card title={relativeDay(date)} icon={ListTodo} accent={ACCENT} action={items.length ? <span className="tabular text-xs text-ink-3">{doneCount}/{items.length}</span> : undefined}>

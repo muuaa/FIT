@@ -414,7 +414,7 @@ export function HabitsPage() {
         </Button>
 
         {archived.length > 0 && (
-          <details className="rounded-3xl border border-line/70 bg-surface p-4">
+          <details className="glass rounded-[28px] p-4">
             <summary className="cursor-pointer text-sm font-medium text-ink-2">{t('Archived ({n})', { n: archived.length })}</summary>
             <ul className="mt-2 space-y-1">
               {archived.map((h) => (

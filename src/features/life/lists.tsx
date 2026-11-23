@@ -159,7 +159,7 @@ function ListCard({ list, items, members }: { list: SharedList; items: SharedIte
             block
             variant="secondary"
             className="mt-2"
-            onClick={() => void navigator.share({ text: t('Join my “{name}” list in Replete with code {code}', { name: list.name, code: list.join_code }) }).catch(() => undefined)}
+            onClick={() => void navigator.share({ text: t('Join my “{name}” list in Better Together with code {code}', { name: list.name, code: list.join_code }) }).catch(() => undefined)}
           >
             <Share2 size={16} /> {t('Send code')}
           </Button>
@@ -211,7 +211,7 @@ export function ListsPage() {
   if (!cloudEnabled)
     return (
       <>
-        <PageHeader title={t('Shared lists')} back="/life" />
+        <PageHeader title={t('Shared lists')} back="/us" />
         <Empty icon={Users} title={t('Sign in to share lists')} />
       </>
     );
@@ -237,7 +237,7 @@ export function ListsPage() {
     <>
       <PageHeader
         title={t('Shared lists')}
-        back="/life"
+        back="/us"
         right={
           <IconButton label={t('Refresh')} onClick={() => void refetch()}>
             <RefreshCw size={18} className={isFetching ? 'animate-spin' : ''} />

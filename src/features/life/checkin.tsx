@@ -109,7 +109,7 @@ export function CheckInPage() {
   const recent = [...rows].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 30);
   return (
     <>
-      <PageHeader title={t('Mood & energy')} back="/life" />
+      <PageHeader title={t('Mood & energy')} back="/health" />
       <DayPicker date={date} onChange={setDate} />
       <div className="space-y-3">
         <Card title={t('Check-in')} icon={Smile} accent="var(--color-mood)">

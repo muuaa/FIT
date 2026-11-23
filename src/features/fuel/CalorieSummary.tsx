@@ -15,9 +15,9 @@ export function MacroBars({
   profile: Profile;
 }) {
   const rows = [
-    { label: t('Protein'), v: protein, t: profile.protein_target_g, c: '#f472b6' },
-    { label: t('Carbs'), v: carbs, t: profile.carbs_target_g, c: '#fbbf24' },
-    { label: t('Fat'), v: fat, t: profile.fat_target_g, c: '#60a5fa' },
+    { label: t('Protein'), v: protein, t: profile.protein_target_g, c: 'var(--color-body)' },
+    { label: t('Carbs'), v: carbs, t: profile.carbs_target_g, c: 'var(--color-money)' },
+    { label: t('Fat'), v: fat, t: profile.fat_target_g, c: 'var(--color-weight)' },
   ];
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">

@@ -62,7 +62,7 @@ function StartCard() {
   const count = exercisesFor(exercises, chosen).length;
 
   return (
-    <section className="rounded-3xl border border-lift/25 bg-gradient-to-br from-lift/14 via-surface to-surface p-4">
+    <section className="glass rounded-[28px] bg-gradient-to-br from-lift/16 via-transparent to-transparent p-4">
       <div className="text-xs font-medium uppercase tracking-wider text-lift">
         {scheduled ? t("Today's session") : t('Rest day · optional session')}
       </div>
@@ -123,7 +123,7 @@ export function TrainPage() {
   const { data: profile } = useProfile();
   return (
     <>
-      <PageHeader title={t('Train')} subtitle={profile ? t('{split} split', { split: profile.split_mode }) : undefined} />
+      <PageHeader title={t('Training')} subtitle={profile ? t('{split} split', { split: profile.split_mode }) : undefined} back="/health" />
       {!profile ? (
         <Spinner />
       ) : active ? (

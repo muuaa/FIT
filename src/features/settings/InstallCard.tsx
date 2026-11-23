@@ -7,7 +7,7 @@ import { clearInstallPrompt, installPrompt, isStandalone, onInstallChange } from
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-/** How to put Replete on the home screen. Hidden once it's running as an installed app. */
+/** How to put Better Together on the home screen. Hidden once it's running as an installed app. */
 export function InstallCard() {
   const [, rerender] = useState(0);
   useEffect(() => {
@@ -20,7 +20,7 @@ export function InstallCard() {
   return (
     <Card title={t('Install on your phone')} icon={Smartphone} accent="var(--color-weight)">
       <p className="mb-3 text-sm text-ink-2">
-        {t('Installed, Replete opens full-screen from your home screen and works offline.')}
+        {t('Installed, Better Together opens full-screen from your home screen and works offline.')}
       </p>
       {deferred ? (
         <Button

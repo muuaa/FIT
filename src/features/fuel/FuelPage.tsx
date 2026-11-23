@@ -201,7 +201,7 @@ export function FuelPage() {
 
   return (
     <>
-      <PageHeader title={t('Fuel')} subtitle={t('Calories · Water · Supplements')} />
+      <PageHeader title={t('Nutrition')} subtitle={t('Calories · Water · Supplements')} back="/health" />
       <DayPicker date={date} onChange={setDate} />
       {!profile ? (
         <Spinner />

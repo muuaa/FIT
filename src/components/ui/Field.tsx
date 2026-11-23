@@ -19,7 +19,7 @@ export const Field = forwardRef<HTMLInputElement, FieldProps>(function Field(
       <label htmlFor={inputId} className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">
         {label}
       </label>
-      <div className="flex h-12 items-center rounded-2xl border border-line bg-surface-2 px-3.5 focus-within:border-ink-3">
+      <div className="flex h-12 items-center rounded-2xl border border-white/[0.07] bg-white/[0.04] px-3.5 transition-colors focus-within:border-accent/60 focus-within:bg-white/[0.06]">
         <input
           ref={ref}
           id={inputId}

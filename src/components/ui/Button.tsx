@@ -14,9 +14,9 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const sizes: Record<Size, string> = {
-  sm: 'h-9 px-3 text-sm rounded-xl gap-1.5',
+  sm: 'h-9 px-3.5 text-sm rounded-full gap-1.5',
   md: 'h-11 px-4 text-[15px] rounded-2xl gap-2',
-  lg: 'h-14 px-5 text-base rounded-2xl gap-2',
+  lg: 'h-14 px-5 text-[16px] rounded-[20px] gap-2',
 };
 
 export function Button({
@@ -30,8 +30,8 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const variantClass: Record<Variant, string> = {
-    primary: 'font-semibold text-bg',
-    secondary: 'bg-surface-2 text-ink border border-line/70 active:bg-surface-3',
+    primary: 'font-semibold text-bg shadow-[0_8px_24px_-10px_var(--btn-glow),inset_0_1px_0_rgb(255_255_255/0.35)]',
+    secondary: 'bg-white/[0.06] text-ink border border-white/[0.07] active:bg-white/[0.1]',
     ghost: 'text-ink-2 active:bg-surface-2',
     danger: 'bg-danger/12 text-danger border border-danger/25 active:bg-danger/20',
   };
@@ -39,13 +39,21 @@ export function Button({
     <button
       type="button"
       className={cn(
-        'inline-flex select-none items-center justify-center font-medium transition-[transform,background,opacity] active:scale-[0.97] disabled:opacity-40',
+        'press inline-flex select-none items-center justify-center font-medium disabled:opacity-40',
         sizes[size],
         variantClass[variant],
         block && 'w-full',
         className,
       )}
-      style={variant === 'primary' ? { background: accent, ...style } : style}
+      style={
+        variant === 'primary'
+          ? ({
+              background: `linear-gradient(180deg, color-mix(in oklab, ${accent} 92%, white), ${accent})`,
+              '--btn-glow': `color-mix(in oklab, ${accent} 70%, transparent)`,
+              ...style,
+            } as React.CSSProperties)
+          : style
+      }
       {...rest}
     >
       {children}

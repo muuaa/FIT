@@ -23,12 +23,12 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'push-sw.js'],
       manifest: {
-        id: 'replete',
-        name: 'Replete',
-        short_name: 'Replete',
-        description: 'Lifting, food, water, supplements, bodyweight and cardio in one app.',
-        theme_color: '#0b0f14',
-        background_color: '#0b0f14',
+        id: 'replete', // internal id: kept so installed copies update in place
+        name: 'Better Together',
+        short_name: 'Together',
+        description: 'Your days, plans, health, money and home, shared by two.',
+        theme_color: '#07080d',
+        background_color: '#07080d',
         display: 'standalone',
         orientation: 'portrait',
         start_url: './',

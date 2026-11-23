@@ -130,7 +130,7 @@ export function SettingsPage() {
       <div className="space-y-3">
         <AccountCard />
         {cloudEnabled && (
-          <Link to="/settings/reminders" className="flex items-center gap-3 rounded-3xl border border-line/70 bg-surface p-4 active:bg-surface-2">
+          <Link to="/settings/reminders" className="flex items-center gap-3 glass rounded-[28px] p-4 active:bg-surface-2">
             <span className="grid size-8 place-items-center rounded-xl bg-life/15 text-life">
               <Bell size={17} />
             </span>
@@ -277,8 +277,8 @@ export function SettingsPage() {
         <BackupCard />
         <div className="flex flex-col items-center gap-1 pb-2 pt-4 text-center">
           <Logo size={36} />
-          <div className="text-sm font-semibold">{t('Replete')}</div>
-          <div className="text-xs text-ink-3">{t('Train · Fuel · Hydrate · Recover')}</div>
+          <div className="text-sm font-semibold">{t('Better Together')}</div>
+          <div className="text-xs text-ink-3">{t('Everything, together')}</div>
         </div>
       </div>
     </>

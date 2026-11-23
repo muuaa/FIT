@@ -53,7 +53,7 @@ export function WelcomeCard() {
   if (meta.welcomed) return null;
 
   return (
-    <section className="relative rounded-3xl border border-line/70 bg-surface p-4">
+    <section className="relative glass rounded-[28px] p-4">
       <IconButton
         label={t('Dismiss')}
         className="absolute end-2 top-2"
@@ -67,8 +67,8 @@ export function WelcomeCard() {
       <div className="flex items-center gap-3 pe-10">
         <Logo size={44} />
         <div>
-          <h2 className="text-lg font-bold tracking-tight">{t('Welcome to Replete')}</h2>
-          <p className="text-xs text-ink-3">{t('Train · Fuel · Hydrate · Recover')}</p>
+          <h2 className="text-lg font-bold tracking-tight">{t('Welcome to Better Together')}</h2>
+          <p className="text-xs text-ink-3">{t('Everything, together')}</p>
         </div>
       </div>
       <p className="mt-2 text-sm text-ink-2">

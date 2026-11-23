@@ -124,7 +124,7 @@ export function SleepPage() {
 
   return (
     <>
-      <PageHeader title={t('Sleep')} back="/life" />
+      <PageHeader title={t('Sleep')} back="/health" />
       <div className="space-y-3">
         <Card title={t('Last night')} icon={Moon} accent={ACCENT}>
           <SleepToday />

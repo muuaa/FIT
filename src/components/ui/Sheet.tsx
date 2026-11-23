@@ -50,9 +50,9 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
   if (!open) return null;
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="animate-fade absolute inset-0 bg-black/60 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="animate-fade absolute inset-0 bg-black/55 backdrop-blur-[3px]" onClick={onClose} />
       <div
-        className="animate-sheet relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[28px] border-t border-line bg-surface"
+        className="animate-sheet glass-strong relative flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-[32px] border-b-0"
         style={drag ? { transform: `translateY(${drag}px)` } : { transition: 'transform 200ms ease' }}
       >
         <div
@@ -62,7 +62,7 @@ export function Sheet({ open, onClose, title, children, footer }: SheetProps) {
           onPointerUp={onUp}
           onPointerCancel={onUp}
         >
-          <div className="mx-auto mt-2 h-1 w-10 rounded-full bg-surface-3" />
+          <div className="mx-auto mt-2.5 h-1.5 w-10 rounded-full bg-white/15" />
           <header className="flex items-center gap-2 px-5 pb-1 pt-2">
           <h2 className="flex-1 text-lg font-semibold tracking-tight">{title}</h2>
           <IconButton label={t('Close')} onClick={onClose} className="-me-2">
