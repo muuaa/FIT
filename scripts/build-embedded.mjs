@@ -17,12 +17,12 @@ const script = readFileSync(join(dir, 'assets', js[0]), 'utf8').replace(/<\/scri
 const style = css.map((f) => readFileSync(join(dir, 'assets', f), 'utf8')).join('\n').replace(/<\/style/gi, '<\\/style');
 const favicon = readFileSync('public/favicon.svg', 'utf8');
 
-const html = `<title>Replete</title>
-<meta name="theme-color" content="#0b0f14">
+const html = `<title>Better Together</title>
+<meta name="theme-color" content="#07080d">
 <link rel="icon" href="data:image/svg+xml,${encodeURIComponent(favicon)}">
 <style>
 :root { color-scheme: dark; }
-html, body { background: #0b0f14; color: #e8eef5; }
+html, body { background: #07080d; color: #e8eef5; }
 ${style}
 </style>
 <div id="root"></div>
