@@ -21,25 +21,16 @@ window.addEventListener('unhandledrejection', (ev) => viewOnly(ev.reason) && ev.
 requestPersistence();
 
 // Installed apps keep an offline copy. Check for a new version whenever the app is opened or brought
-// back to the front. A new version is switched in while the app is in the background (never in front
-// of you, which looked like a glitch); you see it the next time you come back.
+// back to the front. The new version is used from the next time the app is opened: the page is never
+// reloaded under you (in the Android app a reload while you were in another app could show Chrome's
+// own screen when you came back).
 if ('serviceWorker' in navigator && !import.meta.env.VITE_EMBEDDED) {
-  const hadController = Boolean(navigator.serviceWorker.controller);
-  let pending = false;
   let reloaded = false;
   const reloadNow = () => {
     if (reloaded) return;
     reloaded = true;
     window.location.reload();
   };
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController) return; // first install: nothing to refresh
-    if (document.visibilityState === 'hidden') reloadNow();
-    else pending = true;
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (pending && document.visibilityState === 'hidden') reloadNow();
-  });
   // A page from the old version that's no longer online: load the new version instead of failing.
   window.addEventListener('vite:preloadError', (ev) => {
     ev.preventDefault();
