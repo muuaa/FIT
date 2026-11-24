@@ -66,8 +66,9 @@ function WeekStrip({ date, onPick, marks }: { date: string; onPick: (d: string) 
 
 function EventRow({ e, onOpen }: { e: CalEvent; onOpen: () => void }) {
   const me = useSession((s) => s.user);
-  const partner = usePartnerStore((s) => s.partner);
-  const who = e.who === 'both' ? null : e.who === me?.id ? t('Me') : e.who === partner?.id ? partner.name : null;
+  const { partner, viewing, self } = usePartnerStore();
+  const meLabel = viewing ? (self?.name ?? t('Me')) : t('Me');
+  const who = e.who === 'both' ? null : e.who === me?.id ? meLabel : e.who === partner?.id ? partner.name : null;
   return (
     <li>
       <button type="button" onClick={onOpen} className="press flex w-full items-center gap-3 rounded-2xl bg-white/[0.04] py-2.5 ps-3 pe-3 text-start">

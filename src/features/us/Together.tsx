@@ -127,19 +127,22 @@ const fmt = {
 export function SideBySide() {
   const today = useToday();
   const me = useSession((s) => s.user);
-  const partner = usePartnerStore((s) => s.partner);
+  const { partner, viewing, self } = usePartnerStore();
+  // Columns follow whose day is on screen: you and your partner, or (while viewing) them and you.
+  const left = viewing ? partner : me ? { id: me.id, name: t('You') } : null;
+  const right = viewing ? (self ?? (me ? { id: me.id, name: t('You') } : null)) : partner;
   const opts = { staleTime: 0, refetchInterval: 60_000, refetchOnWindowFocus: true, retry: 1 } as const;
-  const mine = useQuery({ queryKey: ['snap', me?.id, today], queryFn: () => fetchDaySnapshot(me!.id, today), enabled: Boolean(me && partner), ...opts });
-  const theirs = useQuery({ queryKey: ['snap', partner?.id, today], queryFn: () => fetchDaySnapshot(partner!.id, today), enabled: Boolean(partner), ...opts });
-  if (!partner) return null;
+  const mine = useQuery({ queryKey: ['snap', left?.id, today], queryFn: () => fetchDaySnapshot(left!.id, today), enabled: Boolean(left && right), ...opts });
+  const theirs = useQuery({ queryKey: ['snap', right?.id, today], queryFn: () => fetchDaySnapshot(right!.id, today), enabled: Boolean(left && right), ...opts });
+  if (!partner || !left || !right) return null;
   const a = mine.data;
   const b = theirs.data;
   return (
     <Card title={t('Today, side by side')} icon={CalendarHeart} accent="var(--color-us)">
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/[0.06] pb-2 text-sm font-semibold">
-        <div className="text-end text-accent">{t('You')}</div>
+        <div className="text-end text-accent">{left.name}</div>
         <div className="w-20" />
-        <div className="text-us">{partner.name}</div>
+        <div className="text-us">{right.name}</div>
       </div>
       <div className="divide-y divide-white/[0.05]">
         <Stat label={t('Water')} a={fmt.water(a)} b={fmt.water(b)} />

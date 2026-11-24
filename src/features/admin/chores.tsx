@@ -24,8 +24,10 @@ const EVERY = [1, 2, 3, 7, 14, 30];
 
 function useNames() {
   const me = useSession((s) => s.user);
-  const partner = usePartnerStore((s) => s.partner);
-  return { meId: me?.id ?? 'me', partnerId: partner?.id ?? null, name: (id: string | null) => (!id ? '' : id === me?.id ? t('You') : id === partner?.id ? partner.name : '') };
+  const { partner, viewing, self } = usePartnerStore();
+  // While viewing your partner's day, "You" would be them: use real names instead.
+  const meLabel = viewing ? (self?.name ?? t('Me')) : t('You');
+  return { meId: me?.id ?? 'me', partnerId: partner?.id ?? null, name: (id: string | null) => (!id ? '' : id === me?.id ? meLabel : id === partner?.id ? partner.name : '') };
 }
 
 export function ChoresPage() {

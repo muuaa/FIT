@@ -37,12 +37,17 @@ export function UsPage() {
             style={{ background: 'radial-gradient(60% 60% at 30% 20%, color-mix(in oklab, var(--color-us) 22%, transparent), transparent 70%)' }}
           />
           <div className="relative flex items-center justify-center gap-3">
-            <Avatar name={myName} accent="var(--color-accent)" />
+            {/* Whose day is on screen comes first. */}
+            <Avatar name={viewing ? (partner?.name ?? '?') : myName} accent={viewing ? 'var(--color-us)' : 'var(--color-accent)'} />
             <HeartHandshake size={26} className="text-us" />
-            <Avatar name={partner?.name ?? '?'} accent="var(--color-us)" />
+            <Avatar name={viewing ? myName : (partner?.name ?? '?')} accent={viewing ? 'var(--color-accent)' : 'var(--color-us)'} />
           </div>
           <p className="relative mt-3 text-center text-[15px] font-semibold">
-            {partner ? t('{me} & {partner}', { me: myName, partner: partner.name }) : t('Waiting for your partner to join')}
+            {partner
+              ? viewing
+                ? t('{me} & {partner}', { me: partner.name, partner: myName })
+                : t('{me} & {partner}', { me: myName, partner: partner.name })
+              : t('Waiting for your partner to join')}
           </p>
           <p className="relative mt-1 text-center text-xs text-ink-3">
             {partner
@@ -82,8 +87,9 @@ export function UsPage() {
 }
 
 function NudgeBarCard() {
-  const partner = usePartnerStore((s) => s.partner);
-  if (!partner) return null;
+  const { partner, viewing } = usePartnerStore();
+  // While looking at your partner's day the page is theirs (view only): nudges are sent from your own view.
+  if (!partner || viewing) return null;
   return (
     <section className="glass animate-page rounded-[28px] p-4">
       <NudgeBar />
