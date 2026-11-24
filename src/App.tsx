@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/Toaster';
 import { TodayPage } from '@/features/today/TodayPage';
 import { useProfile } from '@/hooks/useProfile';
 import { useToday } from '@/hooks/useToday';
-import { language, setLanguage } from '@/lib/i18n';
+import { effectiveLanguage, language, setLanguage } from '@/lib/i18n';
 import { useValidateActiveWorkout } from '@/hooks/useWorkouts';
 import { useWakeLock } from '@/hooks/useWakeLock';
 
@@ -44,7 +44,7 @@ export default function App() {
   // Switch language before rendering so every string and the layout direction match.
   const viewing = usePartnerStore((s) => s.viewing);
   // Keep your own language while looking at your partner's data.
-  if (profile && !viewing && profile.language !== language()) setLanguage(profile.language);
+  if (profile && !viewing && effectiveLanguage(profile.language) !== language()) setLanguage(profile.language);
   const lang = language();
   return (
     <>

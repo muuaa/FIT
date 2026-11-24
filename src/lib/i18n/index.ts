@@ -8,7 +8,17 @@ import { AR } from './ar';
 
 let lang: Language = 'en';
 
-export function setLanguage(l: Language): void {
+/**
+ * Arabic is switched off for now: the app is English only. The translations stay in ./ar.ts;
+ * set this to true (and bring back the picker in Settings) to offer Arabic again.
+ */
+export const ARABIC_ENABLED = false;
+
+/** The language actually used for a chosen one. */
+export const effectiveLanguage = (l: Language): Language => (ARABIC_ENABLED ? l : 'en');
+
+export function setLanguage(chosen: Language): void {
+  const l = effectiveLanguage(chosen);
   lang = l;
   document.documentElement.lang = l;
   document.documentElement.dir = l === 'ar' ? 'rtl' : 'ltr';

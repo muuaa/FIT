@@ -179,7 +179,7 @@ async function userState(userId: string, date: string) {
   const habitLogs = of('habit_logs');
   const wd = new Date(`${date}T12:00:00Z`).getUTCDay();
   return {
-    lang: (profile.language === 'ar' ? 'ar' : 'en') as Lang,
+    lang: 'en' as Lang, // Arabic is switched off in the app for now
     split: String(profile.split_mode ?? 'PPL-UL'),
     waterTarget: Number(profile.water_target_ml ?? 4000),
     waterMl: Number(of('water_days')[0]?.ml ?? 0),
@@ -309,7 +309,7 @@ Deno.serve(async (req) => {
       const theirs = (profs?.find((r) => r.user_id === partner.id)?.data ?? {}) as Record<string, unknown>;
       const prefs = (theirs.activity_prefs ?? {}) as Record<string, boolean>;
       if (prefs[kind] === false) return Response.json({ ok: true, sent: 0, reason: 'muted' }, { headers: cors });
-      const lang: Lang = theirs.language === 'ar' ? 'ar' : 'en';
+      const lang: Lang = 'en'; // Arabic is switched off in the app for now
       const name = String(mine.display_name ?? '').trim() || (data.user.email ?? '').split('@')[0];
       const clean: Record<string, string> = {};
       for (const [k, v] of Object.entries(params)) clean[k] = String(v).slice(0, 80);

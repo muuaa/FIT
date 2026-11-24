@@ -14,7 +14,7 @@ import { toast } from '@/stores/toastStore';
 import type { Language, Profile } from '@/types/db';
 import { Segmented } from '@/components/ui/Segmented';
 import { TodayCardsEditor } from '@/features/today/TodayPage';
-import { t } from '@/lib/i18n';
+import { ARABIC_ENABLED, t } from '@/lib/i18n';
 import { Logo } from '@/components/Logo';
 import { BackupCard } from './BackupCard';
 import { AccountCard } from './AccountCard';
@@ -141,17 +141,19 @@ export function SettingsPage() {
         )}
         <Card title={t('Profile')} icon={User}>
           <Field label={t('Display name')} value={form.display_name} onChange={set('display_name')} />
-          <div className="mt-3">
-            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Language')}</span>
-            <Segmented<Language>
-              value={profile.language}
-              onChange={(language) => update.mutate({ language })}
-              options={[
-                { value: 'en', label: 'English' },
-                { value: 'ar', label: 'العربية' },
-              ]}
-            />
-          </div>
+          {ARABIC_ENABLED && (
+            <div className="mt-3">
+              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Language')}</span>
+              <Segmented<Language>
+                value={profile.language}
+                onChange={(language) => update.mutate({ language })}
+                options={[
+                  { value: 'en', label: 'English' },
+                  { value: 'ar', label: 'العربية' },
+                ]}
+              />
+            </div>
+          )}
         </Card>
 
         <Card title={t('Nutrition targets')} icon={Flame} accent="var(--color-fuel)">
