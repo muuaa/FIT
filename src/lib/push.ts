@@ -16,7 +16,7 @@ export function captureNativeLaunch() {
   try {
     const url = new URL(window.location.href);
     if (!url.searchParams.has('app')) return;
-    sessionStorage.setItem(NATIVE_KEY, '1');
+    sessionStorage.setItem(NATIVE_KEY, url.searchParams.get('app') || '1'); // the app's version
     const token = url.searchParams.get('fcm');
     const prev = localStorage.getItem(FCM_KEY);
     if (token && prev && prev !== token) localStorage.setItem(FCM_PREV_KEY, prev); // Firebase rotated it
@@ -29,10 +29,27 @@ export function captureNativeLaunch() {
   }
 }
 
+/** Version of the Android app this page runs in (0 = a browser). */
+export function nativeAppVersion(): number {
+  try {
+    return Number(sessionStorage.getItem(NATIVE_KEY) ?? 0) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** The Android app (1.3+) can open its own notification settings for a blocked phone. */
+export function canOpenNotificationSettings(): boolean {
+  return nativeAppVersion() >= 4;
+}
+export function openNotificationSettings(): void {
+  window.location.href = 'intent://notification-settings#Intent;scheme=bettertogether;package=io.github.muuaa.bettertogether;end';
+}
+
 /** Firebase token when running inside the Android app (null in a browser or the old app). */
 function nativeToken(): string | null {
   try {
-    const native = sessionStorage.getItem(NATIVE_KEY) === '1' || document.referrer.startsWith('android-app://io.github.muuaa.bettertogether');
+    const native = Boolean(sessionStorage.getItem(NATIVE_KEY)) || document.referrer.startsWith('android-app://io.github.muuaa.bettertogether');
     return native ? localStorage.getItem(FCM_KEY) : null;
   } catch {
     return null;

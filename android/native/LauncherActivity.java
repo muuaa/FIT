@@ -15,7 +15,9 @@
  */
 package io.github.muuaa.bettertogether;
 
+import android.Manifest;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -48,9 +50,35 @@ public class LauncherActivity
 
     private boolean launched;
 
-    /** Wait (briefly) for this phone's Firebase token so the site can register it. */
+    private static final int ASK_NOTIFICATIONS = 7;
+
+    /**
+     * Before opening: on Android 13+ ask once for permission to show notifications (an install
+     * starts with them off), then wait briefly for this phone's Firebase token.
+     */
     @Override
     protected boolean shouldLaunchImmediately() {
+        if (Build.VERSION.SDK_INT >= 33
+                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                && !getSharedPreferences(Push.PREFS, MODE_PRIVATE).getBoolean("asked_notifications", false)) {
+            getSharedPreferences(Push.PREFS, MODE_PRIVATE).edit().putBoolean("asked_notifications", true).apply();
+            requestPermissions(new String[] {Manifest.permission.POST_NOTIFICATIONS}, ASK_NOTIFICATIONS);
+            return false;
+        }
+        return afterPermission();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
+        super.onRequestPermissionsResult(requestCode, permissions, results);
+        if (requestCode == ASK_NOTIFICATIONS && afterPermission() && !launched) {
+            launched = true;
+            launchTwa();
+        }
+    }
+
+    /** Wait (briefly) for this phone's Firebase token so the site can register it. */
+    private boolean afterPermission() {
         if (Push.token(this) != null) return true;
         Handler main = new Handler(Looper.getMainLooper());
         Runnable go = () -> {
@@ -74,7 +102,7 @@ public class LauncherActivity
     @Override
     protected Uri getLaunchingUrl() {
         // Tell the site it is running in the app, and hand it the token for native notifications.
-        Uri.Builder b = super.getLaunchingUrl().buildUpon().appendQueryParameter("app", "1");
+        Uri.Builder b = super.getLaunchingUrl().buildUpon().appendQueryParameter("app", String.valueOf(BuildConfig.VERSION_CODE));
         String token = Push.token(this);
         if (token != null) b.appendQueryParameter("fcm", token);
         return b.build();

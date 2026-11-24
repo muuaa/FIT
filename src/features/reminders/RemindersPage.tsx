@@ -12,7 +12,7 @@ import { Toggle } from '@/components/ui/Toggle';
 import { WeekdayPicker } from '@/components/ui/WeekdayPicker';
 
 import { t } from '@/lib/i18n';
-import { disablePush, enablePush, pushStatus, sendTestPush, type PushStatus } from '@/lib/push';
+import { canOpenNotificationSettings, disablePush, enablePush, openNotificationSettings, pushStatus, refreshPush, sendTestPush, type PushStatus } from '@/lib/push';
 import { cloudEnabled, supabase } from '@/lib/supabase';
 import { toast } from '@/stores/toastStore';
 
@@ -216,6 +216,16 @@ function DeviceCard() {
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     void pushStatus().then(setStatus);
+    // Coming back from the phone's settings: check again, and switch on if they were just allowed.
+    const onBack = () => {
+      if (document.visibilityState !== 'visible') return;
+      void refreshPush()
+        .catch(() => undefined)
+        .then(pushStatus)
+        .then(setStatus);
+    };
+    document.addEventListener('visibilitychange', onBack);
+    return () => document.removeEventListener('visibilitychange', onBack);
   }, []);
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -259,9 +269,18 @@ function DeviceCard() {
           {t('On iPhone and iPad, notifications only work in the installed app. Add Better Together to your Home Screen (Settings → Install on your phone), open it from there, then come back here.')}
         </p>
       ) : status === 'blocked' ? (
-        <p className="text-sm text-ink-2">
-          {t('Notifications are blocked for this app. Allow them in your phone’s settings (Settings → Notifications → Better Together, or the browser’s site settings), then come back here.')}
-        </p>
+        canOpenNotificationSettings() ? (
+          <div className="space-y-3">
+            <p className="text-sm text-ink-2">{t('Notifications are switched off for this app on this phone. Tap below, turn on “Allow notifications”, then come back here.')}</p>
+            <Button variant="primary" accent="var(--color-life)" block onClick={openNotificationSettings}>
+              <Bell size={16} /> {t('Open notification settings')}
+            </Button>
+          </div>
+        ) : (
+          <p className="text-sm text-ink-2">
+            {t('Notifications are blocked for this app. Allow them in your phone’s settings (Settings → Apps → Better Together → Notifications), then come back here.')}
+          </p>
+        )
       ) : status === 'unsupported' ? (
         <p className="text-sm text-ink-2">{t('This browser can’t show notifications. On iPhone, use the app installed from Safari; on Android, use Chrome.')}</p>
       ) : (
