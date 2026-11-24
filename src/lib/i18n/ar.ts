@@ -845,4 +845,7 @@ export const AR: Record<string, string> = {
   "More space": "مساحة أكثر",
   "Slide with two fingers": "اسحب بإصبعين للتمرير",
   "Write with the pen · slide with one finger": "اكتب بالقلم · مرّر بإصبع واحد",
+  "Breakfast": "الفطور",
+  "Lunch": "الغداء",
+  "Dinner": "العشاء",
 };
