@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Opening the app: a solid dark screen from the first frame (no see-through flicker of the
+         home screen while Chrome starts), matching the app's background and status/navigation bars. -->
+    <style name="LaunchTheme" parent="@android:style/Theme.NoTitleBar">
+        <item name="android:windowBackground">@color/backgroundColor</item>
+        <item name="android:statusBarColor">@color/backgroundColor</item>
+        <item name="android:navigationBarColor">@color/backgroundColor</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>
