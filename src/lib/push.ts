@@ -118,7 +118,7 @@ async function upsertSub(sub: PushSubscription) {
  * another account (someone else used this phone before), start a fresh subscription for this one.
  */
 async function save(reg: ServiceWorkerRegistration, sub: PushSubscription): Promise<PushSubscription> {
-  if (!supabase) throw new Error('Not signed in');
+  if (!supabase) throw new Error(t('Not signed in'));
   const { error } = await upsertSub(sub);
   if (!error) return sub;
   await sub.unsubscribe().catch(() => undefined);
@@ -170,7 +170,7 @@ export async function refreshPush(): Promise<void> {
 }
 
 export async function sendTestPush(): Promise<number> {
-  if (!supabase) throw new Error('Not signed in');
+  if (!supabase) throw new Error(t('Not signed in'));
   const { data, error } = await supabase.functions.invoke('send-reminders', { body: { test: true } });
   if (error) throw error;
   return (data as { sent?: number })?.sent ?? 0;
@@ -178,7 +178,7 @@ export async function sendTestPush(): Promise<number> {
 
 /** Send a quick notification to your partner. */
 export async function sendNudge(text: string): Promise<number> {
-  if (!supabase) throw new Error('Not signed in');
+  if (!supabase) throw new Error(t('Not signed in'));
   const { data, error } = await supabase.functions.invoke('send-reminders', { body: { nudge: text } });
   if (error) {
     const status = (error as { context?: { status?: number } }).context?.status;

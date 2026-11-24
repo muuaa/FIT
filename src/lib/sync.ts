@@ -10,7 +10,9 @@
  */
 import { create } from 'zustand';
 import { t } from './i18n';
-import { applyRemote, onLocalChange, readKey, removeKey, writeKey, type RowChange } from './localDb';
+import { all, applyRemote, JOINT_TABLES, onLocalChange, PERSON_TABLES, readKey, removeKey, replaceTable, rowKey, writeKey, type RowChange, type TableName } from './localDb';
+
+export { JOINT_TABLES };
 import { supabase } from './supabase';
 
 interface OutboxEntry {
@@ -87,11 +89,6 @@ function schedulePush(delay = 800) {
   }, delay);
 }
 
-/**
- * Tables both people edit together (one joint copy). They live in `household_records`; everything
- * else is personal and lives in `records` under the user's id (readable, not writable, by the partner).
- */
-export const JOINT_TABLES = new Set(['todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals', 'bills', 'meal_plan', 'chores']);
 
 async function push(uid: string): Promise<void> {
   if (!supabase) return;
@@ -145,7 +142,9 @@ async function pullFrom(uid: string, table: 'records' | 'household_records', cur
     if (error) throw error;
     if (uid !== userId) return applied;
     for (const r of data ?? []) {
-      if (!outbox.has(k(r.tbl, r.row_id))) {
+      // A table lives in one place: ignore leftovers from before it became shared (or vice versa).
+      const inRightPlace = (table === 'household_records') === JOINT_TABLES.has(r.tbl) || r.tbl === 'profile';
+      if (inRightPlace && !outbox.has(k(r.tbl, r.row_id))) {
         applyRemote(r.tbl, r.row_id, r.deleted ? null : r.data);
         applied++;
       }
@@ -225,6 +224,7 @@ export function startSync(uid: string, remoteApplied: () => void): void {
   onRemoteApplied = remoteApplied;
   loadOutbox();
   unsubscribe = onLocalChange(enqueue);
+  migrateToShared(uid);
   document.addEventListener('visibilitychange', onWake);
   window.addEventListener('online', onOnline);
   const id = window.setInterval(() => document.visibilityState === 'visible' && void syncNow(), 120_000);
@@ -233,6 +233,24 @@ export function startSync(uid: string, remoteApplied: () => void): void {
     prevUnsub();
     window.clearInterval(id);
   };
+}
+
+/**
+ * One-time move of habits and the journal from personal to shared: mark this device's rows as yours
+ * and upload them to the shared copy. Unsent edits in the old format are folded in the same way.
+ */
+function migrateToShared(uid: string) {
+  if (readKey('mig_shared_habits_journal')) return;
+  for (const [key, e] of outbox) {
+    if (JOINT_TABLES.has(e.tbl) && ['habits', 'habit_logs', 'journal'].includes(e.tbl)) outbox.delete(key);
+  }
+  saveOutbox();
+  for (const tbl of ['habits', 'habit_logs', 'journal'] as TableName[]) {
+    const rows = all(tbl).map((r) => (PERSON_TABLES.has(tbl) && !(r as { by?: string }).by ? { ...r, by: uid } : r));
+    replaceTable(tbl, rows as never[]); // rows whose key changed are queued by the change listener
+    enqueue(rows.map((r) => ({ tbl, row_id: rowKey(tbl, r as never), data: r })));
+  }
+  writeKey('mig_shared_habits_journal', '1');
 }
 
 export function stopSync(): void {

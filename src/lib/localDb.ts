@@ -152,6 +152,24 @@ export const storageAvailable = probeStorage();
 
 let viewOnly = false;
 let savedPrefix = BASE;
+let viewPerson: string | null = null;
+
+/**
+ * Tables both people share (one joint copy, in `household_records`). Everything else is personal and
+ * lives in `records` under the user's id (readable, not writable, by the partner).
+ */
+export const JOINT_TABLES = new Set<string>([
+  'todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals', 'bills', 'meal_plan', 'chores',
+  'habits', 'habit_logs', 'journal',
+]);
+
+/** Shared tables where each row belongs to one of us (`by`): your habit ticks, your journal entry. */
+export const PERSON_TABLES = new Set<string>(['habit_logs', 'journal']);
+
+/** Whose rows the screens show: the partner's while viewing them, otherwise the signed-in user's. */
+export function personId(): string {
+  return (viewOnly ? viewPerson : currentUser) ?? 'local';
+}
 
 class ViewOnlyError extends Error {}
 
@@ -164,9 +182,10 @@ export function isViewingPartner(): boolean {
 }
 
 /** Show someone else's data (kept in memory only). Every write is refused until exitView(). */
-export function enterView(tables: Partial<Record<TableName, unknown[]>>, profile: Partial<Profile> | null): void {
+export function enterView(tables: Partial<Record<TableName, unknown[]>>, profile: Partial<Profile> | null, person: string): void {
   if (!viewOnly) savedPrefix = PREFIX;
   viewOnly = true;
+  viewPerson = person;
   PREFIX = `${BASE}view.`;
   cache.clear();
   for (const t of TABLE_NAMES) cache.set(t, (tables[t] ?? []) as unknown[]);
@@ -176,6 +195,7 @@ export function enterView(tables: Partial<Record<TableName, unknown[]>>, profile
 export function exitView(): void {
   if (!viewOnly) return;
   viewOnly = false;
+  viewPerson = null;
   PREFIX = savedPrefix;
   cache.clear();
   profileCache = null;
@@ -245,18 +265,22 @@ export function all<T extends TableName>(t: T): Tables[T][] {
 // ---------------------------------------------------------------- change tracking (for sync)
 
 /** Tables with at most one row per day, keyed by that date. */
-const DATE_KEYED = new Set<TableName>(['water_days', 'bodyweight_logs', 'sleep_logs', 'checkins', 'steps_days', 'journal']);
+const DATE_KEYED = new Set<TableName>(['water_days', 'bodyweight_logs', 'sleep_logs', 'checkins', 'steps_days']);
 
 /** Stable id of a row within its table (some tables are keyed by date rather than an id). */
 export function rowKey<T extends TableName>(t: T, row: Tables[T]): string {
   if (DATE_KEYED.has(t)) return (row as { date: string }).date;
+  if (t === 'journal') {
+    const r = row as JournalEntry;
+    return `${r.date}|${r.by}`;
+  }
   if (t === 'supplement_logs') {
     const r = row as SupplementLog;
     return `${r.supplement_id}|${r.date}`;
   }
   if (t === 'habit_logs') {
     const r = row as HabitLog;
-    return `${r.habit_id}|${r.date}`;
+    return `${r.habit_id}|${r.date}|${r.by}`;
   }
   if (t === 'routine_logs') {
     const r = row as RoutineLog;
@@ -552,14 +576,22 @@ export function importAll(json: string): void {
   try {
     data = JSON.parse(json) as Backup;
   } catch {
-    throw new Error('That file is not a Better Together backup (invalid JSON).');
+    throw new Error(t('That file is not a Better Together backup (invalid JSON).'));
   }
   if (data?.app !== 'fit' || data.version !== 1 || typeof data.tables !== 'object') {
-    throw new Error('That file is not a Better Together backup.');
+    throw new Error(t('That file is not a Better Together backup.'));
   }
+  const me = personId();
   for (const t of TABLE_NAMES) {
-    const rows = data.tables[t];
-    commit(t, Array.isArray(rows) ? (rows as never[]) : []);
+    let rows = (Array.isArray(data.tables[t]) ? data.tables[t] : []) as unknown as Record<string, unknown>[];
+    // Older backups were made before habits and the journal were shared: they're yours.
+    if (PERSON_TABLES.has(t)) rows = rows.map((r) => (r.by ? r : { ...r, by: me }));
+    if (JOINT_TABLES.has(t)) {
+      // Shared tables: put the backup's rows back without deleting anything your partner added.
+      const byKey = new Map(all(t).map((r) => [rowKey(t, r), r as unknown]));
+      for (const r of rows) byKey.set(rowKey(t, r as never), r);
+      commit(t, [...byKey.values()] as never[]);
+    } else commit(t, rows as never[]);
   }
   profileCache = null;
   const profile = { ...DEFAULT_PROFILE, ...data.profile, id: 'local' };
@@ -569,7 +601,11 @@ export function importAll(json: string): void {
 
 /** Deletes every entry (and, when signed in, from the account on every device too). */
 export function eraseAll(): void {
-  for (const t of TABLE_NAMES) commit(t, []);
+  const me = personId();
+  for (const t of TABLE_NAMES) {
+    if (PERSON_TABLES.has(t)) commit(t, all(t).filter((r) => (r as { by?: string }).by !== me) as never[]);
+    else if (!JOINT_TABLES.has(t)) commit(t, []); // shared lists, money, plans… belong to both of you
+  }
   removeRaw('profile');
   removeRaw('meta');
   profileCache = null;

@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { t } from './i18n';
 import { queryClient } from './queryClient';
-import { all, enterView, exitView, TABLE_NAMES, type TableName } from './localDb';
+import { all, enterView, exitView, getProfile, TABLE_NAMES, type TableName } from './localDb';
 import { supabase } from './supabase';
 import { JOINT_TABLES, pauseSync } from './sync';
 import type { Profile } from '@/types/db';
@@ -14,15 +14,29 @@ export interface Partner {
 
 interface PartnerState {
   partner: Partner | null;
+  /** You (kept so your name still shows correctly while the app is showing your partner's data). */
+  self: Partner | null;
   viewing: boolean;
   loading: boolean;
 }
 
-export const usePartnerStore = create<PartnerState>()(() => ({ partner: null, viewing: false, loading: false }));
+export const usePartnerStore = create<PartnerState>()(() => ({ partner: null, self: null, viewing: false, loading: false }));
+
+/** Your own name, read from your profile (only valid while not viewing the partner). */
+function ownName(): string {
+  return getProfile().display_name?.trim() || t('Me');
+}
+
+/** The other person relative to whose data is on screen: your partner, or you while viewing them. */
+export function useOtherPerson(): Partner | null {
+  const { partner, self, viewing } = usePartnerStore();
+  return viewing ? self : partner;
+}
 
 /** Look up the partner (the other account). Their profile row is readable to us. */
 export async function findPartner(myId: string): Promise<void> {
   if (!supabase) return;
+  if (!usePartnerStore.getState().viewing) usePartnerStore.setState({ self: { id: myId, name: ownName() } });
   const { data } = await supabase.from('records').select('user_id,data').eq('tbl', 'profile').neq('user_id', myId).limit(1);
   const row = data?.[0];
   if (!row) return usePartnerStore.setState({ partner: null });
@@ -55,8 +69,10 @@ export async function viewPartner(): Promise<void> {
       }
       if (!data || data.length < 1000) break;
     }
+    const self = usePartnerStore.getState().self;
+    if (self) usePartnerStore.setState({ self: { ...self, name: ownName() } }); // before the profile swaps
     pauseSync(true);
-    enterView(tables, profile);
+    enterView(tables, profile, partner.id);
     queryClient.clear(); // drop cached screens of our own data before showing theirs
     usePartnerStore.setState({ viewing: true });
   } finally {
@@ -87,13 +103,15 @@ export interface DaySnapshot {
 export async function fetchDaySnapshot(userId: string, date: string): Promise<DaySnapshot> {
   if (!supabase) throw new Error('offline');
   const base = () => supabase!.from('records').select('tbl,data').eq('user_id', userId).eq('deleted', false);
-  const [small, day] = await Promise.all([
-    base().in('tbl', ['profile', 'habits']),
-    base().in('tbl', ['water_days', 'habit_logs', 'checkins', 'sleep_logs', 'workout_sessions', 'steps_days']).eq('data->>date', date),
+  const home = () => supabase!.from('household_records').select('tbl,data').eq('deleted', false);
+  const [small, day, habits, ticks] = await Promise.all([
+    base().eq('tbl', 'profile'),
+    base().in('tbl', ['water_days', 'checkins', 'sleep_logs', 'workout_sessions', 'steps_days']).eq('data->>date', date),
+    home().eq('tbl', 'habits'), // shared
+    home().eq('tbl', 'habit_logs').eq('data->>date', date).eq('data->>by', userId),
   ]);
-  if (small.error) throw new Error(small.error.message);
-  if (day.error) throw new Error(day.error.message);
-  const rows = [...(small.data ?? []), ...(day.data ?? [])];
+  for (const r of [small, day, habits, ticks]) if (r.error) throw new Error(r.error.message);
+  const rows = [...(small.data ?? []), ...(day.data ?? []), ...(habits.data ?? []), ...(ticks.data ?? [])];
   const of = (t: string) => rows.filter((r) => r.tbl === t).map((r) => r.data as Record<string, unknown>);
   const profile = (of('profile')[0] ?? {}) as Record<string, unknown>;
   const wd = new Date(`${date}T12:00:00`).getDay();

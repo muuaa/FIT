@@ -119,7 +119,7 @@ export function BackupCard() {
             className="h-28 w-full rounded-2xl border border-line bg-surface-2 p-3 font-mono text-xs text-ink-2"
           />
           <Button size="sm" variant="ghost" onClick={() => setCopyFallback(null)}>
-            Done
+            {t('Done')}
           </Button>
         </div>
       )}
@@ -133,7 +133,11 @@ export function BackupCard() {
             placeholder={t('Paste a Better Together backup here')}
             className="h-28 w-full rounded-2xl border border-line bg-surface-2 p-3 font-mono text-xs text-ink outline-none"
           />
-          <p className="text-xs text-ink-3">Restoring replaces everything currently in {cloudEnabled ? "your account" : "this app on this device"}.</p>
+          <p className="text-xs text-ink-3">
+            {cloudEnabled
+              ? t('Restoring replaces your personal data in your account. Shared items from the backup are added back; nothing your partner added is removed.')
+              : t('Restoring replaces everything currently in this app on this device.')}
+          </p>
           <Button block variant="primary" accent="var(--color-water)" disabled={!pasted.trim()} onClick={() => restore(pasted)}>
             {t('Restore this backup')}
           </Button>
@@ -143,12 +147,14 @@ export function BackupCard() {
       <div className="mt-4 border-t border-line/60 pt-3">
         {confirmErase ? (
           <div className="space-y-2">
-            <p className="text-sm text-danger">{cloudEnabled
-                ? "Delete every workout, meal, weigh-in and setting from your account, on all your devices? This can't be undone."
-                : "Delete every workout, meal, weigh-in and setting on this device? This can't be undone."}</p>
+            <p className="text-sm text-danger">
+              {cloudEnabled
+                ? t('Delete your workouts, meals, weigh-ins, habit ticks, journal entries and settings from your account, on all your devices? Shared to-dos, money, plans and habits stay for both of you. This can’t be undone.')
+                : t('Delete every workout, meal, weigh-in and setting on this device? This can’t be undone.')}
+            </p>
             <div className="flex gap-2">
               <Button variant="ghost" className="flex-1" onClick={() => setConfirmErase(false)}>
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button
                 variant="danger"

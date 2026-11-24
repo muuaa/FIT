@@ -5,11 +5,15 @@ import { AttachmentThumb, AttachmentViewer } from '@/components/ui/AttachmentVie
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { DayPicker } from '@/components/ui/DayPicker';
-import { useTable, useTableActions } from '@/hooks/useTable';
+import { useQuery } from '@tanstack/react-query';
+import { useTable, useTableActions, useTableEveryone } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { relativeDay } from '@/lib/date';
 import { filesAvailable } from '@/lib/files';
 import { t } from '@/lib/i18n';
+import { personId } from '@/lib/localDb';
+import { useOtherPerson } from '@/lib/partner';
+import { supabase } from '@/lib/supabase';
 import type { Attachment, JournalEntry } from '@/types/db';
 import { Handwriting } from './Handwriting';
 import { useAttachments } from './useAttachments';
@@ -47,7 +51,7 @@ function EntryEditor({ date }: { date: string }) {
       if (saved) actions.remove(date);
       return;
     }
-    const row: JournalEntry = { date, gratitude, text: body, updated_at: new Date().toISOString() };
+    const row: Omit<JournalEntry, 'by'> = { date, gratitude, text: body, updated_at: new Date().toISOString() };
     actions.put(row);
   };
 
@@ -183,12 +187,65 @@ function Attachments({ date }: { date: string }) {
   );
 }
 
+/** The other person's entry for the day (read-only), with their photos and handwriting. */
+function OtherEntry({ date }: { date: string }) {
+  const other = useOtherPerson();
+  const { data: everyone = [] } = useTableEveryone('journal');
+  const entry = other ? everyone.find((r) => r.by === other.id && r.date === date) : undefined;
+  const [open, setOpen] = useState<Attachment | null>(null);
+  // Their attachments live in their own space; the server lets the two of you read each other's.
+  const { data: files = [] } = useQuery({
+    queryKey: ['other-journal-files', other?.id, date],
+    enabled: Boolean(other && supabase && navigator.onLine),
+    queryFn: async () => {
+      const { data } = await supabase!
+        .from('records')
+        .select('data')
+        .eq('user_id', other!.id)
+        .eq('tbl', 'attachments')
+        .eq('deleted', false)
+        .eq('data->>date', date);
+      return (data ?? []).map((r) => r.data as Attachment).filter((a) => a.kind !== 'progress');
+    },
+  });
+  if (!other || (!entry && !files.length)) return null;
+  const gratitude = entry?.gratitude.filter((g) => g.trim()) ?? [];
+  return (
+    <Card title={t('{name}’s entry', { name: other.name })} icon={BookOpen} accent="var(--color-us)">
+      {gratitude.length > 0 && (
+        <ul className="mb-3 space-y-1">
+          {gratitude.map((g, i) => (
+            <li key={i} className="flex gap-2 text-sm">
+              <Sparkles size={13} className="mt-1 shrink-0 text-us" /> <span className="min-w-0 break-words">{g}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {entry?.text && <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-ink-2">{entry.text}</p>}
+      {files.length > 0 && (
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          {files.map((a) => (
+            <AttachmentThumb key={a.id} a={a} onOpen={() => setOpen(a)} />
+          ))}
+        </div>
+      )}
+      <AttachmentViewer a={open} onClose={() => setOpen(null)} />
+    </Card>
+  );
+}
+
 export function JournalPage() {
   const today = useToday();
   const [date, setDate] = useState(today);
-  const { data: rows = [] } = useTable('journal');
+  const { data: rows = [] } = useTableEveryone('journal');
   const { data: atts = [] } = useTable('attachments');
-  const recent = [...rows].filter((r) => r.date !== date).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20);
+  const other = useOtherPerson();
+  const me = personId();
+  // Both of your entries, newest first (yours first on the same day).
+  const recent = rows
+    .filter((r) => r.date !== date && (r.by === me || r.by === other?.id))
+    .sort((a, b) => b.date.localeCompare(a.date) || (a.by === me ? -1 : 1))
+    .slice(0, 20);
   return (
     <>
       <PageHeader title={t('Journal')} back="/life" />
@@ -200,16 +257,21 @@ export function JournalPage() {
         <Card title={t('Handwriting, photos & files')} icon={Paperclip} accent={ACCENT}>
           <Attachments date={date} />
         </Card>
+        <OtherEntry date={date} />
         {recent.length > 0 && (
           <Card title={t('Earlier entries')} icon={BookOpen} accent={ACCENT}>
             <ul className="divide-y divide-line/60">
               {recent.map((r) => {
-                const n = atts.filter((a) => a.date === r.date && a.kind !== 'progress').length;
+                const theirs = r.by !== me;
+                const n = theirs ? 0 : atts.filter((a) => a.date === r.date && a.kind !== 'progress').length;
                 return (
-                  <li key={r.date}>
+                  <li key={`${r.date}|${r.by}`}>
                     <button type="button" onClick={() => setDate(r.date)} className="w-full py-2.5 text-start">
                       <div className="flex justify-between text-xs text-ink-3">
-                        <span>{relativeDay(r.date)}</span>
+                        <span>
+                          {relativeDay(r.date)}
+                          {theirs && other && <span className="text-us"> · {other.name}</span>}
+                        </span>
                         {n > 0 && (
                           <span className="flex items-center gap-1">
                             <Paperclip size={11} /> {n}

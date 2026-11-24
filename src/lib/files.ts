@@ -51,7 +51,7 @@ export async function uploadFile(file: Blob, name: string): Promise<{ path: stri
 export async function fileUrl(path: string): Promise<string> {
   const hit = urlCache.get(path);
   if (hit && hit.expires > Date.now() + 60_000) return hit.url;
-  if (!supabase) throw new Error('Not signed in');
+  if (!supabase) throw new Error(t('Not signed in'));
   const { data, error } = await supabase.storage.from('files').createSignedUrl(path, 3600);
   if (error || !data) throw error ?? new Error('Could not open file');
   urlCache.set(path, { url: data.signedUrl, expires: Date.now() + 3600_000 });

@@ -47,12 +47,13 @@ export function AttachmentThumb({ a, onOpen }: { a: Attachment; onOpen: () => vo
 }
 
 /** Full-screen viewer with open/download and delete. */
-export function AttachmentViewer({ a, onClose, onDelete }: { a: Attachment | null; onClose: () => void; onDelete: (a: Attachment) => void }) {
+/** Full-screen view. Without `onDelete` (your partner's files) there's no delete button. */
+export function AttachmentViewer({ a, onClose, onDelete }: { a: Attachment | null; onClose: () => void; onDelete?: (a: Attachment) => void }) {
   if (!a) return null;
   return createPortal(<Viewer a={a} onClose={onClose} onDelete={onDelete} />, document.body);
 }
 
-function Viewer({ a, onClose, onDelete }: { a: Attachment; onClose: () => void; onDelete: (a: Attachment) => void }) {
+function Viewer({ a, onClose, onDelete }: { a: Attachment; onClose: () => void; onDelete?: (a: Attachment) => void }) {
   const { url, failed } = useSignedUrl(a.path);
   const isImage = a.mime.startsWith('image/');
   const [confirm, setConfirm] = useState(false);
@@ -73,7 +74,7 @@ function Viewer({ a, onClose, onDelete }: { a: Attachment; onClose: () => void; 
             {t('Open')}
           </a>
         )}
-        {confirm ? (
+        {!onDelete ? null : confirm ? (
           <button type="button" onClick={() => onDelete(a)} className="rounded-xl bg-danger px-3 py-2 text-sm font-semibold text-bg">
             {t('Delete')}
           </button>

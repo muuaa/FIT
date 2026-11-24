@@ -7,7 +7,7 @@ import { Field } from '@/components/ui/Field';
 import { Sheet } from '@/components/ui/Sheet';
 import { Empty } from '@/components/ui/States';
 import { WeekdayPicker } from '@/components/ui/WeekdayPicker';
-import { useTable, useTableActions } from '@/hooks/useTable';
+import { mine, useTable, useTableActions, useTableEveryone } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { tick } from '@/lib/alerts';
 import { cn } from '@/lib/cn';
@@ -16,6 +16,7 @@ import { t, tn } from '@/lib/i18n';
 import { bestStreak, HABIT_EMOJI, habitDueOn, habitStreak } from '@/lib/life';
 import { all, uid } from '@/lib/localDb';
 import { sendActivity } from '@/lib/activity';
+import { useOtherPerson } from '@/lib/partner';
 import type { Habit } from '@/types/db';
 
 const ACCENT = 'var(--color-habit)';
@@ -46,7 +47,7 @@ function useToggleHabit() {
       if (date === today) {
         // Last one of the day? Let the partner know.
         const due = all('habits').filter((x) => habitDueOn(x, today));
-        const logged = new Set(all('habit_logs').filter((l) => l.date === today).map((l) => l.habit_id));
+        const logged = new Set(mine('habit_logs').filter((l) => l.date === today).map((l) => l.habit_id));
         if (due.length > 1 && due.every((x) => logged.has(x.id))) sendActivity('habits');
       }
     }
@@ -58,6 +59,12 @@ export function HabitsToday({ onAdd }: { onAdd?: () => void }) {
   const today = useToday();
   const { active, doneBy } = useHabits();
   const toggle = useToggleHabit();
+  const other = useOtherPerson();
+  const { data: everyone = [] } = useTableEveryone('habit_logs');
+  const otherDone = useMemo(
+    () => new Set(other ? everyone.filter((l) => l.by === other.id && l.date === today).map((l) => l.habit_id) : []),
+    [everyone, other, today],
+  );
   const due = active.filter((h) => habitDueOn(h, today));
   if (!active.length)
     return (
@@ -97,6 +104,15 @@ export function HabitsToday({ onAdd }: { onAdd?: () => void }) {
                     </span>
                   )}
                 </span>
+                {other && otherDone.has(h.id) && (
+                  <span
+                    title={t('{name} did it today', { name: other.name })}
+                    aria-label={t('{name} did it today', { name: other.name })}
+                    className="grid size-6 shrink-0 place-items-center rounded-full bg-us/25 text-[11px] font-bold text-us"
+                  >
+                    {other.name.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
                 <span
                   className={cn(
                     'grid size-6 shrink-0 place-items-center rounded-full border-2',

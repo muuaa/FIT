@@ -7,7 +7,7 @@ import { MoneyToday } from '@/features/life/money';
 import { TodosToday } from '@/features/life/todos';
 import { useSession } from '@/features/auth/session';
 import { t } from '@/lib/i18n';
-import { usePartnerStore, viewPartner } from '@/lib/partner';
+import { usePartnerStore, viewMe, viewPartner } from '@/lib/partner';
 import { getProfile } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
 import { Countdowns, Goals, NudgeBar, SideBySide } from './Together';
@@ -24,9 +24,10 @@ function Avatar({ name, accent }: { name: string; accent: string }) {
 }
 
 export function UsPage() {
-  const { partner, loading } = usePartnerStore();
+  const { partner, loading, viewing, self } = usePartnerStore();
   const me = useSession((s) => s.user);
-  const myName = getProfile().display_name?.trim() || me?.email?.split('@')[0] || t('Me');
+  // While showing your partner's data the on-screen profile is theirs, so use the name kept for you.
+  const myName = (viewing ? self?.name : getProfile().display_name?.trim()) || me?.email?.split('@')[0] || t('Me');
   return (
     <>
       <PageHeader title={t('Us')} subtitle={t('Shared between you two')} />
@@ -46,7 +47,7 @@ export function UsPage() {
           </p>
           <p className="relative mt-1 text-center text-xs text-ink-3">
             {partner
-              ? t('To-dos, money and lists are shared. Tap below to see their day.')
+              ? t('To-dos, money, lists, habits and the journal are shared. Tap below to see their day.')
               : t('When your partner creates their account, they’ll appear here.')}
           </p>
           {partner && (
@@ -55,9 +56,9 @@ export function UsPage() {
               variant="secondary"
               className="relative mt-4"
               disabled={loading}
-              onClick={() => void viewPartner().catch((e) => toast.error(e instanceof Error ? e.message : t('Could not load')))}
+              onClick={() => (viewing ? viewMe() : void viewPartner().catch((e) => toast.error(e instanceof Error ? e.message : t('Could not load'))))}
             >
-              <ArrowLeftRight size={16} /> {t('See {name}’s day', { name: partner.name })}
+              <ArrowLeftRight size={16} /> {viewing ? t('Back to my day') : t('See {name}’s day', { name: partner.name })}
             </Button>
           )}
         </section>

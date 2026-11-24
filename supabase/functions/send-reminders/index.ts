@@ -163,12 +163,16 @@ function localNow(tz: string, offsetMin = 0) {
  */
 async function userState(userId: string, date: string) {
   const base = () => db.from('records').select('tbl,row_id,data').eq('user_id', userId).eq('deleted', false);
-  const [small, today] = await Promise.all([
-    base().in('tbl', ['profile', 'supplements', 'habits']),
-    base().in('tbl', ['water_days', 'bodyweight_logs', 'journal', 'supplement_logs', 'workout_sessions', 'habit_logs']).eq('data->>date', date),
+  // Habits and the journal are shared (household_records); ticks and entries carry who made them.
+  const home = () => db.from('household_records').select('tbl,row_id,data').eq('deleted', false);
+  const [small, today, habits, mineToday] = await Promise.all([
+    base().in('tbl', ['profile', 'supplements']),
+    base().in('tbl', ['water_days', 'bodyweight_logs', 'supplement_logs', 'workout_sessions']).eq('data->>date', date),
+    home().eq('tbl', 'habits'),
+    home().in('tbl', ['journal', 'habit_logs']).eq('data->>date', date).eq('data->>by', userId),
   ]);
-  for (const r of [small, today]) if (r.error) console.error('load state failed', r.error.message);
-  const rows = [...(small.data ?? []), ...(today.data ?? [])];
+  for (const r of [small, today, habits, mineToday]) if (r.error) console.error('load state failed', r.error.message);
+  const rows = [...(small.data ?? []), ...(today.data ?? []), ...(habits.data ?? []), ...(mineToday.data ?? [])];
   const of = (t: string) => rows.filter((r) => r.tbl === t).map((r) => r.data as Record<string, unknown>);
   const profile = (of('profile')[0] ?? {}) as Record<string, unknown>;
   const suppLogs = of('supplement_logs');

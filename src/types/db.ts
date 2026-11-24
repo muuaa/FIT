@@ -171,6 +171,8 @@ export interface Habit {
 export interface HabitLog {
   habit_id: string;
   date: string;
+  /** Who ticked it (user id). Habits are shared; each of you ticks your own. */
+  by: string;
 }
 
 export type Repeat = 'none' | 'daily' | 'weekdays' | 'weekly';
@@ -203,6 +205,8 @@ export interface Expense {
 
 export interface JournalEntry {
   date: string;
+  /** Who wrote it (user id). The journal is shared; each of you writes your own entry per day. */
+  by: string;
   gratitude: string[];
   text: string;
   updated_at: string;
