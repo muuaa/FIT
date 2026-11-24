@@ -21,14 +21,36 @@ window.addEventListener('unhandledrejection', (ev) => viewOnly(ev.reason) && ev.
 requestPersistence();
 
 // Installed apps keep an offline copy. Check for a new version whenever the app is opened or brought
-// back to the front, and reload once the new version takes over, so updates show up right away.
+// back to the front. A new version is switched in while the app is in the background (never in front
+// of you, which looked like a glitch); you see it the next time you come back.
 if ('serviceWorker' in navigator && !import.meta.env.VITE_EMBEDDED) {
   const hadController = Boolean(navigator.serviceWorker.controller);
+  let pending = false;
   let reloaded = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController || reloaded) return; // first install: nothing to refresh
+  const reloadNow = () => {
+    if (reloaded) return;
     reloaded = true;
     window.location.reload();
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return; // first install: nothing to refresh
+    if (document.visibilityState === 'hidden') reloadNow();
+    else pending = true;
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (pending && document.visibilityState === 'hidden') reloadNow();
+  });
+  // A page from the old version that's no longer online: load the new version instead of failing.
+  window.addEventListener('vite:preloadError', (ev) => {
+    ev.preventDefault();
+    try {
+      const last = Number(sessionStorage.getItem('fit.reloadedForUpdate') ?? 0);
+      if (Date.now() - last < 30_000) return;
+      sessionStorage.setItem('fit.reloadedForUpdate', String(Date.now()));
+    } catch {
+      /* ignore */
+    }
+    reloadNow();
   });
   const check = () => void navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => undefined);
   document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && check());

@@ -128,6 +128,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
     }
   }, [user, phase, qc]);
 
+  // Lift the launch animation once there's something real to show (not the brief loading screens).
+  useEffect(() => {
+    if (phase !== 'checking' && phase !== 'loading') (window as { __appReady?: () => void }).__appReady?.();
+  }, [phase]);
+
   const retry = () => {
     const u = useSession.getState().user;
     if (!u) return;

@@ -56,7 +56,7 @@ export function PageHeader({
       <header
         className={cn(
           'pt-safe sticky top-0 z-30 -mx-4 px-4 transition-[background,border-color,backdrop-filter] duration-300 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8',
-          compact ? 'border-b border-white/[0.06] bg-bg/70 backdrop-blur-2xl' : 'border-b border-transparent',
+          compact ? 'border-b border-white/[0.06] bg-bg/90 backdrop-blur-md' : 'border-b border-transparent',
         )}
       >
         <div className="flex h-14 items-center gap-2">

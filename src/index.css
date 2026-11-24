@@ -52,15 +52,24 @@
     -webkit-text-size-adjust: 100%;
   }
   body {
-    background:
-      radial-gradient(120% 60% at 50% -10%, color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 60%),
-      radial-gradient(80% 40% at 100% 0%, color-mix(in oklab, var(--color-us) 6%, transparent), transparent 70%),
-      var(--color-bg);
-    background-attachment: fixed;
+    background: var(--color-bg);
     color: var(--color-ink);
     font-family: var(--font-sans);
     overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
+  }
+  /* The soft glow behind everything, on its own fixed layer: scrolling never has to repaint it
+     (background-attachment: fixed repainted the whole page on every frame on Android). */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 60% at 50% -10%, color-mix(in oklab, var(--color-accent) 14%, transparent), transparent 60%),
+      radial-gradient(80% 40% at 100% 0%, color-mix(in oklab, var(--color-us) 6%, transparent), transparent 70%);
+    transform: translateZ(0);
   }
   input,
   select,
@@ -147,9 +156,9 @@
 
 /* Frosted glass surface used by cards, sheets and bars */
 @utility glass {
-  background: color-mix(in oklab, var(--color-surface) 72%, transparent);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  /* Cards sit on a near-flat background, so a live blur behind each one cost smooth scrolling for
+     almost no visible difference: a slightly denser fill gives the same look. */
+  background: color-mix(in oklab, var(--color-surface) 84%, transparent);
   border: 1px solid rgb(255 255 255 / 0.06);
   box-shadow:
     inset 0 1px 0 rgb(255 255 255 / 0.05),

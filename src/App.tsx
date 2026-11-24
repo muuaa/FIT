@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { usePartnerStore } from '@/lib/partner';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
@@ -49,11 +49,7 @@ export default function App() {
     <>
       <AppShell key={lang}>
         <Suspense
-          fallback={
-            <div className="grid h-40 place-items-center">
-              <Spinner />
-            </div>
-          }
+          fallback={<SlowSpinner />}
         >
           <Routes key={`${today}-${lang}-${viewing ? 'partner' : 'me'}`}>
             <Route path="/" element={<TodayPage />} />
@@ -85,4 +81,14 @@ export default function App() {
       <Toaster />
     </>
   );
+}
+
+/** Only show a spinner if a page takes a moment to load (a quick flash of one looks glitchy). */
+function SlowSpinner() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const id = window.setTimeout(() => setShow(true), 350);
+    return () => window.clearTimeout(id);
+  }, []);
+  return <div className="grid h-40 place-items-center">{show && <Spinner />}</div>;
 }
