@@ -16,6 +16,24 @@ const COLORS = ['#111827', '#2563eb', '#dc2626', '#16a34a', '#9333ea'];
 const SIZES = [2, 4, 8];
 const PAPER = '#ffffff';
 const LINE = '#e5e7eb';
+/** Tablets (shortest side 600px or more) are pen-only. */
+const isTablet = () => Math.min(window.screen.width, window.screen.height) >= 600;
+const PEN_KEY = 'fit.penUsed';
+function PEN_ONLY(): boolean {
+  if (isTablet()) return true;
+  try {
+    return localStorage.getItem(PEN_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function rememberPen() {
+  try {
+    localStorage.setItem(PEN_KEY, '1');
+  } catch {
+    /* fine: just this session */
+  }
+}
 const LINE_START = 40;
 const LINE_GAP = 36;
 /** The page starts this many screens tall and grows as you write near the bottom (up to MAX). */
@@ -108,7 +126,9 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
   const strokes = useRef<Stroke[]>([]);
   const redo = useRef<Stroke[]>([]);
   const current = useRef<Stroke | null>(null);
-  const penSeen = useRef(false);
+  // Fingers never write on tablets, or on a phone once its pen (e.g. S Pen) has been used here:
+  // there, one finger slides the page and only the pen writes.
+  const penSeen = useRef(PEN_ONLY());
   const penDown = useRef(false);
   const cursor = useRef<HTMLDivElement>(null);
   const [color, setColor] = useState(COLORS[0]);
@@ -199,17 +219,40 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
   };
 
   /** Fingers that slide the page instead of drawing. */
+  const velocity = useRef({ v: 0, t: 0 });
+  const fling = useRef(0);
+  const stopFling = () => cancelAnimationFrame(fling.current);
   const slide = (e: React.PointerEvent) => {
     const prev = touches.current.get(e.pointerId);
     touches.current.set(e.pointerId, e.clientY);
     if (prev === undefined || !wrap.current) return;
     // With two fingers, move by their average so the page follows both.
-    wrap.current.scrollTop -= (e.clientY - prev) / Math.max(1, touches.current.size === 2 ? 2 : 1);
+    const dy = (e.clientY - prev) / Math.max(1, touches.current.size === 2 ? 2 : 1);
+    wrap.current.scrollTop -= dy;
+    const now = performance.now();
+    const dt = Math.max(1, now - velocity.current.t);
+    velocity.current = { v: 0.8 * (dy / dt) + 0.2 * velocity.current.v, t: now };
   };
+  /** Let go while sliding: the page keeps gliding and slows down, like normal scrolling. */
+  const release = () => {
+    const w = wrap.current;
+    let v = velocity.current.v * 16; // px per frame
+    if (!w || performance.now() - velocity.current.t > 80 || Math.abs(v) < 1) return;
+    const step = () => {
+      w.scrollTop -= v;
+      v *= 0.95;
+      if (Math.abs(v) > 0.5) fling.current = requestAnimationFrame(step);
+    };
+    fling.current = requestAnimationFrame(step);
+  };
+  useEffect(() => stopFling, []);
 
   const down = (e: React.PointerEvent) => {
     showCursor(null);
+    stopFling();
+    velocity.current = { v: 0, t: performance.now() };
     if (e.pointerType === 'pen') {
+      if (!penSeen.current) rememberPen();
       penSeen.current = true;
       penDown.current = true;
     }
@@ -263,7 +306,9 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
     if (last && last[1] > pageH - screen * 0.35) grow();
   };
   const up = (e: React.PointerEvent) => {
+    const wasSliding = e.pointerType === 'touch' && touches.current.has(e.pointerId) && !current.current;
     touches.current.delete(e.pointerId);
+    if (wasSliding && touches.current.size === 0) release();
     if (e.pointerType === 'pen') penDown.current = false;
     else if (e.pointerType === 'touch' && penDown.current) return; // a palm lifting mid-stroke
     if (current.current) {
@@ -472,7 +517,7 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
       </div>
       {hint && (
         <p className="pointer-events-none absolute bottom-[calc(env(safe-area-inset-bottom)+8px)] start-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[11px] text-white rtl:translate-x-1/2">
-          {t('Slide with two fingers')}
+          {penSeen.current ? t('Write with the pen · slide with one finger') : t('Slide with two fingers')}
         </p>
       )}
     </div>

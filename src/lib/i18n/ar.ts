@@ -844,4 +844,5 @@ export const AR: Record<string, string> = {
   "Move the page": "تحريك الصفحة",
   "More space": "مساحة أكثر",
   "Slide with two fingers": "اسحب بإصبعين للتمرير",
+  "Write with the pen · slide with one finger": "اكتب بالقلم · مرّر بإصبع واحد",
 };
