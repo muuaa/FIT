@@ -171,7 +171,7 @@ export function personId(): string {
   return (viewOnly ? viewPerson : currentUser) ?? 'local';
 }
 
-class ViewOnlyError extends Error {}
+export class ViewOnlyError extends Error {}
 
 function guardWrite(): void {
   if (viewOnly) throw new ViewOnlyError(t("You're looking at your partner's data. Switch back to yourself to make changes."));

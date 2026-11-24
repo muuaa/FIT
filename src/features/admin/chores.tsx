@@ -12,7 +12,7 @@ import { useTable, useTableActions } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { tick } from '@/lib/alerts';
 import { cn } from '@/lib/cn';
-import { t } from '@/lib/i18n';
+import { t, tn } from '@/lib/i18n';
 import { uid } from '@/lib/localDb';
 import { usePartnerStore } from '@/lib/partner';
 import { choreStatus } from '@/lib/plan';
@@ -79,8 +79,8 @@ export function ChoresPage() {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-medium">{c.name}</span>
                   <span className={cn('block text-xs', days < 0 ? 'text-danger' : days === 0 ? 'text-steps' : 'text-ink-3')}>
-                    {days < 0 ? t('{n} days late', { n: -days }) : days === 0 ? t('Due today') : t('In {n} days', { n: days })}
-                    {turn && ` · ${t('{name}’s turn', { name: name(turn) })}`}
+                    {days < 0 ? t('{n} days late', { n: -days }) : days === 0 ? t('Due today') : tn(days, 'In {n} day', 'In {n} days')}
+                    {turn && ` · ${turn === meId && name(turn) === t('You') ? t('Your turn') : t('{name}’s turn', { name: name(turn) })}`}
                   </span>
                 </span>
                 {days <= 0 && (

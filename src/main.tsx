@@ -7,11 +7,17 @@ import App from './App';
 import { AuthGate } from './features/auth/AuthGate';
 import './lib/install';
 import { restoreLanguage } from './lib/i18n';
-import { requestPersistence } from './lib/localDb';
+import { requestPersistence, ViewOnlyError } from './lib/localDb';
+import { toast } from './stores/toastStore';
 import { captureNativeLaunch } from './lib/push';
 import './index.css';
 
 captureNativeLaunch();
+
+// Tapping something while looking at your partner's data: explain instead of failing silently.
+const viewOnly = (e: unknown) => e instanceof ViewOnlyError && (toast.error(e.message), true);
+window.addEventListener('error', (ev) => viewOnly(ev.error) && ev.preventDefault());
+window.addEventListener('unhandledrejection', (ev) => viewOnly(ev.reason) && ev.preventDefault());
 requestPersistence();
 
 // Installed apps keep an offline copy. Check for a new version whenever the app is opened or brought
