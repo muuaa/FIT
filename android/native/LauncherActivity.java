@@ -24,6 +24,17 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
+import android.content.ComponentName;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.browser.customtabs.CustomTabsCallback;
+import androidx.browser.customtabs.CustomTabsClient;
+import androidx.browser.customtabs.CustomTabsService;
+import androidx.browser.customtabs.CustomTabsServiceConnection;
+import androidx.browser.customtabs.CustomTabsSession;
+
+import com.google.androidbrowserhelper.trusted.TwaProviderPicker;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 
@@ -48,13 +59,20 @@ public class LauncherActivity
         }
     }
 
-    private boolean launched;
-
     private static final int ASK_NOTIFICATIONS = 7;
+    private static final Uri ORIGIN = Uri.parse("https://muuaa.github.io");
+
+    private final Handler main = new Handler(Looper.getMainLooper());
+    private boolean launched;
+    private boolean preparing;
+    private CustomTabsServiceConnection connection;
 
     /**
-     * Before opening: on Android 13+ ask once for permission to show notifications (an install
-     * starts with them off), then wait briefly for this phone's Firebase token.
+     * Opening runs in steps behind the dark launch screen, then shows the app in one go:
+     * 1. Android 13+: ask once for permission to show notifications.
+     * 2. Get this phone's Firebase token (if it isn't saved yet), for native notifications.
+     * 3. Have Chrome confirm the app and the site belong together *before* opening it. Otherwise
+     *    Chrome opens first and shows a grey screen with the site's address bar until it's sure.
      */
     @Override
     protected boolean shouldLaunchImmediately() {
@@ -65,38 +83,84 @@ public class LauncherActivity
             requestPermissions(new String[] {Manifest.permission.POST_NOTIFICATIONS}, ASK_NOTIFICATIONS);
             return false;
         }
-        return afterPermission();
+        fetchToken();
+        return false;
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(requestCode, permissions, results);
-        if (requestCode == ASK_NOTIFICATIONS && afterPermission() && !launched) {
-            launched = true;
-            launchTwa();
-        }
+        if (requestCode == ASK_NOTIFICATIONS) fetchToken();
     }
 
-    /** Wait (briefly) for this phone's Firebase token so the site can register it. */
-    private boolean afterPermission() {
-        if (Push.token(this) != null) return true;
-        Handler main = new Handler(Looper.getMainLooper());
-        Runnable go = () -> {
-            if (launched || isFinishing()) return;
-            launched = true;
-            launchTwa();
-        };
+    private void fetchToken() {
+        if (Push.token(this) != null) {
+            verifyThenOpen();
+            return;
+        }
         try {
             FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
                 if (task.isSuccessful()) Push.saveToken(this, task.getResult());
-                main.post(go);
+                main.post(this::verifyThenOpen);
             });
         } catch (RuntimeException e) {
-            main.post(go);
-            return false;
+            main.post(this::verifyThenOpen);
+            return;
         }
-        main.postDelayed(go, 3000);
-        return false;
+        main.postDelayed(this::verifyThenOpen, 3000);
+    }
+
+    private void verifyThenOpen() {
+        if (preparing || launched) return;
+        preparing = true;
+        main.postDelayed(this::open, 2500); // never wait longer than this
+        String chrome = TwaProviderPicker.pickProvider(getPackageManager()).provider;
+        if (chrome == null) {
+            open();
+            return;
+        }
+        connection = new CustomTabsServiceConnection() {
+            @Override
+            public void onCustomTabsServiceConnected(@NonNull ComponentName name, @NonNull CustomTabsClient client) {
+                client.warmup(0);
+                CustomTabsSession session = client.newSession(new CustomTabsCallback() {
+                    @Override
+                    public void onRelationshipValidationResult(int relation, @NonNull Uri origin, boolean result, @Nullable Bundle extras) {
+                        main.post(LauncherActivity.this::open);
+                    }
+                });
+                if (session == null || !session.validateRelationship(CustomTabsService.RELATION_HANDLE_ALL_URLS, ORIGIN, null)) {
+                    main.post(LauncherActivity.this::open);
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {}
+        };
+        try {
+            if (!CustomTabsClient.bindCustomTabsService(this, chrome, connection)) open();
+        } catch (RuntimeException e) {
+            open();
+        }
+    }
+
+    private void open() {
+        if (launched || isFinishing()) return;
+        launched = true;
+        launchTwa();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (connection != null) {
+            try {
+                unbindService(connection);
+            } catch (RuntimeException ignored) {
+                // already gone
+            }
+            connection = null;
+        }
+        super.onDestroy();
     }
 
     @Override
