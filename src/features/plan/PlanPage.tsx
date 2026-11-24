@@ -18,6 +18,7 @@ import type { CalEvent } from '@/types/db';
 import { EventSheet } from './EventSheet';
 import { FocusCard } from './Focus';
 import { RoutinesCard } from './Routines';
+import { OtherPlan } from '@/features/us/OtherPerson';
 
 function WeekStrip({ date, onPick, marks }: { date: string; onPick: (d: string) => void; marks: (d: string) => number }) {
   const today = useToday();
@@ -140,6 +141,7 @@ export function PlanPage() {
         </Card>
         {date === today && <RoutinesCard />}
         {date === today && <FocusCard />}
+        <OtherPlan date={date} />
       </div>
       <EventSheet open={sheet !== null} event={sheet?.event ?? null} date={date} onClose={() => setSheet(null)} />
     </>

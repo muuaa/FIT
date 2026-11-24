@@ -1,4 +1,4 @@
-import { Eraser, Loader2, Pen, Redo2, Trash2, Undo2, X } from 'lucide-react';
+import { Eraser, Hand, Loader2, Pen, Plus, Redo2, Trash2, Undo2, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
@@ -16,35 +16,86 @@ const COLORS = ['#111827', '#2563eb', '#dc2626', '#16a34a', '#9333ea'];
 const SIZES = [2, 4, 8];
 const PAPER = '#ffffff';
 const LINE = '#e5e7eb';
+const LINE_START = 40;
+const LINE_GAP = 36;
+/** The page starts this many screens tall and grows as you write near the bottom (up to MAX). */
+const START_SCREENS = 2;
+const MAX_SCREENS = 8;
 
-function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
-  ctx.strokeStyle = s.eraser ? PAPER : s.color;
+/** Line width at a pressure (0–1). Light pen pressure gives a fine line, firm pressure a bold one. */
+const widthAt = (s: Stroke, p: number) => (s.eraser ? s.size * 4 : s.size * (0.3 + 1.2 * p));
+
+function style(ctx: CanvasRenderingContext2D, s: Stroke) {
+  // The ink sits on its own transparent layer above the paper, so the eraser removes ink only
+  // (never the ruled lines).
+  ctx.globalCompositeOperation = s.eraser ? 'destination-out' : 'source-over';
+  ctx.strokeStyle = s.eraser ? '#000' : s.color;
   ctx.fillStyle = ctx.strokeStyle;
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
+}
+
+/**
+ * Draw the piece of a stroke that ends at point i, as a curve through the midpoints of the
+ * surrounding points: fast pen movement stays smooth instead of turning into straight segments.
+ */
+function drawSegment(ctx: CanvasRenderingContext2D, s: Stroke, i: number) {
+  const pts = s.points;
+  const a = pts[Math.max(0, i - 2)];
+  const b = pts[i - 1];
+  const c = pts[i];
+  const sx = i === 1 ? b[0] : (a[0] + b[0]) / 2;
+  const sy = i === 1 ? b[1] : (a[1] + b[1]) / 2;
+  ctx.lineWidth = widthAt(s, (b[2] + c[2]) / 2);
+  ctx.beginPath();
+  ctx.moveTo(sx, sy);
+  ctx.quadraticCurveTo(b[0], b[1], (b[0] + c[0]) / 2, (b[1] + c[1]) / 2);
+  ctx.stroke();
+}
+
+/** The last half-segment, from the final midpoint to where the pen lifted. */
+function drawTail(ctx: CanvasRenderingContext2D, s: Stroke) {
+  const pts = s.points;
+  if (pts.length < 2) return;
+  const b = pts[pts.length - 2];
+  const c = pts[pts.length - 1];
+  ctx.lineWidth = widthAt(s, c[2]);
+  ctx.beginPath();
+  ctx.moveTo((b[0] + c[0]) / 2, (b[1] + c[1]) / 2);
+  ctx.lineTo(c[0], c[1]);
+  ctx.stroke();
+}
+
+function drawStroke(ctx: CanvasRenderingContext2D, s: Stroke) {
+  style(ctx, s);
   const pts = s.points;
   if (pts.length === 1) {
     const [x, y, p] = pts[0];
     ctx.beginPath();
-    ctx.arc(x, y, (s.size * (s.eraser ? 4 : 0.5 + p)) / 2, 0, Math.PI * 2);
+    ctx.arc(x, y, widthAt(s, p) / 2, 0, Math.PI * 2);
     ctx.fill();
     return;
   }
-  for (let i = 1; i < pts.length; i++) {
-    const [x0, y0, p0] = pts[i - 1];
-    const [x1, y1, p1] = pts[i];
-    ctx.lineWidth = s.eraser ? s.size * 4 : s.size * (0.5 + (p0 + p1) / 2);
-    ctx.beginPath();
-    ctx.moveTo(x0, y0);
-    ctx.lineTo(x1, y1);
-    ctx.stroke();
-  }
+  for (let i = 1; i < pts.length; i++) drawSegment(ctx, s, i);
+  drawTail(ctx, s);
 }
 
 /**
- * Full-screen handwriting page. Works with fingers, mouse and styluses (Apple Pencil pressure
- * changes line width). Once a pen is detected, finger touches are ignored so a resting palm
- * doesn't draw.
+ * The drawing context. `desynchronized` lets Chrome on Android draw pen strokes straight to the
+ * screen (low-latency ink), so the line keeps up with an S Pen or Honor pen.
+ */
+function ctxOf(c: HTMLCanvasElement): CanvasRenderingContext2D {
+  return c.getContext('2d', { desynchronized: true })!;
+}
+
+/** Pen side button (S Pen) or eraser end/button: erase while held. */
+const penErasing = (e: PointerEvent | React.PointerEvent) =>
+  e.pointerType === 'pen' && ((e.buttons & 32) !== 0 || (e.buttons & 2) !== 0 || e.button === 5);
+
+/**
+ * Full-screen handwriting page that scrolls, so there's room to keep writing. Works with fingers,
+ * mouse and styluses (pen pressure changes line width). Slide the page with two fingers, with the
+ * hand tool, or (once a pen is used) with one finger, so a resting palm never draws.
  */
 export function Handwriting({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (png: Blob) => Promise<boolean> }) {
   if (!open) return null;
@@ -58,45 +109,51 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
   const redo = useRef<Stroke[]>([]);
   const current = useRef<Stroke | null>(null);
   const penSeen = useRef(false);
+  const penDown = useRef(false);
+  const cursor = useRef<HTMLDivElement>(null);
   const [color, setColor] = useState(COLORS[0]);
   const [size, setSize] = useState(SIZES[1]);
   const [eraser, setEraser] = useState(false);
   const [, force] = useState(0);
   const [saving, setSaving] = useState(false);
   const [lined, setLined] = useState(true);
+  const [hand, setHand] = useState(false);
+  const [screen, setScreen] = useState(() => Math.max(400, window.innerHeight - 120));
+  const [pageH, setPageH] = useState(() => Math.max(400, window.innerHeight - 120) * START_SCREENS);
+  const touches = useRef(new Map<number, number>()); // pointerId -> last clientY, for sliding
+  const [hint, setHint] = useState(true);
+  useEffect(() => {
+    const id = window.setTimeout(() => setHint(false), 4000);
+    return () => window.clearTimeout(id);
+  }, []);
+  const maxPage = screen * MAX_SCREENS;
 
   const redraw = useCallback(() => {
     const c = canvas.current;
     if (!c) return;
-    const ctx = c.getContext('2d')!;
+    const ctx = ctxOf(c);
     const dpr = c.width / c.clientWidth;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = PAPER;
-    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.clearRect(0, 0, c.width, c.height);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (lined) {
-      ctx.strokeStyle = LINE;
-      ctx.lineWidth = 1;
-      for (let y = 40; y < c.clientHeight; y += 36) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(c.clientWidth, y);
-        ctx.stroke();
-      }
-    }
     for (const s of strokes.current) drawStroke(ctx, s);
-  }, [lined]);
+    if (current.current) drawStroke(ctx, current.current); // the page grew mid-stroke
+  }, []);
 
   useEffect(() => {
     const c = canvas.current;
     const w = wrap.current;
     if (!c || !w) return;
     const resize = () => {
-      const dpr = Math.min(3, window.devicePixelRatio || 1);
+      // Sharp on high-resolution tablets and phones, but a tall page is a big image: keep it within
+      // about 16 million pixels so a long page doesn't run the device out of memory.
+      const budget = Math.sqrt(16_000_000 / Math.max(1, w.clientWidth * pageH));
+      const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 3, budget));
+      setScreen(Math.max(400, w.clientHeight));
       c.width = Math.round(w.clientWidth * dpr);
-      c.height = Math.round(w.clientHeight * dpr);
+      c.height = Math.round(pageH * dpr);
       c.style.width = `${w.clientWidth}px`;
-      c.style.height = `${w.clientHeight}px`;
+      c.style.height = `${pageH}px`;
       redraw();
     };
     resize();
@@ -108,37 +165,111 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
       ro.disconnect();
       document.body.style.overflow = prev;
     };
-  }, [redraw]);
+  }, [redraw, pageH]);
 
+  /** Add another screen of paper (keeps everything already written). */
+  const grow = useCallback(() => setPageH((h) => Math.min(maxPage, h + screen)), [maxPage, screen]);
+
+  /** Pen pressure, eased between readings so the line doesn't wobble (mouse and finger: medium). */
+  const pressure = (ev: PointerEvent | React.PointerEvent, prev?: number) => {
+    if (ev.pointerType !== 'pen') return 0.5;
+    const raw = Math.min(1, Math.max(0.05, ev.pressure || 0.5));
+    return prev === undefined ? raw : prev * 0.6 + raw * 0.4;
+  };
   const pos = (e: React.PointerEvent): Point => {
     const r = canvas.current!.getBoundingClientRect();
-    const p = e.pointerType === 'pen' ? Math.max(0.1, e.pressure || 0.5) : 0.5;
-    return [e.clientX - r.left, e.clientY - r.top, p];
+    return [e.clientX - r.left, e.clientY - r.top, pressure(e)];
+  };
+
+  /** While a pen hovers over the page, show where it will write (and how big the eraser is). */
+  const showCursor = (e: React.PointerEvent | null) => {
+    const el = cursor.current;
+    if (!el) return;
+    if (!e || e.pointerType !== 'pen' || hand) {
+      el.style.opacity = '0';
+      return;
+    }
+    const r = canvas.current!.getBoundingClientRect();
+    const erasing = eraser || penErasing(e);
+    const d = Math.max(4, widthAt({ color, size, eraser: erasing, points: [] }, 0.5));
+    el.style.width = el.style.height = `${d}px`;
+    el.style.transform = `translate(${e.clientX - r.left - d / 2}px, ${e.clientY - r.top - d / 2}px)`;
+    el.style.borderColor = erasing ? '#9ca3af' : color;
+    el.style.opacity = '1';
+  };
+
+  /** Fingers that slide the page instead of drawing. */
+  const slide = (e: React.PointerEvent) => {
+    const prev = touches.current.get(e.pointerId);
+    touches.current.set(e.pointerId, e.clientY);
+    if (prev === undefined || !wrap.current) return;
+    // With two fingers, move by their average so the page follows both.
+    wrap.current.scrollTop -= (e.clientY - prev) / Math.max(1, touches.current.size === 2 ? 2 : 1);
   };
 
   const down = (e: React.PointerEvent) => {
-    if (e.pointerType === 'pen') penSeen.current = true;
-    else if (e.pointerType === 'touch' && penSeen.current) return; // palm rejection
+    showCursor(null);
+    if (e.pointerType === 'pen') {
+      penSeen.current = true;
+      penDown.current = true;
+    }
+    if (e.pointerType === 'touch') {
+      // A palm landing while the pen writes: ignore it completely (no drawing, no sliding).
+      if (penDown.current) return;
+      touches.current.set(e.pointerId, e.clientY);
+      e.currentTarget.setPointerCapture(e.pointerId);
+      // Second finger, hand tool, or a finger while using a pen (palm): slide, don't draw.
+      if (touches.current.size > 1 || hand || penSeen.current) {
+        if (current.current && touches.current.size > 1) {
+          current.current = null; // the first finger's dot was the start of a slide
+          redraw();
+        }
+        return;
+      }
+    } else if (hand) return;
     e.currentTarget.setPointerCapture(e.pointerId);
-    current.current = { color, size, eraser, points: [pos(e)] };
+    current.current = { color, size, eraser: eraser || penErasing(e), points: [pos(e)] };
     redo.current = [];
-    const ctx = canvas.current!.getContext('2d')!;
-    drawStroke(ctx, current.current);
+    drawStroke(ctxOf(canvas.current!), current.current);
   };
   const move = (e: React.PointerEvent) => {
+    if (e.pointerType === 'pen' && !current.current) {
+      showCursor(e); // hovering
+      return;
+    }
+    if (e.pointerType === 'touch' && penDown.current) return; // palm while writing
+    if (e.pointerType === 'touch' && touches.current.has(e.pointerId) && (touches.current.size > 1 || hand || penSeen.current)) {
+      slide(e);
+      return;
+    }
+    if (e.pointerType === 'touch') touches.current.set(e.pointerId, e.clientY);
     const s = current.current;
     if (!s) return;
     const events = (e.nativeEvent as PointerEvent).getCoalescedEvents?.() ?? [e.nativeEvent];
-    const ctx = canvas.current!.getContext('2d')!;
+    const ctx = ctxOf(canvas.current!);
+    style(ctx, s);
+    const r = canvas.current!.getBoundingClientRect();
+    // Pens report many points per frame (S Pen up to 240 a second): use every one of them.
     for (const ev of events) {
-      const r = canvas.current!.getBoundingClientRect();
-      const p: Point = [ev.clientX - r.left, ev.clientY - r.top, ev.pointerType === 'pen' ? Math.max(0.1, ev.pressure || 0.5) : 0.5];
-      s.points.push(p);
-      drawStroke(ctx, { ...s, points: s.points.slice(-2) });
+      const prev = s.points[s.points.length - 1];
+      const x = ev.clientX - r.left;
+      const y = ev.clientY - r.top;
+      if (Math.abs(x - prev[0]) < 0.3 && Math.abs(y - prev[1]) < 0.3) continue;
+      s.points.push([x, y, pressure(ev, prev[2])]);
+      drawSegment(ctx, s, s.points.length - 1);
     }
+    // Writing near the bottom of the paper? Add more below.
+    const last = s.points[s.points.length - 1];
+    if (last && last[1] > pageH - screen * 0.35) grow();
   };
-  const up = () => {
+  const up = (e: React.PointerEvent) => {
+    touches.current.delete(e.pointerId);
+    if (e.pointerType === 'pen') penDown.current = false;
+    else if (e.pointerType === 'touch' && penDown.current) return; // a palm lifting mid-stroke
     if (current.current) {
+      const ctx = ctxOf(canvas.current!);
+      style(ctx, current.current);
+      drawTail(ctx, current.current);
       strokes.current.push(current.current);
       current.current = null;
       force((n) => n + 1);
@@ -149,7 +280,23 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
     const c = canvas.current;
     if (!c || !strokes.current.length) return;
     setSaving(true);
-    const blob = await new Promise<Blob | null>((res) => c.toBlob(res, 'image/png'));
+    // Save only down to the last thing written (at least one screen), not the empty paper below.
+    const bottom = Math.max(...strokes.current.flatMap((st) => st.points.map((pt) => pt[1])));
+    const keep = Math.min(pageH, Math.max(screen, bottom + 48));
+    const dpr = c.width / c.clientWidth;
+    const out = document.createElement('canvas');
+    out.width = c.width;
+    out.height = Math.round(keep * dpr);
+    // Paper (and lines, if shown) underneath, then the ink on top.
+    const o = out.getContext('2d')!;
+    o.fillStyle = PAPER;
+    o.fillRect(0, 0, out.width, out.height);
+    if (lined) {
+      o.fillStyle = LINE;
+      for (let y = LINE_START; y < keep; y += LINE_GAP) o.fillRect(0, Math.round(y * dpr), out.width, Math.max(1, Math.round(dpr)));
+    }
+    o.drawImage(c, 0, 0);
+    const blob = await new Promise<Blob | null>((res) => out.toBlob(res, 'image/png'));
     const ok = blob ? await onSave(blob) : false;
     setSaving(false);
     if (ok) onClose();
@@ -166,11 +313,32 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
             <X size={20} />
           </button>
           <div className="mx-1 h-6 w-px bg-line" />
-          <button type="button" aria-label={t('Pen')} aria-pressed={!eraser} onClick={() => setEraser(false)} className={tool(!eraser)}>
+          <button
+            type="button"
+            aria-label={t('Pen')}
+            aria-pressed={!eraser && !hand}
+            onClick={() => {
+              setEraser(false);
+              setHand(false);
+            }}
+            className={tool(!eraser && !hand)}
+          >
             <Pen size={18} />
           </button>
-          <button type="button" aria-label={t('Eraser')} aria-pressed={eraser} onClick={() => setEraser(true)} className={tool(eraser)}>
+          <button
+            type="button"
+            aria-label={t('Eraser')}
+            aria-pressed={eraser && !hand}
+            onClick={() => {
+              setEraser(true);
+              setHand(false);
+            }}
+            className={tool(eraser && !hand)}
+          >
             <Eraser size={18} />
+          </button>
+          <button type="button" aria-label={t('Move the page')} aria-pressed={hand} onClick={() => setHand((v) => !v)} className={tool(hand)}>
+            <Hand size={18} />
           </button>
           <button
             type="button"
@@ -234,6 +402,7 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
               onClick={() => {
                 setColor(c);
                 setEraser(false);
+                setHand(false);
               }}
               className={cn('size-8 shrink-0 rounded-full border-2', !eraser && color === c ? 'border-ink' : 'border-transparent')}
               style={{ background: c }}
@@ -262,17 +431,50 @@ function Pad({ onClose, onSave }: { onClose: () => void; onSave: (png: Blob) => 
           </button>
         </div>
       </div>
-      <div ref={wrap} className="relative min-h-0 flex-1 pb-safe">
-        <canvas
-          ref={canvas}
-          className="absolute inset-0 touch-none"
-          onPointerDown={down}
-          onPointerMove={move}
-          onPointerUp={up}
-          onPointerCancel={up}
-          onPointerLeave={up}
-        />
+      <div ref={wrap} className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white pb-safe">
+        <div
+          className="relative select-none [-webkit-touch-callout:none]"
+          style={{
+            height: pageH,
+            background: lined ? `linear-gradient(${LINE} 1px, transparent 1px) 0 ${LINE_START}px / 100% ${LINE_GAP}px ${PAPER}` : PAPER,
+          }}
+        >
+          <div
+            ref={cursor}
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 z-10 rounded-full border-2 opacity-0 transition-opacity"
+          />
+          <canvas
+            ref={canvas}
+            className={cn('absolute inset-x-0 top-0 touch-none', hand && 'cursor-grab')}
+            onPointerDown={down}
+            onPointerMove={move}
+            onPointerUp={up}
+            onPointerCancel={up}
+            onPointerLeave={(e) => {
+              showCursor(null);
+              if (e.pointerType !== 'touch') up(e);
+            }}
+            onContextMenu={(e) => e.preventDefault()} // S Pen button / long-press shouldn't open a menu
+          />
+        </div>
+        {pageH < maxPage && (
+          <div className="flex justify-center bg-white py-4">
+            <button
+              type="button"
+              onClick={grow}
+              className="flex h-10 items-center gap-1.5 rounded-full border border-gray-200 px-4 text-sm font-semibold text-gray-600"
+            >
+              <Plus size={16} /> {t('More space')}
+            </button>
+          </div>
+        )}
       </div>
+      {hint && (
+        <p className="pointer-events-none absolute bottom-[calc(env(safe-area-inset-bottom)+8px)] start-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[11px] text-white rtl:translate-x-1/2">
+          {t('Slide with two fingers')}
+        </p>
+      )}
     </div>
   );
 }

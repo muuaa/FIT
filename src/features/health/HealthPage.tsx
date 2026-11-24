@@ -14,6 +14,7 @@ import { useToday } from '@/hooks/useToday';
 import { useActiveWorkout } from '@/stores/workoutStore';
 import { t } from '@/lib/i18n';
 import { dayLabel, dayTypeForDate } from '@/lib/split';
+import { SideBySide } from '@/features/us/Together';
 
 export function HealthPage() {
   const today = useToday();
@@ -38,6 +39,7 @@ export function HealthPage() {
             <Tile to="/life/mood" icon={Smile} label={t('Mood')} value={useCheckInSummary()} accent="var(--color-mood)" />
             <Tile to="/progress" icon={LineChart} label={t('Progress')} value={t('Charts')} accent="var(--color-weight)" />
           </div>
+          <SideBySide />
           <Card title={t('Calories')} icon={Flame} accent="var(--color-fuel)">
             <CalorieSummary profile={profile} date={today} />
           </Card>

@@ -1,3 +1,4 @@
+import { useToday } from '@/hooks/useToday';
 import { ArrowLeftRight, CalendarClock, ListChecks, Play } from 'lucide-react';
 import { t , tn} from '@/lib/i18n';
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import type { DayType, SplitMode } from '@/types/db';
 import { ActiveWorkout } from './ActiveWorkout';
 import { ExerciseEditor } from './ExerciseEditor';
 import { WorkoutHistory } from './WorkoutHistory';
+import { OtherTrain } from '@/features/us/OtherPerson';
 
 export function SplitSwitcher() {
   const { data: profile } = useProfile();
@@ -121,6 +123,7 @@ function TemplatesCard() {
 export function TrainPage() {
   const active = useActiveWorkout();
   const { data: profile } = useProfile();
+  const today = useToday();
   return (
     <>
       <PageHeader title={t('Training')} subtitle={profile ? t('{split} split', { split: profile.split_mode }) : undefined} back="/health" />
@@ -131,6 +134,7 @@ export function TrainPage() {
       ) : (
         <div className="space-y-3">
           <StartCard />
+          <OtherTrain date={today} />
           <SplitSwitcher />
           <TemplatesCard />
           <Card title={t('Recent workouts')} icon={CalendarClock} accent="var(--color-lift)">

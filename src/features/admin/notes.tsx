@@ -9,6 +9,7 @@ import { relativeDay } from '@/lib/date';
 import { t } from '@/lib/i18n';
 import { uid } from '@/lib/localDb';
 import type { Note } from '@/types/db';
+import { OtherNotes } from '@/features/us/OtherPerson';
 
 function NoteEditor({ note, onClose }: { note: Note | null; onClose: () => void }) {
   const actions = useTableActions('notes');
@@ -102,6 +103,9 @@ export function NotesPage() {
           ))}
         </ul>
       )}
+      <div className="mt-3">
+        <OtherNotes />
+      </div>
       <NoteEditor note={open} onClose={() => setOpen(null)} />
     </>
   );

@@ -28,6 +28,7 @@ import { FoodEntrySheet, macroLine } from './FoodEntrySheet';
 import { SupplementChecklist } from './SupplementChecklist';
 import { SupplementManagerSheet } from './SupplementManagerSheet';
 import { WaterTracker } from './WaterTracker';
+import { OtherFuel } from '@/features/us/OtherPerson';
 
 function FoodLog({ date }: { date: string }) {
   const { data: entries = [], isLoading } = useFoodEntries(date);
@@ -222,6 +223,8 @@ export function FuelPage() {
               <FoodLog date={date} />
             </div>
           </Card>
+
+          <OtherFuel date={date} />
 
           <SavedMealsCard date={date} />
 

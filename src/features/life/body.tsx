@@ -21,6 +21,7 @@ import { uid } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
 import type { Attachment, Measurement } from '@/types/db';
 import { useAttachments } from './useAttachments';
+import { OtherBody } from '@/features/us/OtherPerson';
 
 // ---------------------------------------------------------------- steps
 
@@ -299,6 +300,7 @@ export function BodyPage() {
     <>
       <PageHeader title={t('Steps & body')} back="/health" />
       <div className="space-y-3">
+        <OtherBody date={today} steps />
         <Card title={t('Steps today')} icon={Footprints} accent="var(--color-steps)">
           <StepsToday />
           <div className="mt-4">

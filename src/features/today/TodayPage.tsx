@@ -58,6 +58,7 @@ import { TodosToday } from '@/features/life/todos';
 import { useUpdateProfile } from '@/hooks/useProfile';
 import { useToday } from '@/hooks/useToday';
 import { locale, t , tn} from '@/lib/i18n';
+import { SideBySide } from '@/features/us/Together';
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -367,6 +368,7 @@ export function TodayPage() {
             .map((c) => (
               <Fragment key={c}>{cards[c]()}</Fragment>
             ))}
+          <SideBySide />
           <Button block variant="ghost" onClick={() => setCustomize(true)}>
             <LayoutList size={16} /> {t('Customize this screen')}
           </Button>

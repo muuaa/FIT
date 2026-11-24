@@ -16,6 +16,7 @@ import { t } from '@/lib/i18n';
 import { hm, sleepMinutes } from '@/lib/life';
 import type { SleepLog } from '@/types/db';
 import { toast } from '@/stores/toastStore';
+import { OtherSleep } from '@/features/us/OtherPerson';
 
 const ACCENT = 'var(--color-sleep)';
 const MOONS = ['😩', '😪', '😐', '🙂', '😴'];
@@ -129,6 +130,7 @@ export function SleepPage() {
         <Card title={t('Last night')} icon={Moon} accent={ACCENT}>
           <SleepToday />
         </Card>
+        <OtherSleep date={today} />
         <Card title={t('This week')} icon={BedDouble} accent={ACCENT}>
           <div className="mb-3 grid grid-cols-3 gap-2">
             <Stat label={t('Average')} value={avg !== null ? hm(avg) : '—'} />

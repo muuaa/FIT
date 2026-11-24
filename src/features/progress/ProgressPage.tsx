@@ -1,3 +1,4 @@
+import { useToday } from '@/hooks/useToday';
 import { Activity, Scale, Trash2, TrendingUp } from 'lucide-react';
 import { t } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
@@ -14,6 +15,7 @@ import { round1 } from '@/lib/format';
 import { BodyweightChart } from './BodyweightChart';
 import { BodyweightQuick } from './BodyweightQuick';
 import { StrengthChart } from './StrengthChart';
+import { OtherBody } from '@/features/us/OtherPerson';
 
 function BodyweightSection() {
   const [range, setRange] = useState<7 | 30 | 90>(30);
@@ -83,11 +85,13 @@ function BodyweightSection() {
 
 export function ProgressPage() {
   const [cardioOpen, setCardioOpen] = useState(false);
+  const today = useToday();
   return (
     <>
       <PageHeader title={t('Progress')} subtitle={t('Bodyweight · Strength · Cardio')} back="/health" />
       <div className="space-y-3">
         <BodyweightSection />
+        <OtherBody date={today} />
         <Card title={t('Strength')} icon={TrendingUp} accent="var(--color-lift)">
           <StrengthChart />
         </Card>

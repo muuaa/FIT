@@ -11,6 +11,7 @@ import { useToday } from '@/hooks/useToday';
 import { addDays, relativeDay, weekdayNarrow, parseISODate } from '@/lib/date';
 import { t } from '@/lib/i18n';
 import type { CheckIn } from '@/types/db';
+import { OtherMood } from '@/features/us/OtherPerson';
 
 export const MOOD = ['😞', '😕', '😐', '🙂', '😄'];
 export const ENERGY = ['🪫', '😴', '😐', '⚡', '🚀'];
@@ -115,6 +116,7 @@ export function CheckInPage() {
         <Card title={t('Check-in')} icon={Smile} accent="var(--color-mood)">
           <CheckInForm date={date} />
         </Card>
+        <OtherMood date={date} />
         <Card title={t('Last 2 weeks')} icon={Smile} accent="var(--color-mood)">
           <div className="space-y-3">
             <Trend rows={byDate} field="mood" symbols={MOOD} color="var(--color-mood)" label={t('Mood')} />
