@@ -11,7 +11,6 @@ import { dayLabel } from '@/lib/split';
 import { useActiveWorkout, useRestStore } from '@/stores/workoutStore';
 import { BottomNav, SideNav } from './BottomNav';
 import { QuickAdd } from './QuickAdd';
-import { FocusWatcher } from '@/features/plan/Focus';
 import { RestTimerBar } from './RestTimerBar';
 
 export function WorkoutClock({ className = '' }: { className?: string }) {
@@ -166,7 +165,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
       {viewing ? <ViewingBanner /> : <RestTimerBar />}
       {!viewing && <QuickAdd />}
-      <FocusWatcher />
       <BottomNav />
       <SideNav />
     </div>

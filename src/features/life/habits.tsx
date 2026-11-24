@@ -1,5 +1,10 @@
 import { Archive, Check, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Flame, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
+import { Segmented } from '@/components/ui/Segmented';
+import { Toggle } from '@/components/ui/Toggle';
+import { Times } from '@/features/reminders/RemindersPage';
+import { supabase } from '@/lib/supabase';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -130,28 +135,113 @@ export function HabitsToday({ onAdd }: { onAdd?: () => void }) {
   );
 }
 
+// ---------------------------------------------------------------- habit reminders
+
+interface HabitReminder {
+  on: boolean;
+  times: string[];
+  repeat: 'daily' | 'weekly' | 'custom';
+  days: number[];
+}
+const NO_REMINDER: HabitReminder = { on: false, times: ['09:00'], repeat: 'daily', days: [] };
+
+/** Your own reminder for a habit (each of you sets your own, even though habits are shared). */
+function useHabitReminder(habitId: string | null) {
+  return useQuery({
+    queryKey: ['habit-reminder', habitId],
+    enabled: Boolean(habitId && supabase),
+    queryFn: async (): Promise<HabitReminder> => {
+      const { data } = await supabase!.from('reminders').select('times,days,enabled').eq('kind', 'habit').eq('title', habitId!).maybeSingle();
+      if (!data) return NO_REMINDER;
+      const days = (data.days as number[]) ?? [];
+      return { on: Boolean(data.enabled), times: (data.times as string[])?.length ? (data.times as string[]) : ['09:00'], repeat: !days.length ? 'daily' : days.length === 1 ? 'weekly' : 'custom', days };
+    },
+  });
+}
+
+async function saveHabitReminder(habitId: string, r: HabitReminder) {
+  if (!supabase) return;
+  if (!r.on) {
+    await supabase.from('reminders').delete().eq('kind', 'habit').eq('title', habitId);
+    return;
+  }
+  const days = r.repeat === 'daily' ? [] : r.days;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  await supabase
+    .from('reminders')
+    .upsert({ kind: 'habit', title: habitId, times: r.times, days, enabled: true, smart: true, tz }, { onConflict: 'user_id,kind,title' });
+}
+
+function ReminderEditor({ value, onChange }: { value: HabitReminder; onChange: (r: HabitReminder) => void }) {
+  const set = (p: Partial<HabitReminder>) => onChange({ ...value, ...p });
+  if (!supabase) return null;
+  return (
+    <div className="rounded-2xl bg-surface-2 p-3">
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-medium">{t('Remind me')}</div>
+          <div className="text-xs text-ink-3">{t('Skipped on days you’ve already done it')}</div>
+        </div>
+        <Toggle checked={value.on} label={t('Remind me')} accent={ACCENT} onChange={(on) => set({ on })} />
+      </div>
+      {value.on && (
+        <div className="mt-3 space-y-3">
+          <div>
+            <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Times')}</span>
+            <Times times={value.times} accent={ACCENT} onChange={(times) => set({ times })} />
+          </div>
+          <Segmented
+            value={value.repeat}
+            accent={ACCENT}
+            onChange={(repeat) =>
+              set({ repeat, days: repeat === 'weekly' ? [value.days[0] ?? new Date().getDay()] : repeat === 'custom' && !value.days.length ? [0, 1, 2, 3, 4] : value.days })
+            }
+            options={[
+              { value: 'daily', label: t('Daily') },
+              { value: 'weekly', label: t('Weekly') },
+              { value: 'custom', label: t('Pick days') },
+            ]}
+          />
+          {value.repeat === 'weekly' && (
+            <WeekdayPicker value={value.days} accent={ACCENT} onChange={(d) => set({ days: [d.find((x) => !value.days.includes(x)) ?? value.days[0] ?? 0] })} />
+          )}
+          {value.repeat === 'custom' && <WeekdayPicker value={value.days} accent={ACCENT} onChange={(days) => set({ days })} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function HabitSheet({ habit, open, onClose }: { habit: Habit | null; open: boolean; onClose: () => void }) {
   const actions = useTableActions('habits');
+  const qc = useQueryClient();
   const { habits } = useHabits();
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('🎯');
+  const [custom, setCustom] = useState('');
   const [days, setDays] = useState<number[]>([]);
+  const [reminder, setReminder] = useState<HabitReminder>(NO_REMINDER);
+  const saved = useHabitReminder(open ? (habit?.id ?? null) : null);
   const [seeded, setSeeded] = useState<string | null>(null);
-  const key = open ? (habit?.id ?? 'new') : null;
+  const key = open ? `${habit?.id ?? 'new'}|${saved.isSuccess}` : null;
   if (key !== seeded) {
     setSeeded(key);
     if (open) {
       setName(habit?.name ?? '');
       setEmoji(habit?.emoji ?? '🎯');
+      setCustom('');
       setDays(habit?.days ?? []);
+      setReminder(saved.data ?? NO_REMINDER);
     }
   }
   const save = () => {
     if (!name.trim()) return;
+    const id = habit?.id ?? uid();
+    void saveHabitReminder(id, reminder).then(() => qc.invalidateQueries({ queryKey: ['habit-reminder', id] }));
     if (habit) actions.patch(habit.id, { name: name.trim(), emoji, days });
     else
       actions.insert({
-        id: uid(),
+        id,
         name: name.trim(),
         emoji,
         days,
@@ -176,8 +266,8 @@ function HabitSheet({ habit, open, onClose }: { habit: Habit | null; open: boole
         <Field label={t('Habit')} value={name} onChange={(e) => setName(e.target.value)} placeholder={t('e.g. Read 10 pages')} maxLength={60} />
         <div>
           <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Icon')}</span>
-          <div className="grid grid-cols-10 gap-1">
-            {HABIT_EMOJI.map((e) => (
+          <div className="grid max-h-48 grid-cols-10 gap-1 overflow-y-auto">
+            {[...(HABIT_EMOJI.includes(emoji) ? [] : [emoji]), ...HABIT_EMOJI].map((e) => (
               <button
                 key={e}
                 type="button"
@@ -189,8 +279,24 @@ function HabitSheet({ habit, open, onClose }: { habit: Habit | null; open: boole
               </button>
             ))}
           </div>
+          <label className="mt-2 flex items-center gap-2 text-sm text-ink-2">
+            <span>{t('Or type any emoji')}</span>
+            <input
+              value={custom}
+              onChange={(e) => {
+                setCustom(e.target.value);
+                // Keep just the first emoji/character (emoji can be several code units long).
+                const first = [...new Intl.Segmenter().segment(e.target.value.trim())][0]?.segment;
+                if (first) setEmoji(first);
+              }}
+              placeholder="😀"
+              aria-label={t('Or type any emoji')}
+              className="h-10 w-16 rounded-xl border border-line bg-surface-2 text-center text-lg outline-none focus:border-habit"
+            />
+          </label>
         </div>
         <WeekdayPicker value={days} onChange={setDays} accent={ACCENT} />
+        <ReminderEditor value={reminder} onChange={setReminder} />
       </div>
     </Sheet>
   );
@@ -284,6 +390,7 @@ function HabitDetail({ habit, onClose, onEdit }: { habit: Habit | null; onClose:
               onClick={() => {
                 actions.remove(habit.id);
                 logs.removeWhere((l) => l.habit_id === habit.id);
+                void saveHabitReminder(habit.id, NO_REMINDER);
                 setConfirm(false);
                 onClose();
               }}

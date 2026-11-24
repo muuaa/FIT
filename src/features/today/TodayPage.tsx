@@ -11,7 +11,6 @@ import {
   Flame,
   Footprints,
   LayoutList,
-  ListTodo,
   Moon,
   Pill,
   Play,
@@ -49,12 +48,11 @@ import type { CardioKind, Profile, TodayCard } from '@/types/db';
 import { Sheet } from '@/components/ui/Sheet';
 import { Toggle } from '@/components/ui/Toggle';
 import { CheckInForm } from '@/features/life/checkin';
-import { StepsToday } from '@/features/life/body';
+import { RoutinesCard } from '@/features/plan/Routines';
 import { HabitsToday } from '@/features/life/habits';
 import { JournalToday } from '@/features/life/journal';
 import { MoneyToday } from '@/features/life/money';
 import { SleepToday } from '@/features/life/sleep';
-import { TodosToday } from '@/features/life/todos';
 import { useUpdateProfile } from '@/hooks/useProfile';
 import { useToday } from '@/hooks/useToday';
 import { locale, t , tn} from '@/lib/i18n';
@@ -204,21 +202,26 @@ export const CARD_LABEL: Record<TodayCard, string> = {
   supplements: 'Supplements',
   cardio: 'Cardio',
   habits: 'Habits',
-  todos: 'To-dos',
+  routines: 'Routines',
   sleep: 'Sleep',
   checkin: 'Mood & energy',
-  steps: 'Steps',
   money: 'Money',
   journal: 'Journal',
 };
 export const ALL_CARDS = Object.keys(CARD_LABEL) as TodayCard[];
+
+/** Saved card lists from before: the To-dos card became Routines (to-dos live in Plan), Steps is gone. */
+export function normalizeCards(cards: string[]): TodayCard[] {
+  const out = cards.map((c) => (c === 'todos' ? 'routines' : c)).filter((c): c is TodayCard => (ALL_CARDS as string[]).includes(c));
+  return [...new Set(out)];
+}
 
 /** Choose which cards Today shows, and their order. Used here and in Settings. */
 export function TodayCardsEditor() {
   const { data: profile } = useProfile();
   const update = useUpdateProfile();
   if (!profile) return null;
-  const shown = profile.today_cards.filter((c) => ALL_CARDS.includes(c));
+  const shown = normalizeCards(profile.today_cards);
   const hidden = ALL_CARDS.filter((c) => !shown.includes(c));
   const save = (cards: TodayCard[]) => update.mutate({ today_cards: cards });
   const move = (i: number, d: -1 | 1) => {
@@ -318,11 +321,7 @@ export function TodayPage() {
         <HabitsToday onAdd={() => navigate('/life/habits')} />
       </Card>
     ),
-    todos: () => (
-      <Card title={t('To-dos')} icon={ListTodo} accent="var(--color-todo)" action={<MoreLink to="/life/todos" />}>
-        <TodosToday limit={5} />
-      </Card>
-    ),
+    routines: () => <RoutinesCard />,
     sleep: () => (
       <Card title={t('Sleep')} icon={BedDouble} accent="var(--color-sleep)" action={<MoreLink to="/life/sleep" />}>
         <SleepToday />
@@ -331,11 +330,6 @@ export function TodayPage() {
     checkin: () => (
       <Card title={t('Mood & energy')} icon={Smile} accent="var(--color-mood)" action={<MoreLink to="/life/mood" />}>
         <CheckInForm date={date} />
-      </Card>
-    ),
-    steps: () => (
-      <Card title={t('Steps')} icon={Footprints} accent="var(--color-steps)" action={<MoreLink to="/life/body" />}>
-        <StepsToday />
       </Card>
     ),
     money: () => (
@@ -363,8 +357,7 @@ export function TodayPage() {
         <div className="space-y-3">
           <WelcomeCard />
           <DayHero />
-          {profile.today_cards
-            .filter((c) => c in cards)
+          {normalizeCards(profile.today_cards)
             .map((c) => (
               <Fragment key={c}>{cards[c]()}</Fragment>
             ))}

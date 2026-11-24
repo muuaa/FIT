@@ -22,7 +22,7 @@ export const TABS: Tab[] = [
     label: 'Health',
     icon: Leaf,
     accent: 'var(--color-health)',
-    also: ['/train', '/fuel', '/progress', '/life/sleep', '/life/body', '/life/mood'],
+    also: ['/train', '/fuel', '/progress', '/life/sleep', '/life/mood'],
   },
   { to: '/us', label: 'Us', icon: HeartHandshake, accent: 'var(--color-us)', also: ['/life/lists'] },
   { to: '/life', label: 'Life', icon: Sparkles, accent: 'var(--color-life)' },

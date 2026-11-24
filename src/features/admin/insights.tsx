@@ -86,7 +86,6 @@ function WeeklyReview({ d }: { d: Data }) {
         <Row label={t('Water per day')} now={now.water} prev={prev.water} fmt={(v) => `${round1(v / 1000)} L`} />
         <Row label={t('Workouts')} now={now.workouts} prev={prev.workouts} fmt={(v) => String(v)} />
         <Row label={t('To-dos done')} now={now.todos} prev={prev.todos} fmt={(v) => String(v)} />
-        <Row label={t('Focus time')} now={now.focus} prev={prev.focus} fmt={(v) => hm(v)} />
         <Row label={t('Spent')} now={now.spent} prev={prev.spent} fmt={(v) => money(Math.round(v), home.currency)} higherIsBetter={false} />
       </div>
     </Card>
@@ -232,7 +231,6 @@ function Achievements({ d }: { d: Data }) {
     { emoji: '💧', name: t('Hydrated week'), got: d.water.filter((w) => w.ml >= 3000).length >= 7 },
     { emoji: '📓', name: t('10 journal entries'), got: d.journal.length >= 10 },
     { emoji: '🎯', name: t('Shared goal reached'), got: d.goals.some((g) => g.done_at) },
-    { emoji: '🧠', name: t('10 hours of focus'), got: d.focus.reduce((a, f) => a + f.minutes, 0) >= 600 },
     { emoji: '📅', name: t('30 days logged'), got: loggedDays >= 30 },
     { emoji: '⚖️', name: t('14 weigh-ins'), got: d.weights.length >= 14 },
     { emoji: '🚶', name: t('10k-step day'), got: d.steps.some((s) => s.steps >= 10000) },

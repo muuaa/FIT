@@ -147,7 +147,6 @@ export function SideBySide() {
         <Stat label={t('Mood')} a={fmt.mood(a)} b={fmt.mood(b)} />
         <Stat label={t('Sleep')} a={fmt.sleep(a)} b={fmt.sleep(b)} />
         <Stat label={t('Workout')} a={fmt.trained(a)} b={fmt.trained(b)} />
-        <Stat label={t('Steps')} a={fmt.steps(a)} b={fmt.steps(b)} />
       </div>
     </Card>
   );

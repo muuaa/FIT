@@ -16,7 +16,6 @@ import { usePartnerStore } from '@/lib/partner';
 import { eventsOn, weekOf } from '@/lib/plan';
 import type { CalEvent } from '@/types/db';
 import { EventSheet } from './EventSheet';
-import { FocusCard } from './Focus';
 import { RoutinesCard } from './Routines';
 import { OtherPlan } from '@/features/us/OtherPerson';
 
@@ -140,7 +139,6 @@ export function PlanPage() {
           <TodosForDay date={date} />
         </Card>
         {date === today && <RoutinesCard />}
-        {date === today && <FocusCard />}
         <OtherPlan date={date} />
       </div>
       <EventSheet open={sheet !== null} event={sheet?.event ?? null} date={date} onClose={() => setSheet(null)} />

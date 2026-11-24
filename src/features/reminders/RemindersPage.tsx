@@ -77,7 +77,7 @@ function useSave() {
   };
 }
 
-function Times({ times, onChange, accent }: { times: string[]; onChange: (t: string[]) => void; accent: string }) {
+export function Times({ times, onChange, accent }: { times: string[]; onChange: (t: string[]) => void; accent: string }) {
   const [adding, setAdding] = useState('');
   return (
     <div className="flex flex-wrap items-center gap-1.5">

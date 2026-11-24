@@ -1,16 +1,15 @@
-import { ArrowLeftRight, HeartHandshake, ListChecks, ListTodo, Wallet } from 'lucide-react';
+import { ArrowLeftRight, HeartHandshake, ListChecks, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MoneyToday } from '@/features/life/money';
-import { TodosToday } from '@/features/life/todos';
 import { useSession } from '@/features/auth/session';
 import { t } from '@/lib/i18n';
 import { usePartnerStore, viewMe, viewPartner } from '@/lib/partner';
 import { getProfile } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
-import { Countdowns, Goals, NudgeBar, SideBySide } from './Together';
+import { Goals, NudgeBar, SideBySide } from './Together';
 
 function Avatar({ name, accent }: { name: string; accent: string }) {
   return (
@@ -47,7 +46,7 @@ export function UsPage() {
           </p>
           <p className="relative mt-1 text-center text-xs text-ink-3">
             {partner
-              ? t('To-dos, money, lists, habits and the journal are shared. Tap below to see their day.')
+              ? t('Plans, money, lists, habits and the journal are shared. Tap below to see their day.')
               : t('When your partner creates their account, they’ll appear here.')}
           </p>
           {partner && (
@@ -65,11 +64,7 @@ export function UsPage() {
 
         <NudgeBarCard />
         <SideBySide />
-        <Countdowns />
         <Goals />
-        <Card title={t('Our to-dos today')} icon={ListTodo} accent="var(--color-todo)" action={<Link to="/plan" className="text-xs font-semibold text-todo">{t('All')}</Link>}>
-          <TodosToday limit={6} />
-        </Card>
 
         <Card title={t('Shared lists')} icon={ListChecks} accent="var(--color-lists)" action={<Link to="/life/lists" className="text-xs font-semibold text-lists">{t('Open')}</Link>}>
           <p className="text-sm text-ink-3">{t('Groceries, chores, packing… one list you both tick off.')}</p>

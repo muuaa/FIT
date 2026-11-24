@@ -2,6 +2,8 @@ export type SplitMode = 'PPL-UL' | 'UL-PPL';
 export type DayType = 'push' | 'pull' | 'legs' | 'upper' | 'lower';
 export type CardioKind = 'running' | 'jump_rope';
 export type Language = 'en' | 'ar';
+export type DayItemKind = 'workout' | 'water' | 'supplements' | 'habits' | 'routines' | 'bills' | 'chores';
+
 export type TodayCard =
   | 'workout'
   | 'calories'
@@ -10,10 +12,9 @@ export type TodayCard =
   | 'supplements'
   | 'cardio'
   | 'habits'
-  | 'todos'
+  | 'routines'
   | 'sleep'
   | 'checkin'
-  | 'steps'
   | 'money'
   | 'journal';
 
@@ -36,6 +37,8 @@ export interface Profile {
   language: Language;
   /** Today screen cards, in order. Cards not listed are hidden. */
   today_cards: TodayCard[];
+  /** What counts in the "Your day" ring on Home (missing = everything). */
+  day_items?: DayItemKind[];
   /** Partner activity notifications to receive (missing = on). */
   activity_prefs: Record<string, boolean>;
   split_mode: SplitMode;

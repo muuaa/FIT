@@ -500,7 +500,7 @@ export const DEFAULT_PROFILE: Profile = {
   monthly_budget: 0,
   currency: 'USD',
   language: 'en',
-  today_cards: ['todos', 'water', 'habits', 'money', 'checkin', 'weight'],
+  today_cards: ['habits', 'routines', 'water', 'money', 'checkin', 'weight'],
   activity_prefs: {},
 };
 

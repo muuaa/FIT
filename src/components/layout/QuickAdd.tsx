@@ -1,4 +1,3 @@
-import { sendActivity } from '@/lib/activity';
 import {
   Activity,
   BedDouble,
@@ -6,7 +5,6 @@ import {
   Droplets,
   Dumbbell,
   Flame,
-  ListTodo,
   Plus,
   Scale,
   Smile,
@@ -14,20 +12,18 @@ import {
   Wallet,
   type LucideIcon,
 } from 'lucide-react';
-import { lazy, Suspense, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Sheet } from '@/components/ui/Sheet';
 import { Stepper } from '@/components/ui/Stepper';
 import { useLogBodyweight } from '@/hooks/useBodyweight';
 import { useProfile } from '@/hooks/useProfile';
-import { useTableActions } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { useSetWater, useWater } from '@/hooks/useWater';
 import { tick } from '@/lib/alerts';
 import { num, round1 } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { uid } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
 import { useRestStore } from '@/stores/workoutStore';
 
@@ -37,10 +33,9 @@ const SleepSheet = lazy(() => import('@/features/life/sleep').then((m) => ({ def
 const CardioSheet = lazy(() => import('@/features/cardio/CardioSheet').then((m) => ({ default: m.CardioSheet })));
 const CheckInForm = lazy(() => import('@/features/life/checkin').then((m) => ({ default: m.CheckInForm })));
 
-type Action = 'todo' | 'expense' | 'food' | 'water' | 'weight' | 'mood' | 'sleep' | 'cardio' | 'journal' | 'habit' | 'workout';
+type Action = 'expense' | 'food' | 'water' | 'weight' | 'mood' | 'sleep' | 'cardio' | 'journal' | 'habit' | 'workout';
 
 const ACTIONS: { id: Action; label: string; icon: LucideIcon; accent: string }[] = [
-  { id: 'todo', label: 'To-do', icon: ListTodo, accent: 'var(--color-todo)' },
   { id: 'expense', label: 'Expense', icon: Wallet, accent: 'var(--color-money)' },
   { id: 'food', label: 'Food', icon: Utensils, accent: 'var(--color-fuel)' },
   { id: 'water', label: 'Water', icon: Droplets, accent: 'var(--color-water)' },
@@ -53,35 +48,6 @@ const ACTIONS: { id: Action; label: string; icon: LucideIcon; accent: string }[]
   { id: 'workout', label: 'Workout', icon: Dumbbell, accent: 'var(--color-lift)' },
 ];
 
-function TodoQuick({ onDone }: { onDone: () => void }) {
-  const today = useToday();
-  const todos = useTableActions('todos');
-  const [text, setText] = useState('');
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!text.trim()) return;
-    todos.insert({ id: uid(), title: text.trim().slice(0, 200), date: today, repeat: 'none', done_at: null, note: '', created_at: new Date().toISOString() });
-    sendActivity('todo', { title: text.trim().slice(0, 80) });
-    toast.success(t('Added to today'));
-    onDone();
-  };
-  return (
-    <form onSubmit={submit} className="space-y-3">
-      <input
-        autoFocus
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={t('What do you need to do?')}
-        aria-label={t('To-do')}
-        enterKeyHint="done"
-        className="h-14 w-full rounded-2xl border border-white/[0.07] bg-white/[0.04] px-4 text-[17px] text-ink outline-none placeholder:text-ink-3 focus:border-accent/60"
-      />
-      <Button type="submit" variant="primary" accent="var(--color-todo)" size="lg" block disabled={!text.trim()}>
-        {t('Add to today')}
-      </Button>
-    </form>
-  );
-}
 
 function WeightQuick({ onDone }: { onDone: () => void }) {
   const today = useToday();
@@ -176,9 +142,6 @@ export function QuickAdd() {
         </div>
       </Sheet>
 
-      <Sheet open={sheet === 'todo'} onClose={close} title={t('New to-do')}>
-        <TodoQuick onDone={close} />
-      </Sheet>
       <Sheet open={sheet === 'weight'} onClose={close} title={t('Morning weigh-in')}>
         <WeightQuick onDone={close} />
       </Sheet>

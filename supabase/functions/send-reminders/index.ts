@@ -121,16 +121,16 @@ const DAY: Record<Lang, Record<string, string>> = {
   ar: { push: 'دفع', pull: 'سحب', legs: 'أرجل', upper: 'علوي', lower: 'سفلي' },
 };
 /** Partner activity notifications: text per language, where tapping goes, and a per-kind cooldown. */
-const ACTIVITY: Record<string, { emoji: string; text: Record<Lang, string>; url: string; cooldownSec: number }> = {
-  workout: { emoji: '🏋️', text: { en: 'Finished a {day} workout · {min} min', ar: 'أنهى تمرين {day} · {min} دقيقة' }, url: '/FIT/us', cooldownSec: 600 },
-  habits: { emoji: '🔥', text: { en: 'Did all their habits today', ar: 'أنجز كل عاداته اليوم' }, url: '/FIT/us', cooldownSec: 3600 },
-  event: { emoji: '📅', text: { en: 'Added “{title}” · {when}', ar: 'أضاف «{title}» · {when}' }, url: '/FIT/plan', cooldownSec: 30 },
-  expense: { emoji: '💸', text: { en: 'Spent {amount} on {what}', ar: 'صرف {amount} على {what}' }, url: '/FIT/life/money', cooldownSec: 60 },
-  bill: { emoji: '🧾', text: { en: 'Paid {what} · {amount}', ar: 'دفع {what} · {amount}' }, url: '/FIT/life/bills', cooldownSec: 30 },
-  goal: { emoji: '🎯', text: { en: 'Goal reached: {title} 🎉', ar: 'تحقق الهدف: {title} 🎉' }, url: '/FIT/us', cooldownSec: 30 },
-  chore: { emoji: '🧹', text: { en: 'Did {title} ✓', ar: 'أنجز {title} ✓' }, url: '/FIT/life/chores', cooldownSec: 60 },
-  list: { emoji: '🛒', text: { en: 'Added {item} to {list}', ar: 'أضاف {item} إلى {list}' }, url: '/FIT/life/lists', cooldownSec: 120 },
-  todo: { emoji: '✅', text: { en: 'Added a to-do: {title}', ar: 'أضاف مهمة: {title}' }, url: '/FIT/plan', cooldownSec: 60 },
+const ACTIVITY: Record<string, { emoji: string; label: string; text: Record<Lang, string>; url: string; cooldownSec: number }> = {
+  workout: { emoji: '🏋️', label: 'Workout', text: { en: 'Finished a {day} workout · {min} min', ar: 'أنهى تمرين {day} · {min} دقيقة' }, url: '/FIT/us', cooldownSec: 600 },
+  habits: { emoji: '🔥', label: 'Habits', text: { en: 'Did all their habits today', ar: 'أنجز كل عاداته اليوم' }, url: '/FIT/us', cooldownSec: 3600 },
+  event: { emoji: '📅', label: 'Plan', text: { en: 'Added “{title}” · {when}', ar: 'أضاف «{title}» · {when}' }, url: '/FIT/plan', cooldownSec: 30 },
+  expense: { emoji: '💸', label: 'Money', text: { en: 'Spent {amount} on {what}', ar: 'صرف {amount} على {what}' }, url: '/FIT/life/money', cooldownSec: 60 },
+  bill: { emoji: '🧾', label: 'Bills', text: { en: 'Paid {what} · {amount}', ar: 'دفع {what} · {amount}' }, url: '/FIT/life/bills', cooldownSec: 30 },
+  goal: { emoji: '🎯', label: 'Goals', text: { en: 'Goal reached: {title} 🎉', ar: 'تحقق الهدف: {title} 🎉' }, url: '/FIT/us', cooldownSec: 30 },
+  chore: { emoji: '🧹', label: 'Chores', text: { en: 'Did {title} ✓', ar: 'أنجز {title} ✓' }, url: '/FIT/life/chores', cooldownSec: 60 },
+  list: { emoji: '🛒', label: 'Lists', text: { en: 'Added {item} to {list}', ar: 'أضاف {item} إلى {list}' }, url: '/FIT/life/lists', cooldownSec: 120 },
+  todo: { emoji: '✅', label: 'To-dos', text: { en: 'Added a to-do: {title}', ar: 'أضاف مهمة: {title}' }, url: '/FIT/plan', cooldownSec: 60 },
 };
 
 const SPLITS: Record<string, string[]> = { 'PPL-UL': ['push', 'pull', 'legs', 'upper', 'lower'], 'UL-PPL': ['upper', 'lower', 'push', 'pull', 'legs'] };
@@ -189,6 +189,8 @@ async function userState(userId: string, date: string) {
     suppsLeft: of('supplements')
       .filter((s) => s.active && !suppLogs.some((l) => l.supplement_id === s.id))
       .map((s) => String(s.name)),
+    habitList: of('habits'),
+    habitDone: new Set(habitLogs.map((l) => String(l.habit_id))),
     habitsLeft: of('habits').filter(
       (h) =>
         !h.archived &&
@@ -251,6 +253,14 @@ async function runDue() {
         if (r.kind === 'workout' && st.worked) continue;
         if (r.kind === 'supplements' && st.suppsLeft.length === 0) continue;
         if (r.kind === 'habits' && st.habitsLeft === 0) continue;
+        if (r.kind === 'habit' && st.habitDone.has(r.title)) continue;
+      }
+      // A reminder for one habit (its id is in `title`): name it, and drop it if the habit is gone.
+      if (r.kind === 'habit') {
+        const h = st.habitList.find((x) => x.id === r.title);
+        if (!h || h.archived) continue;
+        sent += await sendTo(r.user_id, { title: `${h.emoji ?? '🎯'} ${h.name}`, body: 'Time for this habit', tag: `habit-${r.title}`, url: '/FIT/life/habits' });
+        break;
       }
       const [title, body] = TEXT[st.lang][r.kind] ?? TEXT[st.lang].custom;
       const dayType = SPLITS[st.split]?.[TRAINING.indexOf(now.wd)];
@@ -305,17 +315,15 @@ Deno.serve(async (req) => {
       const partner = users?.users.find((u) => u.id !== data.user!.id);
       if (!partner) return Response.json({ ok: true, sent: 0, reason: 'no partner' }, { headers: cors });
       const { data: profs } = await db.from('records').select('user_id,data').eq('tbl', 'profile').in('user_id', [data.user.id, partner.id]);
-      const mine = (profs?.find((r) => r.user_id === data.user!.id)?.data ?? {}) as Record<string, unknown>;
       const theirs = (profs?.find((r) => r.user_id === partner.id)?.data ?? {}) as Record<string, unknown>;
       const prefs = (theirs.activity_prefs ?? {}) as Record<string, boolean>;
       if (prefs[kind] === false) return Response.json({ ok: true, sent: 0, reason: 'muted' }, { headers: cors });
       const lang: Lang = 'en'; // Arabic is switched off in the app for now
-      const name = String(mine.display_name ?? '').trim() || (data.user.email ?? '').split('@')[0];
       const clean: Record<string, string> = {};
       for (const [k, v] of Object.entries(params)) clean[k] = String(v).slice(0, 80);
       if (kind === 'workout' && clean.day) clean.day = DAY[lang][clean.day] ?? clean.day;
       const sent = await sendTo(partner.id, {
-        title: `${spec.emoji} ${name}`,
+        title: `${spec.emoji} ${spec.label}`, // no names on notifications
         body: fill(spec.text[lang], clean),
         tag: `activity-${kind}`,
         url: spec.url,
@@ -338,9 +346,7 @@ Deno.serve(async (req) => {
       const { data: users } = await db.auth.admin.listUsers({ perPage: 10 });
       const partner = users?.users.find((u) => u.id !== data.user!.id);
       if (!partner) return Response.json({ ok: true, sent: 0, reason: 'no partner' }, { headers: cors });
-      const { data: prof } = await db.from('records').select('data').eq('user_id', data.user.id).eq('tbl', 'profile').maybeSingle();
-      const name = String((prof?.data as { display_name?: string })?.display_name ?? '').trim() || (data.user.email ?? '').split('@')[0];
-      const sent = await sendTo(partner.id, { title: `💌 ${name}`, body: text, tag: `nudge-${Date.now()}`, url: '/FIT/us' });
+      const sent = await sendTo(partner.id, { title: '💬 Message', body: text, tag: `nudge-${Date.now()}`, url: '/FIT/us' }); // no names
       return Response.json({ ok: true, sent }, { headers: cors });
     }
     const st = await userState(data.user.id, localNow('UTC').date);

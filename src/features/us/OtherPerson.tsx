@@ -16,7 +16,6 @@ import { supabase } from '@/lib/supabase';
 import type {
   BodyweightLog,
   CheckIn,
-  FocusSession,
   FoodEntry,
   Note,
   Profile,
@@ -350,14 +349,13 @@ export function OtherMood({ date }: { date: string }) {
 export function OtherPlan({ date }: { date: string }) {
   const { who, data, isLoading, isError } = useOther(
     'plan',
-    async (w) => [...(await fetchRows(w.id, ['routine_logs', 'focus_sessions'], date)), ...(await fetchRows(w.id, ['routines']))],
+    async (w) => [...(await fetchRows(w.id, ['routine_logs'], date)), ...(await fetchRows(w.id, ['routines']))],
     [date],
   );
   if (!who) return null;
   const routines = pick<Routine>(data, 'routines');
   const logs = pick<RoutineLog>(data, 'routine_logs');
-  const focus = pick<FocusSession>(data, 'focus_sessions').reduce((s, f) => s + f.minutes, 0);
-  if (!isLoading && !isError && !routines.length && !focus) return null;
+  if (!isLoading && !isError && !routines.length) return null;
   return (
     <OtherCard who={who}>
       {isLoading ? (
@@ -370,7 +368,6 @@ export function OtherPlan({ date }: { date: string }) {
             const done = logs.find((l) => l.routine_id === r.id)?.done.length ?? 0;
             return <Line key={r.id} label={`${r.emoji} ${r.name}`} value={`${done}/${r.steps.length}`} />;
           })}
-          {focus > 0 && <Line label={t('Focus')} value={`${focus} ${t('min')}`} />}
         </div>
       )}
     </OtherCard>

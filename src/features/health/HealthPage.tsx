@@ -1,11 +1,11 @@
-import { Activity, BedDouble, Droplets, Dumbbell, Flame, Footprints, LineChart, Smile, Utensils } from 'lucide-react';
+import { Activity, BedDouble, Droplets, Dumbbell, Flame, LineChart, Smile, Utensils } from 'lucide-react';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/States';
 import { Tile } from '@/components/ui/Tile';
 import { CalorieSummary } from '@/features/fuel/CalorieSummary';
 import { WaterTracker } from '@/features/fuel/WaterTracker';
-import { useStepsSummary } from '@/features/life/body';
+import { useHabitsSummary } from '@/features/life/habits';
 import { useCheckInSummary } from '@/features/life/checkin';
 import { useSleepSummary } from '@/features/life/sleep';
 import { useFoodEntries, sumMacros } from '@/hooks/useNutrition';
@@ -35,7 +35,7 @@ export function HealthPage() {
             <Tile to="/train" icon={Dumbbell} label={t('Training')} value={train} accent="var(--color-lift)" />
             <Tile to="/fuel" icon={Utensils} label={t('Nutrition')} value={`${kcal.toLocaleString()} kcal`} accent="var(--color-fuel)" />
             <Tile to="/life/sleep" icon={BedDouble} label={t('Sleep')} value={useSleepSummary()} accent="var(--color-sleep)" />
-            <Tile to="/life/body" icon={Footprints} label={t('Body')} value={useStepsSummary()} accent="var(--color-steps)" />
+            <Tile to="/life/habits" icon={Flame} label={t('Habits')} value={useHabitsSummary()} accent="var(--color-habit)" />
             <Tile to="/life/mood" icon={Smile} label={t('Mood')} value={useCheckInSummary()} accent="var(--color-mood)" />
             <Tile to="/progress" icon={LineChart} label={t('Progress')} value={t('Charts')} accent="var(--color-weight)" />
           </div>

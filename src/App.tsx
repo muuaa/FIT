@@ -19,7 +19,6 @@ const HabitsPage = lazy(() => import('@/features/life/habits').then((m) => ({ de
 const TodosPage = lazy(() => import('@/features/life/todos').then((m) => ({ default: m.TodosPage })));
 const SleepPage = lazy(() => import('@/features/life/sleep').then((m) => ({ default: m.SleepPage })));
 const CheckInPage = lazy(() => import('@/features/life/checkin').then((m) => ({ default: m.CheckInPage })));
-const BodyPage = lazy(() => import('@/features/life/body').then((m) => ({ default: m.BodyPage })));
 const MoneyPage = lazy(() => import('@/features/life/money').then((m) => ({ default: m.MoneyPage })));
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
 const ListsPage = lazy(() => import('@/features/life/lists').then((m) => ({ default: m.ListsPage })));
@@ -69,7 +68,6 @@ export default function App() {
             <Route path="/life/todos" element={<TodosPage />} />
             <Route path="/life/sleep" element={<SleepPage />} />
             <Route path="/life/mood" element={<CheckInPage />} />
-            <Route path="/life/body" element={<BodyPage />} />
             <Route path="/life/money" element={<MoneyPage />} />
             <Route path="/life/journal" element={<JournalPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
