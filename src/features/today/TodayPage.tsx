@@ -20,7 +20,7 @@ import {
   Smile,
   Wallet,
 } from 'lucide-react';
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { PageHeader, WorkoutClock } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
@@ -58,11 +58,29 @@ import { useToday } from '@/hooks/useToday';
 import { locale, t , tn} from '@/lib/i18n';
 import { SideBySide } from '@/features/us/Together';
 
-function greeting(): string {
-  const h = new Date().getHours();
+/** A greeting that fits the actual time (late night is not "morning"). */
+function greeting(d = new Date()): string {
+  const h = d.getHours();
+  if (h < 5) return t('Up late');
   if (h < 12) return t('Good morning');
-  if (h < 18) return t('Good afternoon');
-  return t('Good evening');
+  if (h < 17) return t('Good afternoon');
+  if (h < 22) return t('Good evening');
+  return t('Good night');
+}
+
+/** Keeps the greeting current while the app stays open (checks each minute and on returning). */
+function useGreeting(): string {
+  const [g, setG] = useState(() => greeting());
+  useEffect(() => {
+    const tick = () => setG(greeting());
+    const id = window.setInterval(tick, 60_000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, []);
+  return g;
 }
 
 function WorkoutCard({ profile }: { profile: Profile }) {
@@ -265,6 +283,7 @@ export function TodayCardsEditor() {
 export function TodayPage() {
   const { data: profile } = useProfile();
   const date = useToday();
+  const hello = useGreeting();
   const [foodOpen, setFoodOpen] = useState(false);
   const [suppOpen, setSuppOpen] = useState(false);
   const [customize, setCustomize] = useState(false);
@@ -348,7 +367,7 @@ export function TodayPage() {
   return (
     <>
       <PageHeader
-        title={name ? `${greeting()}, ${name}` : greeting()}
+        title={name ? `${hello}, ${name}` : hello}
         subtitle={new Date().toLocaleDateString(locale(), { weekday: 'long', day: 'numeric', month: 'long' })}
       />
       {!profile ? (
