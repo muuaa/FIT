@@ -407,6 +407,8 @@ export interface Memory {
   type: MemoryType;
   story: string;
   favorite: boolean;
+  /** Paths of photos in file storage (either of you can upload; both can see). */
+  photos?: string[];
   created_by: string;
   created_at: string;
 }

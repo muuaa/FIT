@@ -11,6 +11,7 @@ import { getProfile } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
 import { Goals, NudgeBar, SideBySide } from './Together';
 import { ReviewCard } from './review';
+import { TogetherTiles } from './collections';
 
 function Avatar({ name, accent }: { name: string; accent: string }) {
   return (
@@ -69,6 +70,7 @@ export function UsPage() {
         </section>
 
         <NudgeBarCard />
+        <TogetherTiles />
         <SideBySide />
         <ReviewCard />
         <Goals />
