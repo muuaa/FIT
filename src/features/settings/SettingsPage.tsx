@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/States';
 import { SplitSwitcher } from '@/features/train/TrainPage';
 import { useHomeSettings } from '@/hooks/useHome';
 import { useProfile, useUpdateProfile } from '@/hooks/useProfile';
+import { appInfo } from '@/lib/push';
 import { toast } from '@/stores/toastStore';
 import type { Language, Profile } from '@/types/db';
 import { Segmented } from '@/components/ui/Segmented';
@@ -281,8 +282,17 @@ export function SettingsPage() {
           <Logo size={36} />
           <div className="text-sm font-semibold">{t('Better Together')}</div>
           <div className="text-xs text-ink-3">{t('Everything, together')}</div>
+          <AppVersion />
         </div>
       </div>
     </>
   );
+}
+
+/** Android app build and how opening went (helps tell which version is installed). */
+function AppVersion() {
+  const info = appInfo();
+  if (!info.build) return null;
+  const check = info.checkMs === null ? '' : info.checkOk === 1 ? ` · ${t('opened in {ms} ms', { ms: Math.max(0, info.checkMs) })}` : ` · ${t('link check: no answer')}`;
+  return <div className="tabular text-[11px] text-ink-3/70">{t('Android app build {n}', { n: info.build })}{check}</div>;
 }

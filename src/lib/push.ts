@@ -21,8 +21,10 @@ export function captureNativeLaunch() {
     const prev = localStorage.getItem(FCM_KEY);
     if (token && prev && prev !== token) localStorage.setItem(FCM_PREV_KEY, prev); // Firebase rotated it
     if (token) localStorage.setItem(FCM_KEY, token);
-    url.searchParams.delete('app');
-    url.searchParams.delete('fcm');
+    // How the Android app's opening went (shown in Settings to help diagnose).
+    const vt = url.searchParams.get('vt');
+    if (vt !== null) sessionStorage.setItem('fit.openCheck', JSON.stringify({ ms: Number(vt), ok: Number(url.searchParams.get('vr') ?? -1) }));
+    for (const k of ['app', 'fcm', 'vt', 'vr']) url.searchParams.delete(k);
     window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
   } catch {
     /* storage blocked: fall back to web push */
@@ -36,6 +38,17 @@ export function nativeAppVersion(): number {
   } catch {
     return 0;
   }
+}
+
+/** Android app version and how long Chrome took to confirm the app (for Settings). */
+export function appInfo(): { build: number; checkMs: number | null; checkOk: number | null } {
+  let check: { ms: number; ok: number } | null = null;
+  try {
+    check = JSON.parse(sessionStorage.getItem('fit.openCheck') ?? 'null');
+  } catch {
+    /* none */
+  }
+  return { build: nativeAppVersion(), checkMs: check ? check.ms : null, checkOk: check ? check.ok : null };
 }
 
 /** The Android app (1.3+) can open its own notification settings for a blocked phone. */

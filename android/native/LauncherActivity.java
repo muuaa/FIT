@@ -58,6 +58,9 @@ public class LauncherActivity
     /** When the launch screen started, and whether it may go away yet (Android 12+). */
     private final long startedAt = SystemClock.uptimeMillis();
     private boolean releaseSplash;
+    private long verifyStarted;
+    private long verifyMs = -1;
+    private int verified = -1; // -1 = no answer in time
     private View contentView;
 
     /** Let the launch screen go (it stays until Chrome has started, so nothing shows in between). */
@@ -150,7 +153,10 @@ public class LauncherActivity
     private void verifyThenOpen() {
         if (preparing || launched) return;
         preparing = true;
-        main.postDelayed(this::open, 1500); // never wait longer than this
+        verifyStarted = SystemClock.uptimeMillis();
+        // Wait for Chrome to confirm the app and site belong together (otherwise it shows the site's
+        // address bar and a grey screen). The logo holds meanwhile; never wait more than this.
+        main.postDelayed(this::open, 4000);
         String chrome = TwaProviderPicker.pickProvider(getPackageManager()).provider;
         if (chrome == null) {
             open();
@@ -163,6 +169,8 @@ public class LauncherActivity
                 CustomTabsSession session = client.newSession(new CustomTabsCallback() {
                     @Override
                     public void onRelationshipValidationResult(int relation, @NonNull Uri origin, boolean result, @Nullable Bundle extras) {
+                        verifyMs = SystemClock.uptimeMillis() - verifyStarted;
+                        verified = result ? 1 : 0;
                         main.post(LauncherActivity.this::open);
                     }
                 });
@@ -253,6 +261,8 @@ public class LauncherActivity
         Uri.Builder b = super.getLaunchingUrl().buildUpon().appendQueryParameter("app", String.valueOf(BuildConfig.VERSION_CODE));
         String token = Push.token(this);
         if (token != null) b.appendQueryParameter("fcm", token);
+        // How opening went (shown in Settings, to help fix anything that isn't smooth).
+        b.appendQueryParameter("vt", String.valueOf(verifyMs)).appendQueryParameter("vr", String.valueOf(verified));
         return b.build();
     }
 }
