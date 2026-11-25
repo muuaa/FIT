@@ -36,16 +36,19 @@ export function GEventRow({ e, onOpen }: { e: GEvent; onOpen: () => void }) {
   const { partner, viewing, self } = usePartnerStore();
   const meLabel = viewing ? (self?.name ?? t('Me')) : t('Me');
   const who = e.who === 'both' ? null : e.who === me?.id ? meLabel : e.who === partner?.id ? partner.name : null;
+  // A main calendar is usually named after its owner or their email: don't repeat that.
+  const calLabel = !e.calendarName || e.calendarName.includes('@') || e.calendarName === who || e.calendarName === partner?.name ? null : e.calendarName;
   return (
     <li>
       <button type="button" onClick={onOpen} className="press flex w-full items-center gap-3 rounded-2xl bg-white/[0.035] px-3 py-2.5 text-start">
-        <span className="tabular w-12 shrink-0 text-sm font-semibold text-todo">{e.time ?? t('All day')}</span>
+        <span className="h-8 w-1 shrink-0 rounded-full" style={{ background: e.color }} aria-hidden />
+        <span className="tabular w-11 shrink-0 text-sm font-semibold text-ink-2">{e.time ?? t('All day')}</span>
         {e.emoji && <span className="text-lg">{e.emoji}</span>}
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{e.title}</span>
-          {(who || e.repeat !== 'none') && (
+          {(who || e.repeat !== 'none' || calLabel) && (
             <span className="block text-xs text-ink-3">
-              {[who, e.repeat !== 'none' ? t(e.repeat === 'weekly' ? 'Weekly' : e.repeat === 'monthly' ? 'Monthly' : 'Yearly') : null].filter(Boolean).join(' · ')}
+              {[calLabel, who, e.repeat !== 'none' ? t(e.repeat === 'weekly' ? 'Weekly' : e.repeat === 'monthly' ? 'Monthly' : 'Yearly') : null].filter(Boolean).join(' · ')}
             </span>
           )}
         </span>
@@ -76,6 +79,14 @@ export function GoogleConnectCard() {
   if (s.mine)
     return (
       <Card title={t('Google Calendar')} icon={GIcon} accent="var(--color-todo)">
+        {s.needsReconnect && (
+          <div className="mb-3 rounded-2xl border border-todo/40 bg-todo/10 p-3">
+            <p className="text-sm">{t('Reconnect once so all your calendars show (Family, Workout and the rest), not just your main one.')}</p>
+            <Button size="sm" variant="primary" accent="var(--color-todo)" className="mt-2" disabled={busy} onClick={() => void go()}>
+              <GoogleG size={14} /> {t('Reconnect Google Calendar')}
+            </Button>
+          </div>
+        )}
         <p className="text-sm text-ink-2">
           {t('Your plans are your Google Calendar ({email}). Anything you add, change or delete here happens there too, and the other way round.', { email: s.myEmail })}
         </p>
@@ -144,6 +155,7 @@ export function GEventSheet({ event, date, open, onClose }: { event: GEvent | nu
   const [repeat, setRepeat] = useState<GEvent['repeat']>('none');
   const [note, setNote] = useState('');
   const [series, setSeries] = useState(false);
+  const [calendarId, setCalendarId] = useState('primary');
   const [busy, setBusy] = useState(false);
   const [seeded, setSeeded] = useState<string | null>(null);
   const key = open ? (event ? `${event.owner}|${event.id}` : `new-${date}`) : null;
@@ -160,6 +172,7 @@ export function GEventSheet({ event, date, open, onClose }: { event: GEvent | nu
       setRepeat(event?.repeat ?? 'none');
       setNote(event?.note ?? '');
       setSeries(false);
+      setCalendarId(event?.calendarId ?? status.data?.myCalendars.find((c) => c.primary)?.id ?? 'primary');
     }
   }
   const readOnly = Boolean(event && !event.editable);
@@ -177,6 +190,7 @@ export function GEventSheet({ event, date, open, onClose }: { event: GEvent | nu
       await saveGoogleEvent({
         id: event?.id,
         owner: event?.owner,
+        calendarId: event ? event.calendarId : calendarId,
         recurringId: event?.recurringId ?? null,
         series: isRepeat ? series : true,
         title: title.trim().slice(0, 120),
@@ -297,6 +311,30 @@ export function GEventSheet({ event, date, open, onClose }: { event: GEvent | nu
                     : t('Goes in {name}’s Google Calendar.', { name: partner?.name ?? '' })}
               </p>
             </div>
+          )}
+          {!event && who !== partner?.id && (status.data?.myCalendars.length ?? 0) > 1 && (
+            <div>
+              <span className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-3">{t('Calendar')}</span>
+              <div className="flex flex-wrap gap-1.5">
+                {status.data!.myCalendars.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    aria-pressed={calendarId === c.id}
+                    onClick={() => setCalendarId(c.id)}
+                    className={cn('press flex h-9 items-center gap-1.5 rounded-full px-3 text-sm', calendarId === c.id ? 'bg-white/[0.12] text-ink ring-1 ring-white/25' : 'bg-white/[0.05] text-ink-2')}
+                  >
+                    <span className="size-2.5 rounded-full" style={{ background: c.color }} />
+                    {c.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {event && (
+            <p className="flex items-center gap-1.5 text-xs text-ink-3">
+              <span className="size-2.5 rounded-full" style={{ background: event.color }} /> {event.calendarName}
+            </p>
           )}
           {(!isRepeat || series) && (
             <div>

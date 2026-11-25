@@ -7,8 +7,11 @@ import { toast } from '@/stores/toastStore';
 
 export interface GEvent {
   id: string;
-  /** Whose Google calendar it lives in (user id). */
+  /** Whose Google calendar it lives in (user id), which of their calendars, and its colour. */
   owner: string;
+  calendarId: string;
+  calendarName: string;
+  color: string;
   title: string;
   emoji: string;
   date: string;
@@ -24,11 +27,22 @@ export interface GEvent {
   uid: string;
 }
 
+export interface GCalendar {
+  id: string;
+  name: string;
+  color: string;
+  primary: boolean;
+}
+
 export interface GStatus {
   configured: boolean;
   mine: boolean;
   myEmail: string;
   partner: boolean;
+  /** Connected before the app could see all calendars: reconnect once. */
+  needsReconnect: boolean;
+  /** Your calendars you can add events to (Personal, Family, Workout…). */
+  myCalendars: GCalendar[];
 }
 
 const zone = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Amman';
@@ -77,6 +91,7 @@ export type GEventInput = Pick<GEvent, 'title' | 'emoji' | 'date' | 'time' | 'wh
   durationMin: number;
   id?: string;
   owner?: string;
+  calendarId?: string;
   recurringId?: string | null;
   /** Apply to every repeat of a repeating event (otherwise just this one). */
   series?: boolean;
@@ -84,7 +99,7 @@ export type GEventInput = Pick<GEvent, 'title' | 'emoji' | 'date' | 'time' | 'wh
 
 export const saveGoogleEvent = (event: GEventInput) => call<{ ok: boolean }>({ action: 'save', event });
 export const deleteGoogleEvent = (e: GEvent, series: boolean) =>
-  call<{ ok: boolean }>({ action: 'delete', owner: e.owner, id: e.id, recurringId: e.recurringId, series });
+  call<{ ok: boolean }>({ action: 'delete', owner: e.owner, calendarId: e.calendarId, id: e.id, recurringId: e.recurringId, series });
 
 /** Does an event fall on this day? (all-day events end the day before their end date). */
 export function gOn(e: GEvent, date: string): boolean {

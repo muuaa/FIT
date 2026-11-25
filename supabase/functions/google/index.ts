@@ -15,8 +15,12 @@ const CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID') ?? '';
 const CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET') ?? '';
 const APP_URL = 'https://muuaa.github.io/FIT/';
 const REDIRECT = 'https://muuaa.github.io/google-callback.html'; // Google returns here (an authorised domain), which forwards to /callback
-const SCOPES = 'openid email https://www.googleapis.com/auth/calendar.events';
-const API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+// calendar.events: read and edit events. calendarlist.readonly: see which calendars you have (Family,
+// Workout…) so all of them show, not only the main one.
+const SCOPES = 'openid email https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/calendar.calendarlist.readonly';
+const LIST_SCOPE = 'calendar.calendarlist.readonly';
+const BASE = 'https://www.googleapis.com/calendar/v3';
+const events = (cal: string) => `${BASE}/calendars/${encodeURIComponent(cal)}/events`;
 
 const db = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 const cors = {
@@ -91,10 +95,10 @@ async function accessToken(userId: string): Promise<string | null> {
   return r.body.access_token;
 }
 
-async function google(userId: string, method: string, path: string, body?: unknown) {
+async function google(userId: string, method: string, url: string, body?: unknown) {
   const token = await accessToken(userId);
   if (!token) throw new UserError('not-connected');
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(url, {
     method,
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
@@ -104,7 +108,7 @@ async function google(userId: string, method: string, path: string, body?: unkno
   if (!res.ok) {
     console.error('google api', method, res.status, JSON.stringify(out).slice(0, 300));
     if (res.status === 404 || res.status === 410) throw new UserError('That event no longer exists in Google Calendar.');
-    if (res.status === 403) throw new UserError('Google didn’t allow that change (you may not own this event).');
+    if (res.status === 403) throw new UserError('Google didn’t allow that (you may not be able to change this calendar or event).');
     throw new Error(`google ${res.status}`);
   }
   return out;
@@ -124,6 +128,52 @@ async function people(me: string) {
   };
 }
 
+// ---------------------------------------------------------------- calendars
+
+interface Cal {
+  id: string;
+  name: string;
+  color: string;
+  primary: boolean;
+  writable: boolean;
+}
+const calCache = new Map<string, { at: number; cals: Cal[] }>();
+
+/** The calendars a person has ticked in Google Calendar (falls back to the main one). */
+async function calendars(userId: string): Promise<Cal[]> {
+  const hit = calCache.get(userId);
+  if (hit && Date.now() - hit.at < 5 * 60_000) return hit.cals;
+  let cals: Cal[];
+  try {
+    const items: Record<string, any>[] = [];
+    let page = '';
+    for (let i = 0; i < 4; i++) {
+      const q = new URLSearchParams({ minAccessRole: 'reader', maxResults: '250', ...(page ? { pageToken: page } : {}) });
+      const r = await google(userId, 'GET', `${BASE}/users/me/calendarList?${q}`);
+      items.push(...((r?.items ?? []) as Record<string, any>[]));
+      page = r?.nextPageToken ?? '';
+      if (!page) break;
+    }
+    cals = items
+      .filter((c) => c.selected !== false && !c.hidden && !c.deleted)
+      .map((c) => ({
+        id: String(c.id),
+        name: String(c.summaryOverride ?? c.summary ?? 'Calendar'),
+        color: String(c.backgroundColor ?? '#a89bff'),
+        primary: Boolean(c.primary),
+        writable: c.accessRole === 'owner' || c.accessRole === 'writer',
+      }))
+      .sort((a, b) => Number(b.primary) - Number(a.primary) || a.name.localeCompare(b.name));
+    if (!cals.some((c) => c.primary)) cals.unshift({ id: 'primary', name: 'Calendar', color: '#a89bff', primary: true, writable: true });
+  } catch (e) {
+    if (e instanceof UserError && e.message === 'not-connected') throw e;
+    // Older connections can't read the calendar list yet (reconnect fixes it): use the main calendar.
+    cals = [{ id: 'primary', name: 'Calendar', color: '#a89bff', primary: true, writable: true }];
+  }
+  calCache.set(userId, { at: Date.now(), cals });
+  return cals;
+}
+
 // ---------------------------------------------------------------- events
 
 const EMOJI_AT_START = /^(\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic})*️?)\s+/u;
@@ -131,6 +181,9 @@ const EMOJI_AT_START = /^(\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictogr
 interface AppEvent {
   id: string;
   owner: string; // whose calendar it lives in
+  calendarId: string;
+  calendarName: string;
+  color: string;
   title: string;
   emoji: string;
   date: string;
@@ -146,7 +199,7 @@ interface AppEvent {
   uid: string;
 }
 
-function toApp(g: Record<string, any>, owner: string, partnerId: string | null, partnerEmail: string, myEmail: string, tz: string): AppEvent {
+function toApp(g: Record<string, any>, owner: string, cal: Cal, partnerId: string | null, partnerEmail: string, myEmail: string, tz: string): AppEvent {
   const raw = String(g.summary ?? '(No title)');
   const m = raw.match(EMOJI_AT_START);
   const allDay = Boolean(g.start?.date);
@@ -168,6 +221,9 @@ function toApp(g: Record<string, any>, owner: string, partnerId: string | null, 
   return {
     id: g.id,
     owner,
+    calendarId: cal.id,
+    calendarName: cal.name,
+    color: String(g.colorId && COLORS[g.colorId] ? COLORS[g.colorId] : cal.color),
     title: m ? raw.slice(m[0].length) : raw,
     emoji: m ? m[1] : '',
     date,
@@ -180,28 +236,42 @@ function toApp(g: Record<string, any>, owner: string, partnerId: string | null, 
     note: String(g.description ?? ''),
     link: String(g.htmlLink ?? ''),
     // Only the organiser's copy can be changed (a guest's copy is read-only in Google).
-    editable: (g.organizer?.self === true || (!g.organizer && g.creator?.self === true)) && !g.locked,
+    editable:
+      cal.writable && (g.organizer?.self === true || g.organizer?.email === cal.id || (!g.organizer && g.creator?.self === true)) && !g.locked,
     uid: String(g.iCalUID ?? g.id),
   };
 }
 
-async function listFor(userId: string, from: string, to: string, tz: string) {
-  const timeMin = new Date(zonedToUtc(from, '00:00', tz)).toISOString();
-  const timeMax = new Date(zonedToUtc(addDay(to, 1), '00:00', tz)).toISOString();
+/** Google's event colours (when an event has its own colour instead of its calendar's). */
+const COLORS: Record<string, string> = {
+  '1': '#7986cb', '2': '#33b679', '3': '#8e24aa', '4': '#e67c73', '5': '#f6bf26', '6': '#f4511e',
+  '7': '#039be5', '8': '#616161', '9': '#3f51b5', '10': '#0b8043', '11': '#d50000',
+};
+
+async function listCal(userId: string, cal: Cal, timeMin: string, timeMax: string) {
   const items: Record<string, any>[] = [];
   let page = '';
   for (let i = 0; i < 5; i++) {
     const q = new URLSearchParams({ timeMin, timeMax, singleEvents: 'true', orderBy: 'startTime', maxResults: '250', ...(page ? { pageToken: page } : {}) });
-    const r = await google(userId, 'GET', `?${q}`);
+    const r = await google(userId, 'GET', `${events(cal.id)}?${q}`);
     items.push(...((r?.items ?? []) as Record<string, any>[]));
     page = r?.nextPageToken ?? '';
     if (!page) break;
   }
-  // Repeat rule lives on the series: fetch it for repeating events so the app can show "Weekly" etc.
-  const series = [...new Set(items.map((e) => e.recurringEventId).filter(Boolean))].slice(0, 30) as string[];
+  // The repeat rule lives on the series: fetch it so the app can show "Weekly" etc.
+  const series = [...new Set(items.map((e) => e.recurringEventId).filter(Boolean))].slice(0, 20) as string[];
   const rules = new Map<string, string[]>();
-  await Promise.all(series.map(async (id) => rules.set(id, ((await google(userId, 'GET', `/${encodeURIComponent(id)}`).catch(() => null))?.recurrence ?? []) as string[])));
-  return items.filter((e) => e.status !== 'cancelled').map((e) => ({ ...e, recurrence: e.recurringEventId ? rules.get(e.recurringEventId) : e.recurrence }));
+  await Promise.all(series.map(async (id) => rules.set(id, ((await google(userId, 'GET', `${events(cal.id)}/${encodeURIComponent(id)}`).catch(() => null))?.recurrence ?? []) as string[])));
+  return items.filter((e) => e.status !== 'cancelled').map((e) => ({ g: { ...e, recurrence: e.recurringEventId ? rules.get(e.recurringEventId) : e.recurrence }, cal }));
+}
+
+/** Events from all of a person's ticked calendars. */
+async function listFor(userId: string, from: string, to: string, tz: string) {
+  const timeMin = new Date(zonedToUtc(from, '00:00', tz)).toISOString();
+  const timeMax = new Date(zonedToUtc(addDay(to, 1), '00:00', tz)).toISOString();
+  const cals = await calendars(userId);
+  const all = await Promise.all(cals.map((c) => listCal(userId, c, timeMin, timeMax).catch((e) => (console.error('calendar list failed', (e as Error).message), []))));
+  return all.flat();
 }
 
 function toGoogle(e: Record<string, any>, tz: string, attendee: string | null) {
@@ -252,6 +322,7 @@ Deno.serve(async (req) => {
       const refresh = r.body.refresh_token || prev?.refresh_token;
       if (!refresh) return back('error');
       await db.from('google_tokens').upsert({ user_id: st.user_id, refresh_token: refresh, google_email: email, scope: r.body.scope ?? '', updated_at: new Date().toISOString() });
+      calCache.delete(st.user_id);
       access.set(st.user_id, { token: r.body.access_token, until: Date.now() + (Number(r.body.expires_in ?? 3600) - 120) * 1000 });
       return back('connected');
     }
@@ -267,7 +338,18 @@ Deno.serve(async (req) => {
     const ppl = await people(user.id);
 
     if (action === 'status') {
-      return json({ configured: Boolean(CLIENT_ID && CLIENT_SECRET), mine: ppl.connected(user.id), myEmail: ppl.email(user.id), partner: ppl.connected(ppl.partnerId) });
+      const mine = ppl.connected(user.id);
+      const { data: tok } = mine ? await db.from('google_tokens').select('scope').eq('user_id', user.id).maybeSingle() : { data: null };
+      const myCalendars = mine ? (await calendars(user.id).catch(() => [])).filter((c) => c.writable) : [];
+      return json({
+        configured: Boolean(CLIENT_ID && CLIENT_SECRET),
+        mine,
+        myEmail: ppl.email(user.id),
+        partner: ppl.connected(ppl.partnerId),
+        // Connected before the app could see all calendars: reconnect once to show them.
+        needsReconnect: mine && !String(tok?.scope ?? '').includes(LIST_SCOPE),
+        myCalendars,
+      });
     }
 
     if (action === 'start') {
@@ -309,8 +391,8 @@ Deno.serve(async (req) => {
       // Mine first: a "both" event lives in the organiser's calendar and also appears in the guest's.
       for (const id of [user.id, ppl.partnerId].filter((x): x is string => Boolean(x && ppl.connected(x)))) {
         try {
-          for (const g of await listFor(id, from, to, tz)) {
-            const e = toApp(g, id, ppl.partnerId, partnerEmail, myEmail, tz);
+          for (const { g, cal } of await listFor(id, from, to, tz)) {
+            const e = toApp(g, id, cal, ppl.partnerId, partnerEmail, myEmail, tz);
             const k = `${e.uid}|${e.date}|${e.time}`;
             if (seen.has(k)) {
               // The same event in both calendars: it's for both of you. Keep the organiser's copy,
@@ -346,13 +428,17 @@ Deno.serve(async (req) => {
       const other = owner === user.id ? ppl.partnerId : user.id;
       const attendee = who === 'both' && other ? ppl.email(other) || null : null;
       const payload = toGoogle(e, tz, attendee);
+      // Which of that person's calendars: the event's own, or (new) the one picked, else their main one.
+      const cals = await calendars(owner);
+      const wanted = String(e.calendarId ?? '');
+      const cal = e.id ? wanted || 'primary' : owner === user.id && cals.some((c) => c.id === wanted && c.writable) ? wanted : 'primary';
       const target = e.id && e.series && e.recurringId ? String(e.recurringId) : e.id ? String(e.id) : null;
       if (target) {
         const patch = { ...payload };
         if (e.recurringId && !e.series) delete patch.recurrence; // one occurrence can't change the repeat
-        await google(owner, 'PATCH', `/${encodeURIComponent(target)}?sendUpdates=all`, patch);
+        await google(owner, 'PATCH', `${events(cal)}/${encodeURIComponent(target)}?sendUpdates=all`, patch);
       } else {
-        await google(owner, 'POST', `?sendUpdates=all`, payload);
+        await google(owner, 'POST', `${events(cal)}?sendUpdates=all`, payload);
       }
       return json({ ok: true });
     }
@@ -361,7 +447,7 @@ Deno.serve(async (req) => {
       const owner = String(body.owner ?? '');
       const id = String(body.series && body.recurringId ? body.recurringId : (body.id ?? ''));
       if (!id || (owner !== user.id && owner !== ppl.partnerId)) throw new UserError('bad event');
-      await google(owner, 'DELETE', `/${encodeURIComponent(id)}?sendUpdates=all`);
+      await google(owner, 'DELETE', `${events(String(body.calendarId || 'primary'))}/${encodeURIComponent(id)}?sendUpdates=all`);
       return json({ ok: true });
     }
 
