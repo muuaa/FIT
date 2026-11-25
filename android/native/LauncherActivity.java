@@ -45,7 +45,7 @@ public class LauncherActivity extends Activity {
     private static final String HOME = "https://" + HOST + "/FIT/";
     private static final int PICK_FILE = 41;
     private static final int ASK_NOTIFICATIONS = 42;
-    private static final long SPLASH_MIN_MS = 750; // the ring and spark finish drawing
+    private static final long SPLASH_MIN_MS = 1550; // the launch animation finishes
     private static final long SPLASH_MAX_MS = 7000; // never keep the logo longer than this
 
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -138,8 +138,13 @@ public class LauncherActivity extends Activity {
         if (Build.VERSION.SDK_INT < 31 || splashView == null) return;
         final android.window.SplashScreenView v = splashView;
         splashView = null;
-        v.animate().alpha(0f).setDuration(260)
-                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+        View icon = v.getIconView();
+        if (icon != null) {
+            icon.animate().scaleX(1.22f).scaleY(1.22f).setDuration(340)
+                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.4f)).start();
+        }
+        v.animate().alpha(0f).setStartDelay(40).setDuration(300)
+                .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
                 .withEndAction(v::remove).start();
     }
 

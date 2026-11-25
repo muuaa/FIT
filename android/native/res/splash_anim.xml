@@ -1,57 +1,175 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+ launch screen: the app tile (128dp, in the 288dp icon area) with the ring drawing
-     itself in and the spark popping in. Played natively, so it stays smooth while the app starts. -->
+<!-- Android 12+ launch animation (about 1.5 s, played natively so it stays smooth):
+     the tile springs in, two glowing dots set off from the top in opposite directions and draw the
+     ring between them, meet at the bottom with a ripple, then the spark spins in and the glow breathes. -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt">
     <aapt:attr name="android:drawable">
         <vector android:width="288dp" android:height="288dp" android:viewportWidth="288" android:viewportHeight="288">
           <group android:translateY="9">
-            <path android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
+           <group android:name="tile" android:pivotX="144" android:pivotY="144" android:scaleX="0.72" android:scaleY="0.72">
+            <path android:name="tileBg" android:fillAlpha="0"
+                android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
                 <aapt:attr name="android:fillColor">
                     <gradient android:type="linear" android:startX="80" android:startY="80" android:endX="131.2" android:endY="208"
                         android:startColor="#FF1D1936" android:endColor="#FF07070D" />
                 </aapt:attr>
             </path>
-            <path android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
+            <path android:name="glow" android:fillAlpha="0"
+                android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
                 <aapt:attr name="android:fillColor">
                     <gradient android:type="radial" android:centerX="144" android:centerY="137.6" android:gradientRadius="70.4"
-                        android:startColor="#52A89BFF" android:endColor="#00A89BFF" />
+                        android:startColor="#7AA89BFF" android:endColor="#00A89BFF" />
                 </aapt:attr>
             </path>
-            <path android:pathData="M144,106.5 A37.5,37.5 0 1 1 144,181.5 A37.5,37.5 0 1 1 144,106.5"
+            <path android:name="track" android:strokeAlpha="0" android:pathData="M144,106.5 A37.5,37.5 0 1 1 144,181.5 A37.5,37.5 0 1 1 144,106.5"
                 android:strokeColor="#14FFFFFF" android:strokeWidth="11" />
-            <path android:name="ring" android:pathData="M144,106.5 A37.5,37.5 0 1 1 108.83,130.99"
+
+            <!-- ripple when the two dots meet -->
+            <group android:name="ripple" android:pivotX="144" android:pivotY="144">
+                <path android:name="rippleRing" android:strokeAlpha="0" android:pathData="M144,106.5 A37.5,37.5 0 1 1 144,181.5 A37.5,37.5 0 1 1 144,106.5"
+                    android:strokeColor="#FFD9CEFF" android:strokeWidth="4" />
+            </group>
+
+            <!-- the ring, drawn from the top down both sides -->
+            <path android:name="ringR" android:pathData="M144,106.5 A37.5,37.5 0 0 1 144,181.5"
                 android:strokeWidth="11" android:strokeLineCap="round" android:trimPathEnd="0">
                 <aapt:attr name="android:strokeColor">
-                    <gradient android:type="linear" android:startX="106.5" android:startY="181.5" android:endX="181.5" android:endY="106.5">
+                    <gradient android:type="linear" android:startX="144" android:startY="106.5" android:endX="144" android:endY="181.5">
                         <item android:offset="0" android:color="#FFD9CEFF" />
-                        <item android:offset="0.55" android:color="#FFA89BFF" />
                         <item android:offset="1" android:color="#FFFF9EB5" />
                     </gradient>
                 </aapt:attr>
             </path>
-            <group android:name="spark" android:pivotX="144" android:pivotY="144" android:scaleX="0" android:scaleY="0" android:rotation="-60">
-                <path android:fillColor="#FFFFFFFF"
-                    android:pathData="M144,126.5 c1.75,11 6.5,15.75 17.5,17.5 c-11,1.75 -15.75,6.5 -17.5,17.5 c-1.75,-11 -6.5,-15.75 -17.5,-17.5 c11,-1.75 15.75,-6.5 17.5,-17.5 z" />
+            <path android:name="ringL" android:pathData="M144,106.5 A37.5,37.5 0 0 0 144,181.5"
+                android:strokeWidth="11" android:strokeLineCap="round" android:trimPathEnd="0">
+                <aapt:attr name="android:strokeColor">
+                    <gradient android:type="linear" android:startX="144" android:startY="106.5" android:endX="144" android:endY="181.5">
+                        <item android:offset="0" android:color="#FFD9CEFF" />
+                        <item android:offset="1" android:color="#FFA89BFF" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+
+            <!-- two glowing dots riding the ends of the ring -->
+            <group android:name="dotR" android:pivotX="144" android:pivotY="144">
+                <group android:name="dotRs" android:pivotX="144" android:pivotY="106.5" android:scaleX="0" android:scaleY="0">
+                    <path android:fillColor="#66FF9EB5" android:pathData="M132,106.5 a12,12 0 1 0 24,0 a12,12 0 1 0 -24,0 z" />
+                    <path android:fillColor="#FFFFFFFF" android:pathData="M138.5,106.5 a5.5,5.5 0 1 0 11,0 a5.5,5.5 0 1 0 -11,0 z" />
+                </group>
             </group>
+            <group android:name="dotL" android:pivotX="144" android:pivotY="144">
+                <group android:name="dotLs" android:pivotX="144" android:pivotY="106.5" android:scaleX="0" android:scaleY="0">
+                    <path android:fillColor="#66D9CEFF" android:pathData="M132,106.5 a12,12 0 1 0 24,0 a12,12 0 1 0 -24,0 z" />
+                    <path android:fillColor="#FFFFFFFF" android:pathData="M138.5,106.5 a5.5,5.5 0 1 0 11,0 a5.5,5.5 0 1 0 -11,0 z" />
+                </group>
+            </group>
+
+            <group android:name="spark" android:pivotX="144" android:pivotY="144" android:scaleX="0" android:scaleY="0" android:rotation="-120">
+                <path android:fillColor="#FFFFFFFF"
+                    android:pathData="M144,124.5 c2,12.5 7.5,18 20,20 c-12.5,2 -18,7.5 -20,20 c-2,-12.5 -7.5,-18 -20,-20 c12.5,-2 18,-7.5 20,-20 z" />
+            </group>
+           </group>
           </group>
         </vector>
     </aapt:attr>
-    <target android:name="ring">
+
+    <!-- 0–420 ms: the tile springs in -->
+    <target android:name="tile">
         <aapt:attr name="android:animation">
-            <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1"
-                android:startOffset="80" android:duration="620" android:interpolator="@android:interpolator/decelerate_cubic" />
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="0.72" android:valueTo="1" android:duration="480" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="0.72" android:valueTo="1" android:duration="480" android:interpolator="@android:interpolator/overshoot" />
+            </set>
         </aapt:attr>
     </target>
+    <target android:name="tileBg">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="1" android:duration="260" />
+        </aapt:attr>
+    </target>
+    <target android:name="track">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="strokeAlpha" android:valueFrom="0" android:valueTo="1" android:startOffset="180" android:duration="260" />
+        </aapt:attr>
+    </target>
+
+    <!-- 260–420 ms: the dots appear at the top; 420–1060 ms: they travel down both sides drawing the ring -->
+    <target android:name="dotRs">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="0" android:valueTo="1" android:startOffset="260" android:duration="220" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="0" android:valueTo="1" android:startOffset="260" android:duration="220" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="1" android:valueTo="0" android:startOffset="1040" android:duration="180" android:interpolator="@android:interpolator/accelerate_quad" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="1" android:valueTo="0" android:startOffset="1040" android:duration="180" android:interpolator="@android:interpolator/accelerate_quad" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="dotLs">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="0" android:valueTo="1" android:startOffset="260" android:duration="220" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="0" android:valueTo="1" android:startOffset="260" android:duration="220" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="1" android:valueTo="0" android:startOffset="1040" android:duration="180" android:interpolator="@android:interpolator/accelerate_quad" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="1" android:valueTo="0" android:startOffset="1040" android:duration="180" android:interpolator="@android:interpolator/accelerate_quad" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="dotR">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="rotation" android:valueFrom="0" android:valueTo="180" android:startOffset="420" android:duration="640" android:interpolator="@android:interpolator/fast_out_slow_in" />
+        </aapt:attr>
+    </target>
+    <target android:name="dotL">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="rotation" android:valueFrom="0" android:valueTo="-180" android:startOffset="420" android:duration="640" android:interpolator="@android:interpolator/fast_out_slow_in" />
+        </aapt:attr>
+    </target>
+    <target android:name="ringR">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1" android:startOffset="420" android:duration="640" android:interpolator="@android:interpolator/fast_out_slow_in" />
+        </aapt:attr>
+    </target>
+    <target android:name="ringL">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1" android:startOffset="420" android:duration="640" android:interpolator="@android:interpolator/fast_out_slow_in" />
+        </aapt:attr>
+    </target>
+
+    <!-- 1040–1520 ms: they meet, a ripple pulses out -->
+    <target android:name="ripple">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="1" android:valueTo="1.55" android:startOffset="1040" android:duration="480" android:interpolator="@android:interpolator/decelerate_cubic" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="1" android:valueTo="1.55" android:startOffset="1040" android:duration="480" android:interpolator="@android:interpolator/decelerate_cubic" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="rippleRing">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="strokeAlpha" android:valueFrom="0" android:valueTo="0.7" android:startOffset="1040" android:duration="60" />
+                <objectAnimator android:propertyName="strokeAlpha" android:valueFrom="0.7" android:valueTo="0" android:startOffset="1100" android:duration="420" android:interpolator="@android:interpolator/decelerate_quad" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <!-- 980–1460 ms: the spark spins in; the glow swells and settles -->
     <target android:name="spark">
         <aapt:attr name="android:animation">
             <set>
-                <objectAnimator android:propertyName="scaleX" android:valueFrom="0" android:valueTo="1"
-                    android:startOffset="360" android:duration="460" android:interpolator="@android:interpolator/overshoot" />
-                <objectAnimator android:propertyName="scaleY" android:valueFrom="0" android:valueTo="1"
-                    android:startOffset="360" android:duration="460" android:interpolator="@android:interpolator/overshoot" />
-                <objectAnimator android:propertyName="rotation" android:valueFrom="-60" android:valueTo="0"
-                    android:startOffset="360" android:duration="460" android:interpolator="@android:interpolator/decelerate_cubic" />
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="0" android:valueTo="1" android:startOffset="980" android:duration="480" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="0" android:valueTo="1" android:startOffset="980" android:duration="480" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="rotation" android:valueFrom="-120" android:valueTo="0" android:startOffset="980" android:duration="520" android:interpolator="@android:interpolator/decelerate_cubic" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="glow">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0" android:valueTo="0.45" android:startOffset="200" android:duration="600" />
+                <objectAnimator android:propertyName="fillAlpha" android:valueFrom="0.45" android:valueTo="1" android:startOffset="1040" android:duration="200" />
+                <objectAnimator android:propertyName="fillAlpha" android:valueFrom="1" android:valueTo="0.6" android:startOffset="1240" android:duration="360" />
             </set>
         </aapt:attr>
     </target>
