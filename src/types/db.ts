@@ -348,3 +348,65 @@ export interface Note {
   pinned: boolean;
   updated_at: string;
 }
+
+/** One person's weekly review (shared: you each write your own, and see each other's). */
+export interface WeekReview {
+  /** First day of the week (Saturday), YYYY-MM-DD. */
+  week: string;
+  by: string;
+  wins: string;
+  hard: string;
+  proud: string;
+  focus: string;
+  /** How the week felt, 1–10 (0 = not given). */
+  score: number;
+  updated_at: string;
+}
+
+export type WishType = 'get' | 'do' | 'surprise' | 'place';
+export type IdeaStatus = 'idea' | 'planned' | 'done';
+
+/** Wishlist & bucket list. A surprise is hidden from the person it's for. */
+export interface Wish {
+  id: string;
+  title: string;
+  type: WishType;
+  /** 'both' or a user id. */
+  for: string;
+  status: IdeaStatus;
+  cost: number | null;
+  link: string;
+  note: string;
+  created_by: string;
+  created_at: string;
+}
+
+export type DateCategory = 'movie' | 'game' | 'cook' | 'study' | 'creative' | 'talk' | 'out' | 'other';
+
+/** A date idea, and later a date you went on (with a rating). */
+export interface DateIdea {
+  id: string;
+  title: string;
+  category: DateCategory;
+  status: IdeaStatus;
+  /** When it's planned for (YYYY-MM-DD), if it is. */
+  planned: string | null;
+  /** 1–5 once done (0 = not rated). */
+  rating: number;
+  note: string;
+  created_at: string;
+}
+
+export type MemoryType = 'milestone' | 'first' | 'sweet' | 'funny' | 'trip' | 'photo';
+
+/** A moment in your story. Photos are attachments with this memory's id. */
+export interface Memory {
+  id: string;
+  title: string;
+  date: string;
+  type: MemoryType;
+  story: string;
+  favorite: boolean;
+  created_by: string;
+  created_at: string;
+}

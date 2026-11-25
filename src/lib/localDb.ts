@@ -40,6 +40,10 @@ import type {
   SetLog,
   Supplement,
   WorkoutSession,
+  WeekReview,
+  Wish,
+  DateIdea,
+  Memory,
 } from '@/types/db';
 
 export interface WaterDay {
@@ -92,6 +96,10 @@ export interface Tables {
   meal_plan: PlannedMeal;
   chores: Chore;
   notes: Note;
+  reviews: WeekReview;
+  wishes: Wish;
+  date_ideas: DateIdea;
+  memories: Memory;
 }
 export type TableName = keyof Tables;
 
@@ -128,6 +136,10 @@ export const TABLE_NAMES: TableName[] = [
   'meal_plan',
   'chores',
   'notes',
+  'reviews',
+  'wishes',
+  'date_ideas',
+  'memories',
 ];
 
 const BASE = 'fit.v1.';
@@ -160,11 +172,11 @@ let viewPerson: string | null = null;
  */
 export const JOINT_TABLES = new Set<string>([
   'todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals', 'bills', 'meal_plan', 'chores',
-  'habits', 'habit_logs', 'journal',
+  'habits', 'habit_logs', 'journal', 'reviews', 'wishes', 'date_ideas', 'memories',
 ]);
 
 /** Shared tables where each row belongs to one of us (`by`): your habit ticks, your journal entry. */
-export const PERSON_TABLES = new Set<string>(['habit_logs', 'journal']);
+export const PERSON_TABLES = new Set<string>(['habit_logs', 'journal', 'reviews']);
 
 /** Whose rows the screens show: the partner's while viewing them, otherwise the signed-in user's. */
 export function personId(): string {
@@ -273,6 +285,10 @@ export function rowKey<T extends TableName>(t: T, row: Tables[T]): string {
   if (t === 'journal') {
     const r = row as JournalEntry;
     return `${r.date}|${r.by}`;
+  }
+  if (t === 'reviews') {
+    const r = row as WeekReview;
+    return `${r.week}|${r.by}`;
   }
   if (t === 'supplement_logs') {
     const r = row as SupplementLog;

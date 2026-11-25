@@ -138,3 +138,72 @@ export async function fetchDaySnapshot(userId: string, date: string): Promise<Da
     steps: Number(of('steps_days')[0]?.steps ?? 0),
   };
 }
+
+export interface WeekSnapshot {
+  habitsDone: number;
+  habitsDue: number;
+  /** Days the water goal was reached. */
+  waterDays: number;
+  workouts: number;
+  /** Average mood 1–5 (0 = none logged). */
+  mood: number;
+  /** Average sleep in minutes (null = none logged). */
+  sleepMin: number | null;
+  /** Days anything was written in the journal. */
+  journalDays: number;
+}
+
+/** A person's week (7 dates) from their synced rows: works for you and for your partner. */
+export async function fetchWeekSnapshot(userId: string, days: string[]): Promise<WeekSnapshot> {
+  if (!supabase) throw new Error('offline');
+  const base = () => supabase!.from('records').select('tbl,data').eq('user_id', userId).eq('deleted', false);
+  const home = () => supabase!.from('household_records').select('tbl,data').eq('deleted', false);
+  const [small, week, habits, ticks, journal] = await Promise.all([
+    base().eq('tbl', 'profile'),
+    base().in('tbl', ['water_days', 'checkins', 'sleep_logs', 'workout_sessions']).in('data->>date', days),
+    home().eq('tbl', 'habits'),
+    home().eq('tbl', 'habit_logs').in('data->>date', days).eq('data->>by', userId),
+    home().eq('tbl', 'journal').in('data->>date', days).eq('data->>by', userId),
+  ]);
+  for (const r of [small, week, habits, ticks, journal]) if (r.error) throw new Error(r.error.message);
+  const rows = [...(small.data ?? []), ...(week.data ?? []), ...(habits.data ?? []), ...(ticks.data ?? [])];
+  const of = (t: string) => rows.filter((r) => r.tbl === t).map((r) => r.data as Record<string, unknown>);
+  const profile = (of('profile')[0] ?? {}) as Record<string, unknown>;
+  const target = Number(profile.water_target_ml ?? 4000);
+  let due = 0;
+  let done = 0;
+  const logs = of('habit_logs');
+  for (const date of days) {
+    const wd = new Date(`${date}T12:00:00`).getDay();
+    const today = of('habits').filter(
+      (h) => !h.archived && String(h.created_at ?? '').slice(0, 10) <= date && (!(h.days as number[])?.length || (h.days as number[]).includes(wd)),
+    );
+    const ticked = new Set(logs.filter((l) => l.date === date).map((l) => l.habit_id));
+    due += today.length;
+    done += today.filter((h) => ticked.has(h.id)).length;
+  }
+  const moods = of('checkins').map((c) => Number(c.mood)).filter((m) => m > 0);
+  const sleeps = of('sleep_logs').map((s) => {
+    const [bh, bm] = String(s.bed).split(':').map(Number);
+    const [wh, wm] = String(s.wake).split(':').map(Number);
+    let m = wh * 60 + wm - (bh * 60 + bm);
+    if (m <= 0) m += 1440;
+    return m;
+  });
+  const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const journalDays = new Set(
+    (journal.data ?? [])
+      .map((r) => r.data as { date: string; text?: string; gratitude?: string[] })
+      .filter((j) => (j.text ?? '').trim() || (j.gratitude ?? []).some((g) => g.trim()))
+      .map((j) => j.date),
+  ).size;
+  return {
+    habitsDone: done,
+    habitsDue: due,
+    waterDays: of('water_days').filter((w) => Number(w.ml ?? 0) >= target).length,
+    workouts: of('workout_sessions').filter((w) => w.ended_at).length,
+    mood: moods.length ? Math.round(avg(moods) * 10) / 10 : 0,
+    sleepMin: sleeps.length ? Math.round(avg(sleeps)) : null,
+    journalDays,
+  };
+}

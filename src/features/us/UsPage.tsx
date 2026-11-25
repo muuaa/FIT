@@ -10,6 +10,7 @@ import { usePartnerStore, viewMe, viewPartner } from '@/lib/partner';
 import { getProfile } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
 import { Goals, NudgeBar, SideBySide } from './Together';
+import { ReviewCard } from './review';
 
 function Avatar({ name, accent }: { name: string; accent: string }) {
   return (
@@ -69,6 +70,7 @@ export function UsPage() {
 
         <NudgeBarCard />
         <SideBySide />
+        <ReviewCard />
         <Goals />
 
         <Card title={t('Shared lists')} icon={ListChecks} accent="var(--color-lists)" action={<Link to="/life/lists" className="text-xs font-semibold text-lists">{t('Open')}</Link>}>

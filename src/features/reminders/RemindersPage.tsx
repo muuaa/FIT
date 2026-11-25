@@ -16,7 +16,7 @@ import { canOpenNotificationSettings, disablePush, enablePush, openNotificationS
 import { cloudEnabled, supabase } from '@/lib/supabase';
 import { toast } from '@/stores/toastStore';
 
-type Kind = 'water' | 'supplements' | 'weighin' | 'workout' | 'journal' | 'bedtime' | 'habits' | 'custom';
+type Kind = 'water' | 'supplements' | 'weighin' | 'workout' | 'journal' | 'bedtime' | 'habits' | 'review' | 'custom';
 
 interface Reminder {
   id: string;
@@ -29,7 +29,7 @@ interface Reminder {
   tz: string;
 }
 
-const PRESETS: { kind: Exclude<Kind, 'custom'>; emoji: string; label: string; times: string[]; smart: string | null }[] = [
+const PRESETS: { kind: Exclude<Kind, 'custom'>; emoji: string; label: string; times: string[]; days?: number[]; smart: string | null }[] = [
   { kind: 'water', emoji: '💧', label: 'Drink water', times: ['10:00', '12:00', '14:00', '16:00', '18:00', '20:00'], smart: 'Stop once you hit your water goal' },
   { kind: 'supplements', emoji: '💊', label: 'Supplements', times: ['09:00'], smart: 'Skip once all are ticked' },
   { kind: 'weighin', emoji: '⚖️', label: 'Morning weigh-in', times: ['08:00'], smart: 'Skip if you already weighed in' },
@@ -37,6 +37,7 @@ const PRESETS: { kind: Exclude<Kind, 'custom'>; emoji: string; label: string; ti
   { kind: 'habits', emoji: '🎯', label: 'Habits', times: ['20:00'], smart: 'Skip when all habits are done' },
   { kind: 'journal', emoji: '📓', label: 'Journal', times: ['21:30'], smart: 'Skip if you already wrote today' },
   { kind: 'bedtime', emoji: '😴', label: 'Bedtime', times: ['22:30'], smart: null },
+  { kind: 'review', emoji: '🔄', label: 'Weekly review', times: ['20:00'], days: [5], smart: 'Skip once you’ve written it' },
 ];
 
 const KEY = ['reminders'];
@@ -130,7 +131,7 @@ function PresetRow({ preset, row }: { preset: (typeof PRESETS)[number]; row: Rem
           label={t(preset.label)}
           accent={accent}
           onChange={(v) =>
-            row ? void save({ kind: preset.kind, enabled: v }, row.id) : void save({ kind: preset.kind, title: '', times: preset.times, days: [], enabled: true, smart: true })
+            row ? void save({ kind: preset.kind, enabled: v }, row.id) : void save({ kind: preset.kind, title: '', times: preset.times, days: preset.days ?? [], enabled: true, smart: true })
           }
         />
       </div>

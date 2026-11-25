@@ -101,6 +101,7 @@ const TEXT: Record<Lang, Record<string, [string, string]>> = {
     journal: ['📓 Journal', 'Write a few lines and 3 things you’re grateful for.'],
     bedtime: ['😴 Bedtime', 'Time to wind down for a good night’s sleep.'],
     habits: ['🎯 Habits', '{left} habit(s) left today.'],
+    review: ['🔄 Weekly review', 'How did your week go? Wins, what was hard, and one focus for next week.'],
     custom: ['🔔 Reminder', ''],
     test: ['✅ Notifications are on', 'This is how Better Together reminders will look.'],
   },
@@ -112,6 +113,7 @@ const TEXT: Record<Lang, Record<string, [string, string]>> = {
     journal: ['📓 اليوميات', 'اكتب بضعة أسطر و3 أشياء أنت ممتن لها.'],
     bedtime: ['😴 وقت النوم', 'حان وقت الاسترخاء لنوم جيد.'],
     habits: ['🎯 العادات', 'متبقٍ {left} عادة اليوم.'],
+    review: ['🔄 مراجعة الأسبوع', 'كيف كان أسبوعك؟'],
     custom: ['🔔 تذكير', ''],
     test: ['✅ الإشعارات مفعّلة', 'هكذا ستبدو تذكيرات Better Together.'],
   },
@@ -227,6 +229,16 @@ async function sendTo(userId: string, payload: Record<string, unknown>) {
   return sent;
 }
 
+/** Has this person written this week's review? (Weeks start on Saturday.) */
+async function reviewed(userId: string, date: string): Promise<boolean> {
+  const d = new Date(`${date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 1) % 7));
+  const week = d.toISOString().slice(0, 10);
+  const { data } = await db.from('household_records').select('data').eq('tbl', 'reviews').eq('row_id', `${week}|${userId}`).eq('deleted', false).maybeSingle();
+  const r = (data?.data ?? null) as Record<string, unknown> | null;
+  return Boolean(r && ['wins', 'hard', 'proud', 'focus'].some((k) => String(r[k] ?? '').trim()));
+}
+
 async function runDue() {
   const { data, error: loadError } = await db.from('reminders').select('id,user_id,kind,title,times,days,smart,tz').eq('enabled', true);
   if (loadError) throw new Error(`load reminders: ${loadError.message}`);
@@ -254,6 +266,7 @@ async function runDue() {
         if (r.kind === 'supplements' && st.suppsLeft.length === 0) continue;
         if (r.kind === 'habits' && st.habitsLeft === 0) continue;
         if (r.kind === 'habit' && st.habitDone.has(r.title)) continue;
+        if (r.kind === 'review' && (await reviewed(r.user_id, now.date))) continue;
       }
       // A reminder for one habit (its id is in `title`): name it, and drop it if the habit is gone.
       if (r.kind === 'habit') {
@@ -275,7 +288,7 @@ async function runDue() {
         title: r.kind === 'custom' ? r.title || title : title,
         body: r.kind === 'custom' ? '' : fill(body, vars),
         tag: `replete-${r.kind}`,
-        url: { water: '/FIT/fuel', supplements: '/FIT/', weighin: '/FIT/', workout: '/FIT/train', journal: '/FIT/life/journal', habits: '/FIT/life/habits' }[r.kind] ?? '/FIT/',
+        url: { water: '/FIT/fuel', supplements: '/FIT/', weighin: '/FIT/', workout: '/FIT/train', journal: '/FIT/life/journal', habits: '/FIT/life/habits', review: '/FIT/us/review' }[r.kind] ?? '/FIT/',
       });
       break;
     }
