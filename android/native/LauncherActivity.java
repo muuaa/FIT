@@ -139,13 +139,132 @@ public class LauncherActivity extends Activity {
         final android.window.SplashScreenView v = splashView;
         splashView = null;
         View icon = v.getIconView();
-        if (icon != null) {
-            icon.animate().scaleX(1.22f).scaleY(1.22f).setDuration(340)
-                    .setInterpolator(new android.view.animation.AccelerateInterpolator(1.4f)).start();
+        android.view.ViewGroup decor = (android.view.ViewGroup) getWindow().getDecorView();
+        if (icon == null || icon.getWidth() == 0) {
+            v.animate().alpha(0f).setDuration(260).withEndAction(v::remove).start();
+            return;
         }
-        v.animate().alpha(0f).setStartDelay(40).setDuration(300)
-                .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
-                .withEndAction(v::remove).start();
+        // The star grows to fill the screen and becomes a window onto the app.
+        int[] at = new int[2];
+        int[] decorAt = new int[2];
+        icon.getLocationInWindow(at);
+        decor.getLocationInWindow(decorAt);
+        final StarReveal reveal = new StarReveal(this, at[0] - decorAt[0], at[1] - decorAt[1], icon.getWidth() / 288f);
+        decor.addView(reveal, new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        v.remove();
+        android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(0f, 1f);
+        anim.setDuration(640);
+        anim.setInterpolator(new android.view.animation.PathInterpolator(0.55f, 0f, 0.35f, 1f));
+        anim.addUpdateListener(x -> reveal.setProgress((float) x.getAnimatedValue()));
+        anim.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                decor.removeView(reveal);
+            }
+        });
+        anim.start();
+    }
+
+    /** The launch logo's last moment, drawn by the app: the star opens up into the app behind it. */
+    private static final class StarReveal extends View {
+        private final float ox, oy, u;
+        private float p;
+        private final android.graphics.Path star = new android.graphics.Path();
+        private final android.graphics.Path unit = new android.graphics.Path();
+        private final android.graphics.Paint bg = new android.graphics.Paint();
+        private final android.graphics.Paint tile = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Paint glowPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Paint track = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Paint ring = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Paint fill = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Paint edge = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+        private final android.graphics.Matrix m = new android.graphics.Matrix();
+
+        StarReveal(android.content.Context c, float ox, float oy, float u) {
+            super(c);
+            this.ox = ox;
+            this.oy = oy;
+            this.u = u;
+            // The spark, centred on 0,0 in the logo's own units.
+            unit.moveTo(0, -20);
+            unit.rCubicTo(2, 12.5f, 7.5f, 18, 20, 20);
+            unit.rCubicTo(-12.5f, 2, -18, 7.5f, -20, 20);
+            unit.rCubicTo(-2, -12.5f, -7.5f, -18, -20, -20);
+            unit.rCubicTo(12.5f, -2, 18, -7.5f, 20, -20);
+            unit.close();
+            bg.setColor(Color.parseColor("#07080D"));
+            fill.setColor(Color.WHITE);
+            track.setStyle(android.graphics.Paint.Style.STROKE);
+            track.setColor(Color.argb(20, 255, 255, 255));
+            ring.setStyle(android.graphics.Paint.Style.STROKE);
+            edge.setStyle(android.graphics.Paint.Style.STROKE);
+            edge.setStrokeJoin(android.graphics.Paint.Join.ROUND);
+        }
+
+        void setProgress(float p) {
+            this.p = p;
+            invalidate();
+        }
+
+        @Override
+        protected void onDraw(android.graphics.Canvas canvas) {
+            float cx = ox + 144 * u, cy = oy + 153 * u;
+            float w = getWidth(), h = getHeight();
+            // Big enough that even the star's narrow waist clears the furthest corner.
+            float far = (float) Math.max(Math.hypot(cx, cy), Math.max(Math.hypot(w - cx, cy), Math.max(Math.hypot(cx, h - cy), Math.hypot(w - cx, h - cy))));
+            float end = far / (8.4f * u) * 1.08f;
+            float k = 1 + (end - 1) * p;
+            m.reset();
+            m.postRotate(55 * p);
+            m.postScale(k * u, k * u);
+            m.postTranslate(cx, cy + 0.5f * u);
+            unit.transform(m, star);
+
+            canvas.save();
+            canvas.clipOutPath(star);
+            canvas.drawRect(0, 0, w, h, bg);
+            // Tile and ring rush outward and dissolve.
+            float logo = Math.max(0f, 1f - p * 2.4f);
+            if (logo > 0) {
+                float z = 1 + p * 1.6f;
+                float half = 64 * u * z, r = 29 * u * z;
+                tile.setShader(new android.graphics.LinearGradient(cx - half, cy - half, cx - half + 51.2f * u * z, cy + half,
+                        Color.parseColor("#1D1936"), Color.parseColor("#07070D"), android.graphics.Shader.TileMode.CLAMP));
+                tile.setAlpha((int) (255 * logo));
+                canvas.drawRoundRect(cx - half, cy - half, cx + half, cy + half, r, r, tile);
+                glowPaint.setShader(new android.graphics.RadialGradient(cx, cy - 6.4f * u * z, 70.4f * u * z,
+                        Color.argb(73, 168, 155, 255), Color.argb(0, 168, 155, 255), android.graphics.Shader.TileMode.CLAMP));
+                glowPaint.setAlpha((int) (255 * logo));
+                canvas.drawRoundRect(cx - half, cy - half, cx + half, cy + half, r, r, glowPaint);
+                float rr = 37.5f * u * z;
+                track.setStrokeWidth(11 * u * z);
+                track.setAlpha((int) (20 * logo));
+                canvas.drawCircle(cx, cy, rr, track);
+                ring.setStrokeWidth(11 * u * z);
+                ring.setShader(new android.graphics.LinearGradient(cx, cy - rr, cx, cy + rr,
+                        new int[] {Color.parseColor("#D9CEFF"), Color.parseColor("#A89BFF"), Color.parseColor("#FF9EB5")},
+                        new float[] {0f, 0.55f, 1f}, android.graphics.Shader.TileMode.CLAMP));
+                ring.setAlpha((int) (255 * logo));
+                canvas.drawCircle(cx, cy, rr, ring);
+            }
+            canvas.restore();
+
+            // The star itself: white at first, then clear, with a glowing edge as it opens.
+            float white = Math.max(0f, 1f - p * 4f);
+            if (white > 0) {
+                fill.setAlpha((int) (255 * white));
+                canvas.drawPath(star, fill);
+            }
+            float glow = Math.max(0f, 1f - p * 1.25f);
+            if (glow > 0) {
+                edge.setStrokeWidth((3 + 5 * p) * u);
+                edge.setShader(new android.graphics.LinearGradient(cx - 20 * k * u, cy - 20 * k * u, cx + 20 * k * u, cy + 20 * k * u,
+                        Color.parseColor("#D9CEFF"), Color.parseColor("#FF9EB5"), android.graphics.Shader.TileMode.CLAMP));
+                edge.setAlpha((int) (255 * glow));
+                canvas.drawPath(star, edge);
+            }
+        }
     }
 
     /** On newer Android apps draw behind the status and navigation bars: keep the app clear of them. */
