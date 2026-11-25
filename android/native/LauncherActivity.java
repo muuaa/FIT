@@ -92,14 +92,10 @@ public class LauncherActivity extends Activity {
         setContentView(frame);
         fitBelowSystemBars(frame);
 
-        // Keep Android's animated launch logo on top while the app draws underneath it (the app
-        // must keep drawing, or it can't get ready), then fade the logo away straight into the app.
-        if (Build.VERSION.SDK_INT >= 31) {
-            getSplashScreen().setOnExitAnimationListener(view -> {
-                splashView = view;
-                if (showApp) fadeOutSplash();
-            });
-        }
+        // The launch animation is drawn by the app itself (phones like Honor's replace the system
+        // launch screen's ending with their own), on top of the app while it gets ready underneath.
+        if (savedInstanceState == null) showIntro();
+        else showApp = true;
         main.postDelayed(this::revealApp, SPLASH_MAX_MS);
 
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
@@ -109,7 +105,7 @@ public class LauncherActivity extends Activity {
     /** Show the app: after the logo has finished drawing and the app says it's ready. */
     private void revealApp() {
         if (showApp) return;
-        long wait = SPLASH_MIN_MS - (SystemClock.uptimeMillis() - startedAt);
+        long wait = SPLASH_MIN_MS - (SystemClock.uptimeMillis() - introStartedAt);
         if (wait > 0) {
             main.postDelayed(this::revealApp, wait);
             return;
@@ -132,16 +128,37 @@ public class LauncherActivity extends Activity {
         });
     }
 
-    private android.window.SplashScreenView splashView;
+    private android.widget.FrameLayout intro;
+    private android.widget.ImageView introLogo;
+    private long introStartedAt = SystemClock.uptimeMillis();
+
+    private void showIntro() {
+        android.view.ViewGroup decor = (android.view.ViewGroup) getWindow().getDecorView();
+        intro = new android.widget.FrameLayout(this);
+        intro.setBackgroundColor(Color.parseColor("#07080D"));
+        intro.setClickable(true); // nothing underneath can be tapped while it plays
+        introLogo = new android.widget.ImageView(this);
+        int size = Math.round(288 * getResources().getDisplayMetrics().density);
+        intro.addView(introLogo, new android.widget.FrameLayout.LayoutParams(size, size, android.view.Gravity.CENTER));
+        decor.addView(intro, new android.view.ViewGroup.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+        final android.graphics.drawable.Drawable d = getDrawable(R.drawable.splash_anim);
+        introLogo.setImageDrawable(d);
+        // Start on the first frame the screen actually shows, so none of it is missed.
+        introLogo.post(() -> {
+            introStartedAt = SystemClock.uptimeMillis();
+            if (d instanceof android.graphics.drawable.Animatable) ((android.graphics.drawable.Animatable) d).start();
+        });
+    }
 
     private void fadeOutSplash() {
-        if (Build.VERSION.SDK_INT < 31 || splashView == null) return;
-        final android.window.SplashScreenView v = splashView;
-        splashView = null;
-        View icon = v.getIconView();
-        android.view.ViewGroup decor = (android.view.ViewGroup) getWindow().getDecorView();
-        if (icon == null || icon.getWidth() == 0) {
-            v.animate().alpha(0f).setDuration(260).withEndAction(v::remove).start();
+        if (intro == null) return;
+        final View v = intro;
+        final android.view.ViewGroup decor = (android.view.ViewGroup) getWindow().getDecorView();
+        intro = null;
+        View icon = introLogo;
+        if (Build.VERSION.SDK_INT < 26 || icon == null || icon.getWidth() == 0) {
+            v.animate().alpha(0f).setDuration(260).withEndAction(() -> decor.removeView(v)).start();
             return;
         }
         // The star grows to fill the screen and becomes a window onto the app.
@@ -152,7 +169,7 @@ public class LauncherActivity extends Activity {
         final StarReveal reveal = new StarReveal(this, at[0] - decorAt[0], at[1] - decorAt[1], icon.getWidth() / 288f);
         decor.addView(reveal, new android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-        v.remove();
+        decor.removeView(v);
         android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(0f, 1f);
         anim.setDuration(640);
         anim.setInterpolator(new android.view.animation.PathInterpolator(0.55f, 0f, 0.35f, 1f));

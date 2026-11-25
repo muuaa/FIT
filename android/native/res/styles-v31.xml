@@ -8,7 +8,6 @@
         <item name="android:navigationBarColor">@color/backgroundColor</item>
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:windowSplashScreenBackground">@color/backgroundColor</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_anim</item>
-        <item name="android:windowSplashScreenAnimationDuration">850</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/blank_icon</item>
     </style>
 </resources>
