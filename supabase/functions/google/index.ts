@@ -14,7 +14,7 @@ const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const CLIENT_ID = Deno.env.get('GOOGLE_CLIENT_ID') ?? '';
 const CLIENT_SECRET = Deno.env.get('GOOGLE_CLIENT_SECRET') ?? '';
 const APP_URL = 'https://muuaa.github.io/FIT/';
-const REDIRECT = `${SUPABASE_URL}/functions/v1/google/callback`;
+const REDIRECT = 'https://muuaa.github.io/google-callback.html'; // Google returns here (an authorised domain), which forwards to /callback
 const SCOPES = 'openid email https://www.googleapis.com/auth/calendar.events';
 const API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
