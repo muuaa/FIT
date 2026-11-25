@@ -24,7 +24,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
+import android.app.ActivityOptions;
 import android.content.ComponentName;
+import android.content.Intent;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -166,6 +168,20 @@ public class LauncherActivity
                 }, fallback);
             }
         };
+    }
+
+    /**
+     * The app hands over to Chrome with startActivity. Attach a cross-fade to that launch itself, so
+     * Android can't swap in its own sideways slide (newer Android ignores a fade set afterwards).
+     */
+    @Override
+    public void startActivity(Intent intent, @Nullable Bundle options) {
+        if (options == null && intent != null && !isFinishing()) {
+            options = ActivityOptions.makeCustomAnimation(this, R.anim.bt_fade_in, R.anim.bt_hold).toBundle();
+            Bundle exit = ActivityOptions.makeCustomAnimation(this, R.anim.bt_fade_in, R.anim.bt_hold).toBundle();
+            intent.putExtra("android.support.customtabs.extra.EXIT_ANIMATION_BUNDLE", exit);
+        }
+        super.startActivity(intent, options);
     }
 
     private void open() {

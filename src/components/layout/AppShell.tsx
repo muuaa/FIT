@@ -158,7 +158,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main
         className="mx-auto max-w-lg px-4 md:max-w-2xl md:px-6 lg:max-w-3xl lg:px-8"
         style={{
-          paddingBottom: `calc(${resting || viewing ? '11rem' : '7.5rem'} + env(safe-area-inset-bottom))`,
+          // Leave room for the bottom bar and the floating ✚ (it sits above the rest timer while resting),
+          // so the end of every page can be scrolled clear of them.
+          paddingBottom: `calc(${viewing ? '11rem' : resting ? '15rem' : '10.5rem'} + env(safe-area-inset-bottom))`,
         }}
       >
         {children}

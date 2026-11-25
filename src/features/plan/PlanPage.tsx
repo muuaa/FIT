@@ -10,6 +10,8 @@ import { useTable } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { cn } from '@/lib/cn';
 import { addDays, monthLabel, parseISODate, relativeDay, weekdayNarrow } from '@/lib/date';
+import { googleOn, useGoogleEvents } from '@/lib/googleCalendar';
+import { GoogleCalendarCard, GoogleEventRow } from './GoogleCalendar';
 import { t } from '@/lib/i18n';
 import { todosFor } from '@/lib/life';
 import { usePartnerStore } from '@/lib/partner';
@@ -92,7 +94,13 @@ export function PlanPage() {
   const [sheet, setSheet] = useState<{ event: CalEvent | null } | null>(null);
   const doneKeys = useMemo(() => new Set(todoDone.map((d) => `${d.todo_id}|${d.date}`)), [todoDone]);
   const dayEvents = eventsOn(events, date);
-  const marks = (d: string) => eventsOn(events, d).length + todosFor(todos, doneKeys, d, today).filter((i) => !i.done).length;
+  // Google events for the visible week (with a little margin), merged into the schedule.
+  const week = weekOf(date);
+  const { data: google = [] } = useGoogleEvents(week[0], week[6]);
+  const me = useSession((s) => s.user);
+  const dayGoogle = google.filter((g) => googleOn(g, date)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
+  const marks = (d: string) =>
+    eventsOn(events, d).length + google.filter((g) => googleOn(g, d)).length + todosFor(todos, doneKeys, d, today).filter((i) => !i.done).length;
 
   return (
     <>
@@ -117,10 +125,13 @@ export function PlanPage() {
             </button>
           }
         >
-          {dayEvents.length ? (
+          {dayEvents.length || dayGoogle.length ? (
             <ul className="space-y-1.5">
               {dayEvents.map((e) => (
                 <EventRow key={e.id} e={e} onOpen={() => setSheet({ event: e })} />
+              ))}
+              {dayGoogle.map((g) => (
+                <GoogleEventRow key={`${g.who}|${g.uid}|${g.date}|${g.time}`} e={g} meId={me?.id} />
               ))}
             </ul>
           ) : (
@@ -141,6 +152,7 @@ export function PlanPage() {
         </Card>
         {date === today && <RoutinesCard />}
         <OtherPlan date={date} />
+        <GoogleCalendarCard />
       </div>
       <EventSheet open={sheet !== null} event={sheet?.event ?? null} date={date} onClose={() => setSheet(null)} />
     </>
