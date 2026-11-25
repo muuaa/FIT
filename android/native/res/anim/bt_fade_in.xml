@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Chrome's window stays invisible while the app loads behind it, then fades in already showing the
+     app (so Chrome's grey window and its own splash are never seen). -->
 <alpha xmlns:android="http://schemas.android.com/apk/res/android"
     android:interpolator="@android:interpolator/decelerate_quad"
-    android:fromAlpha="0" android:toAlpha="1" android:duration="160" />
+    android:fillEnabled="true" android:fillBefore="true"
+    android:startOffset="600" android:fromAlpha="0" android:toAlpha="1" android:duration="180" />

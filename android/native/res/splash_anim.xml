@@ -5,6 +5,7 @@
     xmlns:aapt="http://schemas.android.com/aapt">
     <aapt:attr name="android:drawable">
         <vector android:width="288dp" android:height="288dp" android:viewportWidth="288" android:viewportHeight="288">
+          <group android:translateY="9">
             <path android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
                 <aapt:attr name="android:fillColor">
                     <gradient android:type="linear" android:startX="80" android:startY="80" android:endX="131.2" android:endY="208"
@@ -33,6 +34,7 @@
                 <path android:fillColor="#FFFFFFFF"
                     android:pathData="M144,126.5 c1.75,11 6.5,15.75 17.5,17.5 c-11,1.75 -15.75,6.5 -17.5,17.5 c-1.75,-11 -6.5,-15.75 -17.5,-17.5 c11,-1.75 15.75,-6.5 17.5,-17.5 z" />
             </group>
+          </group>
         </vector>
     </aapt:attr>
     <target android:name="ring">

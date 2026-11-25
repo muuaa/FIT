@@ -58,6 +58,13 @@ public class LauncherActivity
     /** When the launch screen started, and whether it may go away yet (Android 12+). */
     private final long startedAt = SystemClock.uptimeMillis();
     private boolean releaseSplash;
+    private View contentView;
+
+    /** Let the launch screen go (it stays until Chrome has started, so nothing shows in between). */
+    private void letSplashGo() {
+        releaseSplash = true;
+        if (contentView != null) contentView.invalidate();
+    }
     private static final long SPLASH_MIN_MS = 850; // the ring and spark finish drawing
 
     @Override
@@ -67,6 +74,7 @@ public class LauncherActivity
         // so the logo never disappears and pops back in between the steps of opening.
         if (Build.VERSION.SDK_INT >= 31) {
             final View content = findViewById(android.R.id.content);
+            contentView = content;
             content.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                 @Override
                 public boolean onPreDraw() {
@@ -108,7 +116,7 @@ public class LauncherActivity
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 && !getSharedPreferences(Push.PREFS, MODE_PRIVATE).getBoolean("asked_notifications", false)) {
             getSharedPreferences(Push.PREFS, MODE_PRIVATE).edit().putBoolean("asked_notifications", true).apply();
-            releaseSplash = true; // let the permission question show
+            letSplashGo(); // let the permission question show
             requestPermissions(new String[] {Manifest.permission.POST_NOTIFICATIONS}, ASK_NOTIFICATIONS);
             return false;
         }
@@ -186,6 +194,8 @@ public class LauncherActivity
                     @Nullable Runnable done, TwaLauncher.FallbackStrategy fallback) {
                 super.launch(builder, callback, splash, () -> {
                     overridePendingTransition(R.anim.bt_fade_in, R.anim.bt_hold);
+                    // Keep Android's launch screen (the logo) until Chrome has faded in on top of it.
+                    main.postDelayed(LauncherActivity.this::letSplashGo, 1200);
                     if (done != null) done.run();
                 }, fallback);
             }
@@ -214,8 +224,14 @@ public class LauncherActivity
             return;
         }
         launched = true;
-        releaseSplash = true;
+        main.postDelayed(this::letSplashGo, 4000); // safety: never keep the launch screen forever
         launchTwa();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        letSplashGo(); // hidden behind the app now
     }
 
     @Override
