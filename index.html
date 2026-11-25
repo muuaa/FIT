@@ -68,7 +68,12 @@
         // there, skip this intro and let Android cross-fade straight into the app.
         var appWindow = !!window.BTNative;
         try { inApp = inApp || !!sessionStorage.getItem('fit.native'); } catch (e) {}
-        if (inApp) document.getElementById('intro').classList.add('static');
+        if (appWindow) {
+          // Android's launch logo sits on top while the app draws underneath: no second intro, no fade.
+          document.getElementById('intro').remove();
+          document.documentElement.classList.remove('intro');
+          gone = true;
+        } else if (inApp) document.getElementById('intro').classList.add('static');
         var MIN = inApp ? 250 : 950; // in the app the logo is already drawn; in a browser let it finish
         function hide() {
           if (gone) return;
@@ -84,10 +89,6 @@
           if (ready) return;
           ready = true;
           if (appWindow) {
-            var el = document.getElementById('intro');
-            if (el) el.remove();
-            document.documentElement.classList.remove('intro');
-            gone = true;
             requestAnimationFrame(function () { requestAnimationFrame(function () { try { window.BTNative.ready(); } catch (e) {} }); });
             return;
           }

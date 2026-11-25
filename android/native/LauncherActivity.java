@@ -16,7 +16,6 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.webkit.CookieManager;
@@ -46,7 +45,7 @@ public class LauncherActivity extends Activity {
     private static final String HOME = "https://" + HOST + "/FIT/";
     private static final int PICK_FILE = 41;
     private static final int ASK_NOTIFICATIONS = 42;
-    private static final long SPLASH_MIN_MS = 850; // the ring and spark finish drawing
+    private static final long SPLASH_MIN_MS = 750; // the ring and spark finish drawing
     private static final long SPLASH_MAX_MS = 7000; // never keep the logo longer than this
 
     private final Handler main = new Handler(Looper.getMainLooper());
@@ -93,16 +92,12 @@ public class LauncherActivity extends Activity {
         setContentView(frame);
         fitBelowSystemBars(frame);
 
-        // Keep Android's animated launch logo until the app has drawn (or a safety limit).
+        // Keep Android's animated launch logo on top while the app draws underneath it (the app
+        // must keep drawing, or it can't get ready), then fade the logo away straight into the app.
         if (Build.VERSION.SDK_INT >= 31) {
-            final View content = findViewById(android.R.id.content);
-            content.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
-                @Override
-                public boolean onPreDraw() {
-                    if (!showApp) return false;
-                    content.getViewTreeObserver().removeOnPreDrawListener(this);
-                    return true;
-                }
+            getSplashScreen().setOnExitAnimationListener(view -> {
+                splashView = view;
+                if (showApp) fadeOutSplash();
             });
         }
         main.postDelayed(this::revealApp, SPLASH_MAX_MS);
@@ -120,8 +115,18 @@ public class LauncherActivity extends Activity {
             return;
         }
         showApp = true;
-        View content = findViewById(android.R.id.content);
-        if (content != null) content.invalidate();
+        fadeOutSplash();
+    }
+
+    private android.window.SplashScreenView splashView;
+
+    private void fadeOutSplash() {
+        if (Build.VERSION.SDK_INT < 31 || splashView == null) return;
+        final android.window.SplashScreenView v = splashView;
+        splashView = null;
+        v.animate().alpha(0f).setDuration(260)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator())
+                .withEndAction(v::remove).start();
     }
 
     /** On newer Android apps draw behind the status and navigation bars: keep the app clear of them. */
@@ -208,7 +213,7 @@ public class LauncherActivity extends Activity {
         // Shown once the page has loaded, even if it never says it's ready (older website version).
         @Override
         public void onPageFinished(WebView view, String url) {
-            main.postDelayed(LauncherActivity.this::revealApp, 700);
+            main.postDelayed(LauncherActivity.this::revealApp, 3000);
         }
 
         @Override
