@@ -137,8 +137,20 @@ public class LauncherActivity extends Activity {
         intro = new android.widget.FrameLayout(this);
         intro.setBackgroundColor(Color.parseColor("#07080D"));
         intro.setClickable(true); // nothing underneath can be tapped while it plays
+        float dp = getResources().getDisplayMetrics().density;
+        // A soft glow behind the logo that breathes while the app finishes loading.
+        introHalo = new View(this);
+        android.graphics.drawable.GradientDrawable halo = new android.graphics.drawable.GradientDrawable();
+        halo.setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
+        halo.setGradientRadius(HALO_R * dp);
+        halo.setColors(new int[] {Color.argb(110, 168, 155, 255), Color.argb(0, 168, 155, 255)});
+        introHalo.setBackground(halo);
+        introHalo.setAlpha(0f);
+        int haloSize = Math.round(HALO_R * 2 * dp);
+        intro.addView(introHalo, new android.widget.FrameLayout.LayoutParams(haloSize, haloSize, android.view.Gravity.CENTER));
+        introHalo.setTranslationY(9 * dp);
         introLogo = new android.widget.ImageView(this);
-        int size = Math.round(288 * getResources().getDisplayMetrics().density);
+        int size = Math.round(288 * dp);
         intro.addView(introLogo, new android.widget.FrameLayout.LayoutParams(size, size, android.view.Gravity.CENTER));
         decor.addView(intro, new android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT));
@@ -148,7 +160,29 @@ public class LauncherActivity extends Activity {
         introLogo.post(() -> {
             introStartedAt = SystemClock.uptimeMillis();
             if (d instanceof android.graphics.drawable.Animatable) ((android.graphics.drawable.Animatable) d).start();
+            main.postDelayed(this::breathe, SPLASH_MIN_MS);
         });
+    }
+
+    private static final float HALO_R = 120; // dp
+    private View introHalo;
+    private android.animation.AnimatorSet breathing;
+
+    /** Still loading after the animation: the logo gently breathes and glows, so it never looks stuck. */
+    private void breathe() {
+        if (intro == null || introLogo == null) return;
+        android.animation.ObjectAnimator sx = android.animation.ObjectAnimator.ofFloat(introLogo, "scaleX", 1f, 1.06f);
+        android.animation.ObjectAnimator sy = android.animation.ObjectAnimator.ofFloat(introLogo, "scaleY", 1f, 1.06f);
+        android.animation.ObjectAnimator glow = android.animation.ObjectAnimator.ofFloat(introHalo, "alpha", 0f, 1f);
+        for (android.animation.ObjectAnimator a : new android.animation.ObjectAnimator[] {sx, sy, glow}) {
+            a.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            a.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            a.setDuration(800);
+        }
+        breathing = new android.animation.AnimatorSet();
+        breathing.playTogether(sx, sy, glow);
+        breathing.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+        breathing.start();
     }
 
     private void fadeOutSplash() {
@@ -161,17 +195,25 @@ public class LauncherActivity extends Activity {
             v.animate().alpha(0f).setDuration(260).withEndAction(() -> decor.removeView(v)).start();
             return;
         }
-        // The star grows to fill the screen and becomes a window onto the app.
+        // The star grows to fill the screen and becomes a window onto the app. It picks up exactly
+        // where the logo is, mid-breath included.
+        if (breathing != null) breathing.cancel();
         int[] at = new int[2];
         int[] decorAt = new int[2];
-        icon.getLocationInWindow(at);
+        v.getLocationInWindow(at);
         decor.getLocationInWindow(decorAt);
-        final StarReveal reveal = new StarReveal(this, at[0] - decorAt[0], at[1] - decorAt[1], icon.getWidth() / 288f);
+        float scale = icon.getScaleX();
+        float u = icon.getWidth() / 288f * scale;
+        float centreX = at[0] - decorAt[0] + icon.getLeft() + icon.getWidth() / 2f;
+        float centreY = at[1] - decorAt[1] + icon.getTop() + icon.getHeight() / 2f;
+        float dp = getResources().getDisplayMetrics().density;
+        final StarReveal reveal = new StarReveal(this, centreX - 144 * u, centreY - 144 * u, u,
+                introHalo == null ? 0f : introHalo.getAlpha(), HALO_R * dp);
         decor.addView(reveal, new android.view.ViewGroup.LayoutParams(
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT));
         decor.removeView(v);
         android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofFloat(0f, 1f);
-        anim.setDuration(640);
+        anim.setDuration(1000);
         anim.setInterpolator(new android.view.animation.PathInterpolator(0.55f, 0f, 0.35f, 1f));
         anim.addUpdateListener(x -> reveal.setProgress((float) x.getAnimatedValue()));
         anim.addListener(new android.animation.AnimatorListenerAdapter() {
@@ -185,7 +227,8 @@ public class LauncherActivity extends Activity {
 
     /** The launch logo's last moment, drawn by the app: the star opens up into the app behind it. */
     private static final class StarReveal extends View {
-        private final float ox, oy, u;
+        private final float ox, oy, u, haloAlpha, haloR;
+        private final android.graphics.Paint haloPaint = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         private float p;
         private final android.graphics.Path star = new android.graphics.Path();
         private final android.graphics.Path unit = new android.graphics.Path();
@@ -198,8 +241,10 @@ public class LauncherActivity extends Activity {
         private final android.graphics.Paint edge = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
         private final android.graphics.Matrix m = new android.graphics.Matrix();
 
-        StarReveal(android.content.Context c, float ox, float oy, float u) {
+        StarReveal(android.content.Context c, float ox, float oy, float u, float haloAlpha, float haloR) {
             super(c);
+            this.haloAlpha = haloAlpha;
+            this.haloR = haloR;
             this.ox = ox;
             this.oy = oy;
             this.u = u;
@@ -245,6 +290,13 @@ public class LauncherActivity extends Activity {
             float logo = Math.max(0f, 1f - p * 2.4f);
             if (logo > 0) {
                 float z = 1 + p * 1.6f;
+                if (haloAlpha > 0.01f) {
+                    float hr = haloR * z;
+                    haloPaint.setShader(new android.graphics.RadialGradient(cx, cy, hr,
+                            Color.argb(110, 168, 155, 255), Color.argb(0, 168, 155, 255), android.graphics.Shader.TileMode.CLAMP));
+                    haloPaint.setAlpha((int) (255 * haloAlpha * logo));
+                    canvas.drawCircle(cx, cy, hr, haloPaint);
+                }
                 float half = 64 * u * z, r = 29 * u * z;
                 tile.setShader(new android.graphics.LinearGradient(cx - half, cy - half, cx - half + 51.2f * u * z, cy + half,
                         Color.parseColor("#1D1936"), Color.parseColor("#07070D"), android.graphics.Shader.TileMode.CLAMP));
@@ -268,7 +320,7 @@ public class LauncherActivity extends Activity {
             canvas.restore();
 
             // The star itself: white at first, then clear, with a glowing edge as it opens.
-            float white = Math.max(0f, 1f - p * 4f);
+            float white = Math.max(0f, 1f - p * 6f);
             if (white > 0) {
                 fill.setAlpha((int) (255 * white));
                 canvas.drawPath(star, fill);
