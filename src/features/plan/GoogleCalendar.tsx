@@ -52,7 +52,6 @@ export function GEventRow({ e, onOpen }: { e: GEvent; onOpen: () => void }) {
             </span>
           )}
         </span>
-        <GoogleG />
       </button>
     </li>
   );
