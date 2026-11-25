@@ -10,8 +10,8 @@ import { useTable } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { cn } from '@/lib/cn';
 import { addDays, monthLabel, parseISODate, relativeDay, weekdayNarrow } from '@/lib/date';
-import { googleOn, useGoogleEvents } from '@/lib/googleCalendar';
-import { GoogleCalendarCard, GoogleEventRow } from './GoogleCalendar';
+import { gOn, useGoogleEvents, useGoogleReturn, useGoogleStatus, type GEvent } from '@/lib/google';
+import { GEventRow, GEventSheet, GoogleConnectCard } from './GoogleCalendar';
 import { t } from '@/lib/i18n';
 import { todosFor } from '@/lib/life';
 import { usePartnerStore } from '@/lib/partner';
@@ -94,13 +94,18 @@ export function PlanPage() {
   const [sheet, setSheet] = useState<{ event: CalEvent | null } | null>(null);
   const doneKeys = useMemo(() => new Set(todoDone.map((d) => `${d.todo_id}|${d.date}`)), [todoDone]);
   const dayEvents = eventsOn(events, date);
-  // Google events for the visible week (with a little margin), merged into the schedule.
+  // Once connected, Google Calendar is the calendar: the week's events come from (and go to) Google.
+  useGoogleReturn();
+  const gStatus = useGoogleStatus();
+  const useGoogle = Boolean(gStatus.data?.mine);
   const week = weekOf(date);
-  const { data: google = [] } = useGoogleEvents(week[0], week[6]);
-  const me = useSession((s) => s.user);
-  const dayGoogle = google.filter((g) => googleOn(g, date)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
+  const gq = useGoogleEvents(week[0], week[6], useGoogle);
+  const google = gq.data?.events ?? [];
+  const [gSheet, setGSheet] = useState<{ event: GEvent | null } | null>(null);
+  const dayGoogle = google.filter((g) => gOn(g, date)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   const marks = (d: string) =>
-    eventsOn(events, d).length + google.filter((g) => googleOn(g, d)).length + todosFor(todos, doneKeys, d, today).filter((i) => !i.done).length;
+    eventsOn(events, d).length + google.filter((g) => gOn(g, d)).length + todosFor(todos, doneKeys, d, today).filter((i) => !i.done).length;
+  const addEvent = () => (useGoogle ? setGSheet({ event: null }) : setSheet({ event: null }));
 
   return (
     <>
@@ -108,19 +113,23 @@ export function PlanPage() {
         title={t('Plan')}
         subtitle={relativeDay(date)}
         right={
-          <IconButton label={t('New event')} onClick={() => setSheet({ event: null })}>
+          <IconButton label={t('New event')} onClick={addEvent}>
             <Plus size={22} />
           </IconButton>
         }
       />
       <WeekStrip date={date} onPick={setDate} marks={marks} />
       <div className="space-y-3">
+        {!useGoogle && <GoogleConnectCard />}
+        {useGoogle && gq.isError && (
+          <p className="rounded-2xl bg-white/[0.035] px-3 py-2.5 text-sm text-ink-3">{t('Can’t reach Google Calendar right now. Check your connection.')}</p>
+        )}
         <Card
           title={t('Schedule')}
           icon={CalendarDays}
           accent="var(--color-todo)"
           action={
-            <button type="button" onClick={() => setSheet({ event: null })} className="text-xs font-semibold text-todo">
+            <button type="button" onClick={addEvent} className="text-xs font-semibold text-todo">
               {t('Add event')}
             </button>
           }
@@ -131,9 +140,11 @@ export function PlanPage() {
                 <EventRow key={e.id} e={e} onOpen={() => setSheet({ event: e })} />
               ))}
               {dayGoogle.map((g) => (
-                <GoogleEventRow key={`${g.who}|${g.uid}|${g.date}|${g.time}`} e={g} meId={me?.id} />
+                <GEventRow key={`${g.owner}|${g.id}`} e={g} onOpen={() => setGSheet({ event: g })} />
               ))}
             </ul>
+          ) : useGoogle && gq.isLoading ? (
+            <p className="py-1 text-sm text-ink-3">{t('Loading your Google Calendar…')}</p>
           ) : (
             <p className="py-1 text-sm text-ink-3">{t('Nothing scheduled. Tap “Add event” to plan something.')}</p>
           )}
@@ -152,9 +163,10 @@ export function PlanPage() {
         </Card>
         {date === today && <RoutinesCard />}
         <OtherPlan date={date} />
-        <GoogleCalendarCard />
+        {useGoogle && <GoogleConnectCard />}
       </div>
       <EventSheet open={sheet !== null} event={sheet?.event ?? null} date={date} onClose={() => setSheet(null)} />
+      <GEventSheet open={gSheet !== null} event={gSheet?.event ?? null} date={date} onClose={() => setGSheet(null)} />
     </>
   );
 }
