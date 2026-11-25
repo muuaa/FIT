@@ -9,7 +9,8 @@ import { t } from '@/lib/i18n';
 import { usePartnerStore, viewMe, viewPartner } from '@/lib/partner';
 import { getProfile } from '@/lib/localDb';
 import { toast } from '@/stores/toastStore';
-import { Goals, NudgeBar, SideBySide } from './Together';
+import { NudgeBar, SideBySide } from './Together';
+import { GoalsCard } from './goals';
 import { ReviewCard } from './review';
 import { TogetherTiles } from './collections';
 
@@ -73,7 +74,7 @@ export function UsPage() {
         <TogetherTiles />
         <SideBySide />
         <ReviewCard />
-        <Goals />
+        <GoalsCard />
 
         <Card title={t('Shared lists')} icon={ListChecks} accent="var(--color-lists)" action={<Link to="/life/lists" className="text-xs font-semibold text-lists">{t('Open')}</Link>}>
           <p className="text-sm text-ink-3">{t('Groceries, chores, packing… one list you both tick off.')}</p>

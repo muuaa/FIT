@@ -24,6 +24,7 @@ const ReviewPage = lazy(() => import('@/features/us/review').then((m) => ({ defa
 const WishlistPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.WishlistPage })));
 const DatesPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.DatesPage })));
 const MemoriesPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.MemoriesPage })));
+const GoalsPage = lazy(() => import('@/features/us/goals').then((m) => ({ default: m.GoalsPage })));
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
 const ListsPage = lazy(() => import('@/features/life/lists').then((m) => ({ default: m.ListsPage })));
 const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage').then((m) => ({ default: m.RemindersPage })));
@@ -74,6 +75,7 @@ export default function App() {
             <Route path="/us/wishlist" element={<WishlistPage />} />
             <Route path="/us/dates" element={<DatesPage />} />
             <Route path="/us/memories" element={<MemoriesPage />} />
+            <Route path="/us/goals" element={<GoalsPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
             <Route path="/life/bills" element={<BillsPage />} />
             <Route path="/life/meals" element={<MealsPage />} />

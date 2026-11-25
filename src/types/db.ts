@@ -259,16 +259,27 @@ export interface Countdown {
 }
 
 /** A goal you work on together, with a numeric target. */
+export type GoalArea = 'learning' | 'health' | 'finance' | 'business' | 'relationship' | 'travel' | 'personal';
+export type GoalStatus = 'todo' | 'doing' | 'done';
+
 export interface Goal {
   id: string;
   title: string;
   emoji: string;
+  /** A number to reach (0 = no number: tracked by status and steps instead). */
   target: number;
   progress: number;
   unit: string;
   due: string | null;
   done_at: string | null;
   created_at: string;
+  /** Section it belongs to (older goals have none: shown under Personal). */
+  area?: GoalArea;
+  /** 'both' or a user id. */
+  owner?: string;
+  status?: GoalStatus;
+  steps?: { id: string; text: string; done: boolean }[];
+  note?: string;
 }
 
 /** Personal routine (morning / evening) with checklist steps. */
