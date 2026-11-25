@@ -135,7 +135,9 @@ export function prefetchGoogleWeek(qc: QueryClient, from: string, to: string): v
 
 /** Sends you to Google to allow calendar access; Google brings you back to Plan. */
 export async function connectGoogle(): Promise<void> {
-  const { url } = await call<{ url: string }>({ action: 'start' });
+  // In the Android app, Google's page opens in a browser tab and comes back to the app afterwards.
+  const inApp = Boolean((window as { BTNative?: unknown }).BTNative);
+  const { url } = await call<{ url: string }>({ action: 'start', app: inApp });
   window.location.href = url;
 }
 

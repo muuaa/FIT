@@ -64,6 +64,9 @@
       (function () {
         var start = Date.now(), ready = false, gone = false;
         var inApp = /[?&]app=/.test(location.search);
+        // The Android app's own window holds its animated launch logo until the app has drawn:
+        // there, skip this intro and let Android cross-fade straight into the app.
+        var appWindow = !!window.BTNative;
         try { inApp = inApp || !!sessionStorage.getItem('fit.native'); } catch (e) {}
         if (inApp) document.getElementById('intro').classList.add('static');
         var MIN = inApp ? 250 : 950; // in the app the logo is already drawn; in a browser let it finish
@@ -80,10 +83,18 @@
         window.__appReady = function () {
           if (ready) return;
           ready = true;
+          if (appWindow) {
+            var el = document.getElementById('intro');
+            if (el) el.remove();
+            document.documentElement.classList.remove('intro');
+            gone = true;
+            requestAnimationFrame(function () { requestAnimationFrame(function () { try { window.BTNative.ready(); } catch (e) {} }); });
+            return;
+          }
           var wait = Math.max(0, MIN - (Date.now() - start));
           setTimeout(function () { requestAnimationFrame(function () { requestAnimationFrame(hide); }); }, wait);
         };
-        setTimeout(hide, 5000); // never get stuck behind the intro
+        setTimeout(function () { hide(); try { window.BTNative && window.BTNative.ready(); } catch (e) {} }, 5000); // never get stuck behind the intro
       })();
     </script>
     <div id="root"></div>

@@ -311,11 +311,15 @@ Deno.serve(async (req) => {
   try {
     // Google sends the user back here after they allow access.
     if (req.method === 'GET' && url.pathname.endsWith('/callback')) {
-      const back = (result: string) => Response.redirect(`${APP_URL}plan?google=${result}`, 302);
       const state = url.searchParams.get('state') ?? '';
       const code = url.searchParams.get('code');
+      const { data: st } = await db.from('google_oauth_states').select('user_id,created_at,app').eq('state', state).maybeSingle();
+      // Started in the Android app: go back into the app (Google's page was in a browser tab).
+      const back = (result: string) =>
+        st?.app
+          ? new Response(null, { status: 302, headers: { Location: `bettertogether://open/FIT/plan?google=${result}` } })
+          : Response.redirect(`${APP_URL}plan?google=${result}`, 302);
       if (!code) return back('cancelled');
-      const { data: st } = await db.from('google_oauth_states').select('user_id,created_at').eq('state', state).maybeSingle();
       await db.from('google_oauth_states').delete().eq('state', state);
       if (!st || Date.now() - Date.parse(st.created_at) > 20 * 60_000) return back('expired');
       const r = await tokenRequest({ grant_type: 'authorization_code', code, redirect_uri: REDIRECT });
@@ -366,7 +370,7 @@ Deno.serve(async (req) => {
     if (action === 'start') {
       if (!CLIENT_ID || !CLIENT_SECRET) throw new UserError('Google Calendar isn’t set up yet.');
       const state = crypto.randomUUID().replace(/-/g, '') + crypto.randomUUID().replace(/-/g, '');
-      await db.from('google_oauth_states').insert({ state, user_id: user.id });
+      await db.from('google_oauth_states').insert({ state, user_id: user.id, app: body.app === true });
       await db.from('google_oauth_states').delete().lt('created_at', new Date(Date.now() - 3600_000).toISOString());
       const q = new URLSearchParams({
         client_id: CLIENT_ID,

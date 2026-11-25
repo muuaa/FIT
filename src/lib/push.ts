@@ -7,6 +7,29 @@ export const VAPID_PUBLIC_KEY = 'BG2av39pT1D3UAbeksM8hZeDUDf3866YWzfzcy29fViVF-B
 
 // ---------------------------------------------------------------- native Android app (Firebase)
 
+/** The Android app's own window (1.13+) gives the page a bridge to the phone. */
+interface BTNativeBridge {
+  ready(): void;
+  fcmToken(): string;
+  appVersion(): number;
+  notificationStatus(): 'granted' | 'denied' | 'default';
+  requestNotifications(): void;
+  openNotificationSettings(): void;
+  openExternal(url: string): void;
+}
+export function bridge(): BTNativeBridge | null {
+  return (window as { BTNative?: BTNativeBridge }).BTNative ?? null;
+}
+
+/** Ask Android for permission to show notifications (answers through window.__btNotif). */
+function askNative(b: BTNativeBridge): Promise<'granted' | 'denied' | 'default'> {
+  return new Promise((resolve) => {
+    (window as { __btNotif?: (s: string) => void }).__btNotif = (st: string) => resolve(st as 'granted' | 'denied' | 'default');
+    b.requestNotifications();
+    window.setTimeout(() => resolve(b.notificationStatus()), 60_000);
+  });
+}
+
 const FCM_KEY = 'fit.fcmToken';
 const NATIVE_KEY = 'fit.native';
 const FCM_PREV_KEY = 'fit.fcmPrev';
@@ -33,6 +56,8 @@ export function captureNativeLaunch() {
 
 /** Version of the Android app this page runs in (0 = a browser). */
 export function nativeAppVersion(): number {
+  const b = bridge();
+  if (b) return b.appVersion();
   try {
     return Number(sessionStorage.getItem(NATIVE_KEY) ?? 0) || 0;
   } catch {
@@ -53,14 +78,18 @@ export function appInfo(): { build: number; checkMs: number | null; checkOk: num
 
 /** The Android app (1.3+) can open its own notification settings for a blocked phone. */
 export function canOpenNotificationSettings(): boolean {
-  return nativeAppVersion() >= 4;
+  return Boolean(bridge()) || nativeAppVersion() >= 4;
 }
 export function openNotificationSettings(): void {
+  const b = bridge();
+  if (b) return b.openNotificationSettings();
   window.location.href = 'intent://notification-settings#Intent;scheme=bettertogether;package=io.github.muuaa.bettertogether;end';
 }
 
 /** Firebase token when running inside the Android app (null in a browser or the old app). */
 function nativeToken(): string | null {
+  const b = bridge();
+  if (b) return b.fcmToken() || null;
   try {
     const native = Boolean(sessionStorage.getItem(NATIVE_KEY)) || document.referrer.startsWith('android-app://io.github.muuaa.bettertogether');
     return native ? localStorage.getItem(FCM_KEY) : null;
@@ -87,7 +116,7 @@ async function saveNative(token: string): Promise<boolean> {
   }
   // The app shows its own notifications now, so drop Chrome's copy on this phone to avoid doubles.
   const reg = await registration();
-  const sub = await reg?.pushManager.getSubscription();
+  const sub = await reg?.pushManager?.getSubscription();
   if (sub) {
     await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
     await sub.unsubscribe().catch(() => undefined);
@@ -124,6 +153,13 @@ async function registration(): Promise<ServiceWorkerRegistration | null> {
 export async function pushStatus(): Promise<PushStatus> {
   // iPhone/iPad only allow web notifications for apps added to the Home Screen.
   if (isIOS() && !isStandalone()) return 'needs-install';
+  const nb = bridge();
+  if (nb) {
+    const st = nb.notificationStatus();
+    if (st === 'denied') return 'blocked';
+    const tok = nativeToken();
+    return st === 'granted' && tok && (await nativeSaved(tok)) ? 'on' : 'off';
+  }
   if (!('Notification' in window) || !('PushManager' in window) || !('serviceWorker' in navigator)) return 'unsupported';
   if (Notification.permission === 'denied') return 'blocked';
   const token = nativeToken();
@@ -167,6 +203,15 @@ async function savedForMe(sub: PushSubscription): Promise<boolean> {
 
 /** Must be called from a tap (browsers only show the permission prompt for a user gesture). */
 export async function enablePush(): Promise<PushStatus> {
+  const nb = bridge();
+  if (nb) {
+    const st = nb.notificationStatus() === 'granted' ? 'granted' : await askNative(nb);
+    if (st !== 'granted') return st === 'denied' ? 'blocked' : 'off';
+    const tok = nativeToken();
+    if (!tok) throw new Error(t('Still setting up notifications on this phone. Try again in a few seconds.'));
+    if (!(await saveNative(tok))) throw new Error(t('Could not save'));
+    return 'on';
+  }
   const perm = await Notification.requestPermission();
   if (perm !== 'granted') return perm === 'denied' ? 'blocked' : 'off';
   const token = nativeToken();
@@ -182,8 +227,9 @@ export async function enablePush(): Promise<PushStatus> {
 export async function disablePush(): Promise<void> {
   const token = nativeToken();
   if (token) await supabase?.from('push_subscriptions').delete().eq('endpoint', `fcm:${token}`);
+  if (bridge()) return;
   const reg = await registration();
-  const sub = await reg?.pushManager.getSubscription();
+  const sub = await reg?.pushManager?.getSubscription();
   if (!sub) return;
   await supabase?.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
   await sub.unsubscribe();
@@ -191,6 +237,12 @@ export async function disablePush(): Promise<void> {
 
 /** Re-save this device's subscription (it can rotate); harmless if unchanged. */
 export async function refreshPush(): Promise<void> {
+  const nb = bridge();
+  if (nb) {
+    const tok = nativeToken();
+    if (nb.notificationStatus() === 'granted' && tok) await saveNative(tok).catch(() => false);
+    return;
+  }
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const token = nativeToken();
   if (token && (await saveNative(token).catch(() => false))) return;

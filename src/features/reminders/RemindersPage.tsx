@@ -225,7 +225,13 @@ function DeviceCard() {
         .then(setStatus);
     };
     document.addEventListener('visibilitychange', onBack);
-    return () => document.removeEventListener('visibilitychange', onBack);
+    // The Android app tells the page when you come back to it (e.g. from its notification settings).
+    const onApp = () => void refreshPush().catch(() => undefined).then(pushStatus).then(setStatus);
+    window.addEventListener('btresume', onApp);
+    return () => {
+      document.removeEventListener('visibilitychange', onBack);
+      window.removeEventListener('btresume', onApp);
+    };
   }, []);
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
