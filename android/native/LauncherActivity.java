@@ -118,6 +118,20 @@ public class LauncherActivity extends Activity {
         fadeOutSplash();
     }
 
+    /** Lift the logo only once the web view has really put the app's current frame on screen. */
+    private void revealWhenDrawn() {
+        if (showApp || web == null) return;
+        if (Build.VERSION.SDK_INT < 23) { revealApp(); return; }
+        main.postDelayed(this::revealApp, 1200); // in case the web view never reports back
+        web.postVisualStateCallback(1, new WebView.VisualStateCallback() {
+            @Override
+            public void onComplete(long requestId) {
+                // That frame is drawn on the next pass: give it one more frame, then fade.
+                web.postOnAnimation(() -> web.postOnAnimation(LauncherActivity.this::revealApp));
+            }
+        });
+    }
+
     private android.window.SplashScreenView splashView;
 
     private void fadeOutSplash() {
@@ -213,7 +227,7 @@ public class LauncherActivity extends Activity {
         // Shown once the page has loaded, even if it never says it's ready (older website version).
         @Override
         public void onPageFinished(WebView view, String url) {
-            main.postDelayed(LauncherActivity.this::revealApp, 3000);
+            main.postDelayed(LauncherActivity.this::revealWhenDrawn, 3000);
         }
 
         @Override
@@ -303,7 +317,7 @@ public class LauncherActivity extends Activity {
     private class Bridge {
         @JavascriptInterface
         public void ready() {
-            main.post(LauncherActivity.this::revealApp);
+            main.post(LauncherActivity.this::revealWhenDrawn);
         }
 
         @JavascriptInterface
