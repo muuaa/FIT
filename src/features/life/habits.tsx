@@ -84,7 +84,7 @@ export function HabitsToday({ onAdd }: { onAdd?: () => void }) {
   return (
     <div>
       <div className="mb-2 text-xs text-ink-3">{t('{done} of {total} done', { done: doneCount, total: due.length })}</div>
-      <ul className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-2">
+      <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {due.map((h) => {
           const set = doneBy.get(h.id) ?? new Set<string>();
           const done = set.has(today);
