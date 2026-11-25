@@ -18,6 +18,7 @@ import android.provider.Settings;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.WindowInsets;
+import android.widget.FrameLayout;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
@@ -85,8 +86,12 @@ public class LauncherActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "BTNative");
         web.setWebViewClient(new Client());
         web.setWebChromeClient(new Chrome());
-        setContentView(web);
-        fitBelowSystemBars(web);
+        // The web view ignores its own padding, so it sits inside a frame that keeps it clear of the bars.
+        FrameLayout frame = new FrameLayout(this);
+        frame.setBackgroundColor(Color.parseColor("#07080D"));
+        frame.addView(web, new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(frame);
+        fitBelowSystemBars(frame);
 
         // Keep Android's animated launch logo until the app has drawn (or a safety limit).
         if (Build.VERSION.SDK_INT >= 31) {
