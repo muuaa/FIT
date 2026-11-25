@@ -101,7 +101,11 @@ const WISH_TYPES: { value: WishType; label: string; emoji: string }[] = [
   { value: 'get', label: 'Want to get', emoji: '🛍️' },
   { value: 'do', label: 'Want to do', emoji: '✨' },
   { value: 'place', label: 'Place to go', emoji: '📍' },
-  { value: 'surprise', label: 'Surprise to send', emoji: '🎁' },
+];
+const WISH_TABS: { value: WishType; tab: string; emoji: string; empty: string }[] = [
+  { value: 'get', tab: 'To get', emoji: '🛍️', empty: 'Things you’d like to buy or own: add the first one.' },
+  { value: 'do', tab: 'To do', emoji: '✨', empty: 'Things you want to try or do together: add the first one.' },
+  { value: 'place', tab: 'Places', emoji: '📍', empty: 'Places you want to go, near or far: add the first one.' },
 ];
 const wishEmoji = (w: WishType) => WISH_TYPES.find((x) => x.value === w)?.emoji ?? '✨';
 
@@ -114,12 +118,27 @@ export function WishlistPage() {
   const me = useSession((s) => s.user);
   const partner = usePartnerStore((s) => s.partner);
   const { data: rows = [] } = useTable('wishes');
-  const [filter, setFilter] = useState<'all' | WishType>('all');
+  const [filter, setFilterState] = useState<WishType>(() => {
+    try {
+      const v = localStorage.getItem('fit.wish.tab') as WishType | null;
+      return v && WISH_TABS.some((x) => x.value === v) ? v : 'get';
+    } catch {
+      return 'get';
+    }
+  });
+  const setFilter = (v: WishType) => {
+    setFilterState(v);
+    try {
+      localStorage.setItem('fit.wish.tab', v);
+    } catch {
+      /* fine */
+    }
+  };
+  const visible = visibleWishes(rows, me?.id);
+  const tab = WISH_TABS.find((x) => x.value === filter)!;
   const [sheet, setSheet] = useState<{ wish: Wish | null } | null>(null);
   const nameOf = useNameOf();
-  const list = visibleWishes(rows, me?.id)
-    .filter((w) => filter === 'all' || w.type === filter)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const list = visible.filter((w) => w.type === filter).sort((a, b) => b.created_at.localeCompare(a.created_at));
   const groups: { status: IdeaStatus; title: string }[] = [
     { status: 'planned', title: t('Planned') },
     { status: 'idea', title: t('Ideas') },
@@ -129,24 +148,37 @@ export function WishlistPage() {
     <>
       <PageHeader
         title={t('Wishlist')}
-        subtitle={t('Things to get, do, see and surprise each other with')}
+        subtitle={t('Things to get, do and places to go')}
         right={
           <IconButton label={t('Add')} onClick={() => setSheet({ wish: null })}>
             <Plus size={22} />
           </IconButton>
         }
       />
-      <div className="mb-3 -mx-1 overflow-x-auto px-1">
-        <Chips
-          value={filter}
-          onChange={setFilter}
-          options={[{ value: 'all', label: t('All') }, ...WISH_TYPES.map((w) => ({ value: w.value, label: `${w.emoji} ${t(w.label)}` }))]}
-        />
+      <div className="mb-3 grid grid-cols-3 gap-1 rounded-[22px] border border-white/[0.06] bg-white/[0.04] p-1" role="tablist">
+        {WISH_TABS.map((x) => {
+          const on = x.value === filter;
+          const n = visible.filter((w) => w.type === x.value && w.status !== 'done').length;
+          return (
+            <button
+              key={x.value}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => setFilter(x.value)}
+              className={cn('press flex flex-col items-center gap-0.5 rounded-[18px] py-2 transition-colors', on ? 'bg-us/20 text-ink' : 'text-ink-3')}
+            >
+              <span className="text-xl leading-none">{x.emoji}</span>
+              <span className={cn('text-[12px] leading-tight', on ? 'font-semibold' : 'font-medium')}>{t(x.tab)}</span>
+              <span className="tabular text-[10px] text-ink-3">{n}</span>
+            </button>
+          );
+        })}
       </div>
       <div className="space-y-3">
         {!list.length && (
           <Card title={t('Nothing here yet')} icon={Gift} accent={ACCENT}>
-            <p className="text-sm text-ink-2">{t('Add something you want to get, do, or a place to go. A surprise stays hidden from the person it’s for.')}</p>
+            <p className="text-sm text-ink-2">{t(tab.empty)}</p>
             <Button variant="primary" accent={ACCENT} block className="mt-3" onClick={() => setSheet({ wish: null })}>
               <Plus size={16} /> {t('Add to the list')}
             </Button>
@@ -191,14 +223,13 @@ export function WishlistPage() {
           );
         })}
       </div>
-      <WishSheet open={sheet !== null} wish={sheet?.wish ?? null} defaultType={filter === 'all' ? 'get' : filter} onClose={() => setSheet(null)} />
+      <WishSheet open={sheet !== null} wish={sheet?.wish ?? null} defaultType={filter} onClose={() => setSheet(null)} />
     </>
   );
 }
 
 function WishSheet({ open, wish, defaultType, onClose }: { open: boolean; wish: Wish | null; defaultType: WishType; onClose: () => void }) {
   const me = useSession((s) => s.user);
-  const partner = usePartnerStore((s) => s.partner);
   const actions = useTableActions('wishes');
   const whoOptions = useWhoOptions();
   const [title, setTitle] = useState('');
@@ -215,7 +246,7 @@ function WishSheet({ open, wish, defaultType, onClose }: { open: boolean; wish: 
     if (open) {
       setTitle(wish?.title ?? '');
       setType(wish?.type ?? defaultType);
-      setFor(wish?.for ?? (defaultType === 'surprise' && partner ? partner.id : 'both'));
+      setFor(wish?.for ?? 'both');
       setStatus(wish?.status ?? 'idea');
       setCost(wish?.cost ? String(wish.cost) : '');
       setLink(wish?.link ?? '');
@@ -272,7 +303,6 @@ function WishSheet({ open, wish, defaultType, onClose }: { open: boolean; wish: 
         <div>
           <Label>{t('Type')}</Label>
           <Chips value={type} onChange={setType} options={WISH_TYPES.map((w) => ({ value: w.value, label: `${w.emoji} ${t(w.label)}` }))} />
-          {type === 'surprise' && <p className="mt-1.5 text-xs text-ink-3">{t('Hidden from the person it’s for. Only you can see it.')}</p>}
         </div>
         <div>
           <Label>{t('For')}</Label>
@@ -382,7 +412,7 @@ export function DatesPage() {
               <p className="text-sm text-ink-2">{t('Let the app pick one of your ideas.')}</p>
             )}
             <Button variant="secondary" block className="mt-3" onClick={surprise}>
-              <Dices size={16} /> {picked ? t('Pick another') : t('Surprise us')}
+              <Dices size={16} /> {picked ? t('Pick another') : t('Pick one for us')}
             </Button>
           </Card>
         )}
