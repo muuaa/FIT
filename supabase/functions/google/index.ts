@@ -248,6 +248,8 @@ const COLORS: Record<string, string> = {
   '7': '#039be5', '8': '#616161', '9': '#3f51b5', '10': '#0b8043', '11': '#d50000',
 };
 
+const ruleCache = new Map<string, { rule: string[]; until: number }>();
+
 async function listCal(userId: string, cal: Cal, timeMin: string, timeMax: string) {
   const items: Record<string, any>[] = [];
   let page = '';
@@ -258,10 +260,19 @@ async function listCal(userId: string, cal: Cal, timeMin: string, timeMax: strin
     page = r?.nextPageToken ?? '';
     if (!page) break;
   }
-  // The repeat rule lives on the series: fetch it so the app can show "Weekly" etc.
+  // The repeat rule lives on the series: fetch it (remembered for a while) to show "Weekly" etc.
   const series = [...new Set(items.map((e) => e.recurringEventId).filter(Boolean))].slice(0, 20) as string[];
   const rules = new Map<string, string[]>();
-  await Promise.all(series.map(async (id) => rules.set(id, ((await google(userId, 'GET', `${events(cal.id)}/${encodeURIComponent(id)}`).catch(() => null))?.recurrence ?? []) as string[])));
+  await Promise.all(
+    series.map(async (id) => {
+      const key = `${userId}|${cal.id}|${id}`;
+      const hit = ruleCache.get(key);
+      if (hit && hit.until > Date.now()) return rules.set(id, hit.rule);
+      const rule = ((await google(userId, 'GET', `${events(cal.id)}/${encodeURIComponent(id)}`).catch(() => null))?.recurrence ?? []) as string[];
+      ruleCache.set(key, { rule, until: Date.now() + 30 * 60_000 });
+      rules.set(id, rule);
+    }),
+  );
   return items.filter((e) => e.status !== 'cancelled').map((e) => ({ g: { ...e, recurrence: e.recurringEventId ? rules.get(e.recurringEventId) : e.recurrence }, cal }));
 }
 
@@ -388,10 +399,14 @@ Deno.serve(async (req) => {
       const out: AppEvent[] = [];
       const seen = new Set<string>();
       const failed: string[] = [];
-      // Mine first: a "both" event lives in the organiser's calendar and also appears in the guest's.
-      for (const id of [user.id, ppl.partnerId].filter((x): x is string => Boolean(x && ppl.connected(x)))) {
+      // Both people's calendars are fetched at the same time, then merged (mine first): a "both"
+      // event lives in the organiser's calendar and also appears in the guest's.
+      const ids = [user.id, ppl.partnerId].filter((x): x is string => Boolean(x && ppl.connected(x)));
+      const fetched = await Promise.all(ids.map((id) => listFor(id, from, to, tz).then((r) => ({ id, r, ok: true }), () => ({ id, r: [] as Awaited<ReturnType<typeof listFor>>, ok: false }))));
+      for (const { id, r, ok } of fetched) {
+        if (!ok) failed.push(id);
         try {
-          for (const { g, cal } of await listFor(id, from, to, tz)) {
+          for (const { g, cal } of r) {
             const e = toApp(g, id, cal, ppl.partnerId, partnerEmail, myEmail, tz);
             const k = `${e.uid}|${e.date}|${e.time}`;
             if (seen.has(k)) {

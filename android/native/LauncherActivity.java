@@ -23,6 +23,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
+import android.view.View;
+import android.view.ViewTreeObserver;
 
 import android.app.ActivityOptions;
 import android.content.ComponentName;
@@ -52,9 +55,27 @@ public class LauncherActivity
 
     
 
+    /** When the launch screen started, and whether it may go away yet (Android 12+). */
+    private final long startedAt = SystemClock.uptimeMillis();
+    private boolean releaseSplash;
+    private static final long SPLASH_MIN_MS = 850; // the ring and spark finish drawing
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Keep Android's animated launch screen up until the app is ready to hand over to Chrome,
+        // so the logo never disappears and pops back in between the steps of opening.
+        if (Build.VERSION.SDK_INT >= 31) {
+            final View content = findViewById(android.R.id.content);
+            content.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    if (!releaseSplash) return false;
+                    content.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+            });
+        }
         // Setting an orientation crashes the app due to the transparent background on Android 8.0
         // Oreo and below. We only set the orientation on Oreo and above. This only affects the
         // splash screen and Chrome will still respect the orientation.
@@ -87,6 +108,7 @@ public class LauncherActivity
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
                 && !getSharedPreferences(Push.PREFS, MODE_PRIVATE).getBoolean("asked_notifications", false)) {
             getSharedPreferences(Push.PREFS, MODE_PRIVATE).edit().putBoolean("asked_notifications", true).apply();
+            releaseSplash = true; // let the permission question show
             requestPermissions(new String[] {Manifest.permission.POST_NOTIFICATIONS}, ASK_NOTIFICATIONS);
             return false;
         }
@@ -120,7 +142,7 @@ public class LauncherActivity
     private void verifyThenOpen() {
         if (preparing || launched) return;
         preparing = true;
-        main.postDelayed(this::open, 2500); // never wait longer than this
+        main.postDelayed(this::open, 1500); // never wait longer than this
         String chrome = TwaProviderPicker.pickProvider(getPackageManager()).provider;
         if (chrome == null) {
             open();
@@ -186,7 +208,13 @@ public class LauncherActivity
 
     private void open() {
         if (launched || isFinishing()) return;
+        long wait = SPLASH_MIN_MS - (SystemClock.uptimeMillis() - startedAt);
+        if (Build.VERSION.SDK_INT >= 31 && wait > 0) {
+            main.postDelayed(this::open, wait); // let the logo finish drawing first
+            return;
+        }
         launched = true;
+        releaseSplash = true;
         launchTwa();
     }
 

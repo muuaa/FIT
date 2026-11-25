@@ -34,6 +34,11 @@
       @keyframes bt-draw { to { stroke-dashoffset: 183; } }
       @keyframes bt-pop { to { transform: scale(1) rotate(0deg); } }
       @keyframes bt-glow { 50% { opacity: 1; } to { opacity: 0.75; } }
+      /* In the Android app, Android has already drawn the logo: show it finished and still, so the
+         hand-over is seamless, then fade into the app. */
+      #intro.static .ring { animation: none; stroke-dashoffset: 183; }
+      #intro.static .spark { animation: none; transform: none; }
+      #intro.static .glow { animation: none; opacity: 0.75; }
       @media (prefers-reduced-motion: reduce) {
         #intro .ring { animation-duration: 0.01s; animation-delay: 0s; }
         #intro .spark { animation-duration: 0.01s; animation-delay: 0s; }
@@ -58,7 +63,10 @@
     <script>
       (function () {
         var start = Date.now(), ready = false, gone = false;
-        var MIN = 950; // let the intro finish
+        var inApp = /[?&]app=/.test(location.search);
+        try { inApp = inApp || !!sessionStorage.getItem('fit.native'); } catch (e) {}
+        if (inApp) document.getElementById('intro').classList.add('static');
+        var MIN = inApp ? 250 : 950; // in the app the logo is already drawn; in a browser let it finish
         function hide() {
           if (gone) return;
           gone = true;

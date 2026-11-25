@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight, ListTodo, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/AppShell';
 import { IconButton } from '@/components/ui/Button';
@@ -10,7 +10,8 @@ import { useTable } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { cn } from '@/lib/cn';
 import { addDays, monthLabel, parseISODate, relativeDay, weekdayNarrow } from '@/lib/date';
-import { gOn, useGoogleEvents, useGoogleReturn, useGoogleStatus, type GEvent } from '@/lib/google';
+import { gOn, prefetchGoogleWeek, useGoogleEvents, useGoogleReturn, useGoogleStatus, type GEvent } from '@/lib/google';
+import { useQueryClient } from '@tanstack/react-query';
 import { GEventRow, GEventSheet, GoogleConnectCard } from './GoogleCalendar';
 import { t } from '@/lib/i18n';
 import { todosFor } from '@/lib/life';
@@ -100,6 +101,16 @@ export function PlanPage() {
   const useGoogle = Boolean(gStatus.data?.mine);
   const week = weekOf(date);
   const gq = useGoogleEvents(week[0], week[6], useGoogle);
+  // Have the weeks either side ready, so moving between weeks is instant.
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!useGoogle) return;
+    const id = window.setTimeout(() => {
+      prefetchGoogleWeek(qc, addDays(week[0], 7), addDays(week[6], 7));
+      prefetchGoogleWeek(qc, addDays(week[0], -7), addDays(week[6], -7));
+    }, 1200);
+    return () => window.clearTimeout(id);
+  }, [qc, useGoogle, week[0]]); // eslint-disable-line react-hooks/exhaustive-deps
   const google = gq.data?.events ?? [];
   const [gSheet, setGSheet] = useState<{ event: GEvent | null } | null>(null);
   const dayGoogle = google.filter((g) => gOn(g, date)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
@@ -143,7 +154,7 @@ export function PlanPage() {
                 <GEventRow key={`${g.owner}|${g.id}`} e={g} onOpen={() => setGSheet({ event: g })} />
               ))}
             </ul>
-          ) : useGoogle && gq.isLoading ? (
+          ) : useGoogle && gq.isLoading && !gq.data ? (
             <p className="py-1 text-sm text-ink-3">{t('Loading your Google Calendar…')}</p>
           ) : (
             <p className="py-1 text-sm text-ink-3">{t('Nothing scheduled. Tap “Add event” to plan something.')}</p>

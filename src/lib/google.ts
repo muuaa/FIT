@@ -1,7 +1,8 @@
 /** Google Calendar, fully connected: each person's main Google calendar is the app's calendar. */
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { t } from './i18n';
+import { currentNamespace } from './localDb';
 import { supabase } from './supabase';
 import { toast } from '@/stores/toastStore';
 
@@ -63,20 +64,73 @@ async function call<T>(body: Record<string, unknown>): Promise<T> {
   return data as T;
 }
 
-export function useGoogleStatus() {
-  return useQuery({ queryKey: ['google-status'], queryFn: () => call<GStatus>({ action: 'status' }), enabled: Boolean(supabase), staleTime: 60_000, retry: 1 });
+// The calendar is kept on the phone so Plan opens instantly with it, then refreshes quietly.
+const cacheKey = (k: string) => `fit.gcal.${currentNamespace() ?? 'local'}.${k}`;
+function cached<T>(k: string): T | undefined {
+  try {
+    const raw = localStorage.getItem(cacheKey(k));
+    return raw ? (JSON.parse(raw) as T) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function keep(k: string, v: unknown) {
+  try {
+    localStorage.setItem(cacheKey(k), JSON.stringify(v));
+  } catch {
+    /* storage full: fine, it just won't open instantly next time */
+  }
 }
 
-/** Both of your Google events between two dates. */
+export function useGoogleStatus() {
+  return useQuery({
+    queryKey: ['google-status'],
+    queryFn: async () => {
+      const s = await call<GStatus>({ action: 'status' });
+      keep('status', s);
+      return s;
+    },
+    enabled: Boolean(supabase),
+    // Remembered from last time, so Plan doesn't flash the "connect" card while checking.
+    initialData: () => cached<GStatus>('status'),
+    initialDataUpdatedAt: 0,
+    staleTime: 60_000,
+    retry: 1,
+  });
+}
+
+type EventsResult = { events: GEvent[]; failed: string[] };
+
+function eventsQuery(from: string, to: string) {
+  return {
+    queryKey: ['google-events', from, to],
+    queryFn: async () => {
+      const r = await call<EventsResult>({ action: 'list', from, to });
+      keep(`ev.${from}.${to}`, r);
+      return r;
+    },
+    staleTime: 60_000,
+    retry: 1,
+  } as const;
+}
+
+/** Both of your Google events between two dates: shown at once from the phone, then refreshed. */
 export function useGoogleEvents(from: string, to: string, enabled: boolean) {
   return useQuery({
-    queryKey: ['google-events', from, to],
+    ...eventsQuery(from, to),
     enabled: enabled && Boolean(supabase),
-    staleTime: 60_000,
+    initialData: () => cached<EventsResult>(`ev.${from}.${to}`),
+    initialDataUpdatedAt: 0,
+    // Moving to another week: keep showing the current one until the new one is ready (no blank).
+    placeholderData: keepPreviousData,
     refetchOnWindowFocus: true,
-    retry: 1,
-    queryFn: async () => (await call<{ events: GEvent[]; failed: string[] }>({ action: 'list', from, to })),
   });
+}
+
+/** Load a week ahead of time (used for the weeks either side of the one on screen). */
+export function prefetchGoogleWeek(qc: QueryClient, from: string, to: string): void {
+  if (!supabase) return;
+  void qc.prefetchQuery(eventsQuery(from, to));
 }
 
 /** Sends you to Google to allow calendar access; Google brings you back to Plan. */

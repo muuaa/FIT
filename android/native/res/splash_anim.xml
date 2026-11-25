@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ launch screen: the app tile (128dp, in the 288dp icon area) with the ring drawing
+     itself in and the spark popping in. Played natively, so it stays smooth while the app starts. -->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector android:width="288dp" android:height="288dp" android:viewportWidth="288" android:viewportHeight="288">
+            <path android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:type="linear" android:startX="80" android:startY="80" android:endX="131.2" android:endY="208"
+                        android:startColor="#FF1D1936" android:endColor="#FF07070D" />
+                </aapt:attr>
+            </path>
+            <path android:pathData="M109,80 H179 A29,29 0 0 1 208,109 V179 A29,29 0 0 1 179,208 H109 A29,29 0 0 1 80,179 V109 A29,29 0 0 1 109,80 Z">
+                <aapt:attr name="android:fillColor">
+                    <gradient android:type="radial" android:centerX="144" android:centerY="137.6" android:gradientRadius="70.4"
+                        android:startColor="#52A89BFF" android:endColor="#00A89BFF" />
+                </aapt:attr>
+            </path>
+            <path android:pathData="M144,106.5 A37.5,37.5 0 1 1 144,181.5 A37.5,37.5 0 1 1 144,106.5"
+                android:strokeColor="#14FFFFFF" android:strokeWidth="11" />
+            <path android:name="ring" android:pathData="M144,106.5 A37.5,37.5 0 1 1 108.83,130.99"
+                android:strokeWidth="11" android:strokeLineCap="round" android:trimPathEnd="0">
+                <aapt:attr name="android:strokeColor">
+                    <gradient android:type="linear" android:startX="106.5" android:startY="181.5" android:endX="181.5" android:endY="106.5">
+                        <item android:offset="0" android:color="#FFD9CEFF" />
+                        <item android:offset="0.55" android:color="#FFA89BFF" />
+                        <item android:offset="1" android:color="#FFFF9EB5" />
+                    </gradient>
+                </aapt:attr>
+            </path>
+            <group android:name="spark" android:pivotX="144" android:pivotY="144" android:scaleX="0" android:scaleY="0" android:rotation="-60">
+                <path android:fillColor="#FFFFFFFF"
+                    android:pathData="M144,126.5 c1.75,11 6.5,15.75 17.5,17.5 c-11,1.75 -15.75,6.5 -17.5,17.5 c-1.75,-11 -6.5,-15.75 -17.5,-17.5 c11,-1.75 15.75,-6.5 17.5,-17.5 z" />
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="ring">
+        <aapt:attr name="android:animation">
+            <objectAnimator android:propertyName="trimPathEnd" android:valueFrom="0" android:valueTo="1"
+                android:startOffset="80" android:duration="620" android:interpolator="@android:interpolator/decelerate_cubic" />
+        </aapt:attr>
+    </target>
+    <target android:name="spark">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator android:propertyName="scaleX" android:valueFrom="0" android:valueTo="1"
+                    android:startOffset="360" android:duration="460" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="scaleY" android:valueFrom="0" android:valueTo="1"
+                    android:startOffset="360" android:duration="460" android:interpolator="@android:interpolator/overshoot" />
+                <objectAnimator android:propertyName="rotation" android:valueFrom="-60" android:valueTo="0"
+                    android:startOffset="360" android:duration="460" android:interpolator="@android:interpolator/decelerate_cubic" />
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>
