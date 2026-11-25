@@ -34,7 +34,12 @@ import androidx.browser.customtabs.CustomTabsService;
 import androidx.browser.customtabs.CustomTabsServiceConnection;
 import androidx.browser.customtabs.CustomTabsSession;
 
+import com.google.androidbrowserhelper.trusted.SessionStore;
+import com.google.androidbrowserhelper.trusted.SharedPreferencesTokenStore;
+import com.google.androidbrowserhelper.trusted.TwaLauncher;
 import com.google.androidbrowserhelper.trusted.TwaProviderPicker;
+import com.google.androidbrowserhelper.trusted.splashscreens.SplashScreenStrategy;
+import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import com.google.firebase.messaging.FirebaseMessaging;
 
 
@@ -142,6 +147,25 @@ public class LauncherActivity
         } catch (RuntimeException e) {
             open();
         }
+    }
+
+    /**
+     * Phones animate opening a new screen with a sideways slide; when the app hands over to Chrome
+     * that looked like the app sliding away. Both screens look the same (dark, same tile), so a
+     * quick cross-fade makes the hand-over invisible.
+     */
+    @Override
+    protected TwaLauncher createTwaLauncher() {
+        return new TwaLauncher(this, null, SessionStore.makeSessionId(getTaskId()), new SharedPreferencesTokenStore(this)) {
+            @Override
+            public void launch(TrustedWebActivityIntentBuilder builder, CustomTabsCallback callback, @Nullable SplashScreenStrategy splash,
+                    @Nullable Runnable done, TwaLauncher.FallbackStrategy fallback) {
+                super.launch(builder, callback, splash, () -> {
+                    overridePendingTransition(R.anim.bt_fade_in, R.anim.bt_hold);
+                    if (done != null) done.run();
+                }, fallback);
+            }
+        };
     }
 
     private void open() {
