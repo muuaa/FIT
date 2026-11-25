@@ -42,8 +42,6 @@ import type {
   WorkoutSession,
   WeekReview,
   Wish,
-  DateIdea,
-  Memory,
 } from '@/types/db';
 
 export interface WaterDay {
@@ -98,8 +96,6 @@ export interface Tables {
   notes: Note;
   reviews: WeekReview;
   wishes: Wish;
-  date_ideas: DateIdea;
-  memories: Memory;
 }
 export type TableName = keyof Tables;
 
@@ -138,8 +134,6 @@ export const TABLE_NAMES: TableName[] = [
   'notes',
   'reviews',
   'wishes',
-  'date_ideas',
-  'memories',
 ];
 
 const BASE = 'fit.v1.';
@@ -172,7 +166,7 @@ let viewPerson: string | null = null;
  */
 export const JOINT_TABLES = new Set<string>([
   'todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals', 'bills', 'meal_plan', 'chores',
-  'habits', 'habit_logs', 'journal', 'reviews', 'wishes', 'date_ideas', 'memories',
+  'habits', 'habit_logs', 'journal', 'reviews', 'wishes',
 ]);
 
 /** Shared tables where each row belongs to one of us (`by`): your habit ticks, your journal entry. */

@@ -22,8 +22,6 @@ const CheckInPage = lazy(() => import('@/features/life/checkin').then((m) => ({ 
 const MoneyPage = lazy(() => import('@/features/life/money').then((m) => ({ default: m.MoneyPage })));
 const ReviewPage = lazy(() => import('@/features/us/review').then((m) => ({ default: m.ReviewPage })));
 const WishlistPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.WishlistPage })));
-const DatesPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.DatesPage })));
-const MemoriesPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.MemoriesPage })));
 const GoalsPage = lazy(() => import('@/features/us/goals').then((m) => ({ default: m.GoalsPage })));
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
 const ListsPage = lazy(() => import('@/features/life/lists').then((m) => ({ default: m.ListsPage })));
@@ -73,8 +71,6 @@ export default function App() {
             <Route path="/life/journal" element={<JournalPage />} />
             <Route path="/us/review" element={<ReviewPage />} />
             <Route path="/us/wishlist" element={<WishlistPage />} />
-            <Route path="/us/dates" element={<DatesPage />} />
-            <Route path="/us/memories" element={<MemoriesPage />} />
             <Route path="/us/goals" element={<GoalsPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
             <Route path="/life/bills" element={<BillsPage />} />

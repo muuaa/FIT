@@ -391,35 +391,3 @@ export interface Wish {
   created_by: string;
   created_at: string;
 }
-
-export type DateCategory = 'movie' | 'game' | 'cook' | 'study' | 'creative' | 'talk' | 'out' | 'other';
-
-/** A date idea, and later a date you went on (with a rating). */
-export interface DateIdea {
-  id: string;
-  title: string;
-  category: DateCategory;
-  status: IdeaStatus;
-  /** When it's planned for (YYYY-MM-DD), if it is. */
-  planned: string | null;
-  /** 1–5 once done (0 = not rated). */
-  rating: number;
-  note: string;
-  created_at: string;
-}
-
-export type MemoryType = 'milestone' | 'first' | 'sweet' | 'funny' | 'trip' | 'photo';
-
-/** A moment in your story. Photos are attachments with this memory's id. */
-export interface Memory {
-  id: string;
-  title: string;
-  date: string;
-  type: MemoryType;
-  story: string;
-  favorite: boolean;
-  /** Paths of photos in file storage (either of you can upload; both can see). */
-  photos?: string[];
-  created_by: string;
-  created_at: string;
-}
