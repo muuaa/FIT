@@ -200,6 +200,12 @@ public class LauncherActivity extends Activity {
     }
 
     private class Client extends WebViewClient {
+        // Shown once the page has loaded, even if it never says it's ready (older website version).
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            main.postDelayed(LauncherActivity.this::revealApp, 700);
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
             Uri u = req.getUrl();
