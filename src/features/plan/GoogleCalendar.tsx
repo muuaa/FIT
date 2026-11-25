@@ -139,7 +139,7 @@ function minutesBetween(e: GEvent): number {
 }
 
 /** Add or edit an event in Google Calendar. */
-export function GEventSheet({ event, date, open, onClose }: { event: GEvent | null; date: string; open: boolean; onClose: () => void }) {
+export function GEventSheet({ event, date, time: startTime, open, onClose }: { event: GEvent | null; date: string; time?: string; open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const me = useSession((s) => s.user);
   const partner = usePartnerStore((s) => s.partner);
@@ -157,7 +157,7 @@ export function GEventSheet({ event, date, open, onClose }: { event: GEvent | nu
   const [calendarId, setCalendarId] = useState('primary');
   const [busy, setBusy] = useState(false);
   const [seeded, setSeeded] = useState<string | null>(null);
-  const key = open ? (event ? `${event.owner}|${event.id}` : `new-${date}`) : null;
+  const key = open ? (event ? `${event.owner}|${event.id}` : `new-${date}-${startTime ?? ''}`) : null;
   if (key !== seeded) {
     setSeeded(key);
     if (open) {
@@ -165,7 +165,7 @@ export function GEventSheet({ event, date, open, onClose }: { event: GEvent | nu
       setEmoji(event?.emoji || '📅');
       setDay(event?.date ?? date);
       setAllDay(event ? event.time === null : false);
-      setTime(event?.time ?? '18:00');
+      setTime(event?.time ?? startTime ?? '18:00');
       setLen(event ? minutesBetween(event) : 60);
       setWho(event?.who ?? 'both');
       setRepeat(event?.repeat ?? 'none');

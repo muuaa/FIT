@@ -23,7 +23,7 @@ const REPEAT: { value: EventRepeat; label: string }[] = [
   { value: 'yearly', label: 'Yearly' },
 ];
 
-export function EventSheet({ event, date, open, onClose }: { event: CalEvent | null; date: string; open: boolean; onClose: () => void }) {
+export function EventSheet({ event, date, time: startTime, open, onClose }: { event: CalEvent | null; date: string; time?: string; open: boolean; onClose: () => void }) {
   const actions = useTableActions('events');
   const me = useSession((s) => s.user);
   const partner = usePartnerStore((s) => s.partner);
@@ -36,7 +36,7 @@ export function EventSheet({ event, date, open, onClose }: { event: CalEvent | n
   const [repeat, setRepeat] = useState<EventRepeat>('none');
   const [note, setNote] = useState('');
   const [seeded, setSeeded] = useState<string | null>(null);
-  const key = open ? (event?.id ?? `new-${date}`) : null;
+  const key = open ? (event?.id ?? `new-${date}-${startTime ?? ''}`) : null;
   if (key !== seeded) {
     setSeeded(key);
     if (open) {
@@ -44,7 +44,7 @@ export function EventSheet({ event, date, open, onClose }: { event: CalEvent | n
       setEmoji(event?.emoji ?? '📅');
       setDay(event?.date ?? date);
       setAllDay(event ? event.time === null : false);
-      setTime(event?.time ?? '18:00');
+      setTime(event?.time ?? startTime ?? '18:00');
       setWho(event?.who ?? 'both');
       setRepeat(event?.repeat ?? 'none');
       setNote(event?.note ?? '');
