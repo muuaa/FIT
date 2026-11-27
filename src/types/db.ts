@@ -422,3 +422,15 @@ export interface QuranProgress {
   reviewed: string | null;
   updated_at: string;
 }
+
+/** A photo one of you sent the other. */
+export interface Pic {
+  id: string;
+  /** Path in file storage. */
+  path: string;
+  caption: string;
+  by: string;
+  created_at: string;
+  /** Who hearted it. */
+  hearts: string[];
+}

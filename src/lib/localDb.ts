@@ -44,6 +44,7 @@ import type {
   Wish,
   IslamDay,
   QuranProgress,
+  Pic,
 } from '@/types/db';
 
 export interface WaterDay {
@@ -100,6 +101,7 @@ export interface Tables {
   wishes: Wish;
   islam_days: IslamDay;
   quran: QuranProgress;
+  pics: Pic;
 }
 export type TableName = keyof Tables;
 
@@ -140,6 +142,7 @@ export const TABLE_NAMES: TableName[] = [
   'wishes',
   'islam_days',
   'quran',
+  'pics',
 ];
 
 const BASE = 'fit.v1.';
@@ -172,7 +175,7 @@ let viewPerson: string | null = null;
  */
 export const JOINT_TABLES = new Set<string>([
   'todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals', 'bills', 'meal_plan', 'chores',
-  'habits', 'habit_logs', 'journal', 'reviews', 'wishes', 'islam_days', 'quran',
+  'habits', 'habit_logs', 'journal', 'reviews', 'wishes', 'islam_days', 'quran', 'pics',
 ]);
 
 /** Shared tables where each row belongs to one of us (`by`): your habit ticks, your journal entry. */

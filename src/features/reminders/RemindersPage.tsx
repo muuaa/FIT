@@ -312,6 +312,7 @@ const ACTIVITY_KINDS: { kind: string; emoji: string; label: string }[] = [
   { kind: 'goal', emoji: '🎯', label: 'Reaches a shared goal' },
   { kind: 'chore', emoji: '🧹', label: 'Does a chore' },
   { kind: 'list', emoji: '🛒', label: 'Adds to a shared list' },
+  { kind: 'pic', emoji: '📸', label: 'Sends you a photo' },
 ];
 
 function PartnerActivity() {

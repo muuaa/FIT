@@ -13,6 +13,7 @@ import { NudgeBar, SideBySide } from './Together';
 import { GoalsCard } from './goals';
 import { ReviewCard } from './review';
 import { TogetherTiles } from './collections';
+import { PicsCard } from './pics';
 
 function Avatar({ name, accent }: { name: string; accent: string }) {
   return (
@@ -71,6 +72,7 @@ export function UsPage() {
         </section>
 
         <NudgeBarCard />
+        <PicsCard />
         <TogetherTiles />
         <SideBySide />
         <ReviewCard />

@@ -158,11 +158,11 @@ async function pullFrom(uid: string, table: 'records' | 'household_records', cur
 }
 
 async function pull(uid: string): Promise<number> {
-  // New shared sections (reviews, wishlist, goals, Islam): an older version of the app may have
+  // New shared sections (reviews, wishlist, goals, Islam, pics): an older version of the app may have
   // skipped their rows while moving its place forward. Fetch all shared rows once to pick them up.
-  if (!readKey('mig_collections_v2')) {
+  if (!readKey('mig_collections_v3')) {
     removeKey('cursor_home');
-    writeKey('mig_collections_v2', '1');
+    writeKey('mig_collections_v3', '1');
   }
   const a = await pullFrom(uid, 'records', 'cursor');
   const b = await pullFrom(uid, 'household_records', 'cursor_home');

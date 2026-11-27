@@ -2,7 +2,7 @@
 import { isViewingPartner } from './localDb';
 import { supabase } from './supabase';
 
-export type ActivityKind = 'workout' | 'habits' | 'event' | 'expense' | 'bill' | 'goal' | 'chore' | 'list' | 'todo';
+export type ActivityKind = 'workout' | 'habits' | 'event' | 'expense' | 'bill' | 'goal' | 'chore' | 'list' | 'todo' | 'pic';
 
 export function sendActivity(kind: ActivityKind, params: Record<string, string | number> = {}): void {
   if (!supabase || isViewingPartner() || !navigator.onLine) return;
