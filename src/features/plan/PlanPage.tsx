@@ -8,6 +8,7 @@ import { useSession } from '@/features/auth/session';
 import { TodosForDay } from '@/features/life/todos';
 import { useTable } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
+import { useProfile } from '@/hooks/useProfile';
 import { cn } from '@/lib/cn';
 import { addDays, addMonths, monthLabel, parseISODate, relativeDay, weekdayNarrow } from '@/lib/date';
 import { Segmented } from '@/components/ui/Segmented';
@@ -92,8 +93,10 @@ function EventRow({ e, color, onOpen }: { e: CalEvent; color: string; onOpen: ()
 const VIEW_KEY = 'fit.plan.view';
 const WHO_KEY = 'fit.plan.who';
 type Whose = 'me' | 'them' | 'both';
-/** One colour per person, so you can tell whose plans are whose at a glance. */
-export const WHO_COLOR: Record<Whose, string> = { me: '#a89bff', them: '#ff9eb5', both: '#7ad9c0' };
+/** One colour per person, the same on both phones: Mustafa blue, Bana lavender; together teal. */
+const BLUE = '#6fa8ff';
+const LAVENDER = '#b9a4ff';
+const TEAL = '#7ad9c0';
 function savedWho(): Record<Whose, boolean> {
   try {
     const v = JSON.parse(localStorage.getItem(WHO_KEY) ?? 'null') as Record<Whose, boolean> | null;
@@ -152,6 +155,10 @@ export function PlanPage() {
       /* fine */
     }
   };
+  const myName = useProfile().data?.display_name ?? '';
+  // Mustafa is blue and Bana lavender on both phones (if the names say otherwise: you blue, your partner lavender).
+  const partnerIsMustafa = /^mustafa/i.test(partner?.name ?? '') && !/^mustafa/i.test(myName);
+  const WHO_COLOR: Record<Whose, string> = partnerIsMustafa ? { me: LAVENDER, them: BLUE, both: TEAL } : { me: BLUE, them: LAVENDER, both: TEAL };
   const gWho = (g: GEvent): Whose => (g.who === 'both' ? 'both' : (g.who === me?.id || (g.who !== partner?.id && g.owner === me?.id)) ? 'me' : 'them');
   const lWho = (e: CalEvent): Whose => (e.who === 'both' ? 'both' : e.who === me?.id ? 'me' : 'them');
   const { data: events = [] } = useTable('events');
@@ -221,7 +228,7 @@ export function PlanPage() {
       }
     }
     return out;
-  }, [view, google, events, from, to, me, show]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view, google, events, from, to, me, show, partnerIsMustafa]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prev = () => setDate(step(view, date, -1));
   const next = () => setDate(step(view, date, 1));
