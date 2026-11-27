@@ -24,7 +24,6 @@ const ReviewPage = lazy(() => import('@/features/us/review').then((m) => ({ defa
 const WishlistPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.WishlistPage })));
 const GoalsPage = lazy(() => import('@/features/us/goals').then((m) => ({ default: m.GoalsPage })));
 const IslamPage = lazy(() => import('@/features/islam/IslamPage').then((m) => ({ default: m.IslamPage })));
-const AzkarPage = lazy(() => import('@/features/islam/IslamPage').then((m) => ({ default: m.AzkarPage })));
 const QuranPage = lazy(() => import('@/features/islam/IslamPage').then((m) => ({ default: m.QuranPage })));
 const PicsPage = lazy(() => import('@/features/us/pics').then((m) => ({ default: m.PicsPage })));
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
@@ -78,7 +77,6 @@ export default function App() {
             <Route path="/us/goals" element={<GoalsPage />} />
             <Route path="/us/pics" element={<PicsPage />} />
             <Route path="/islam" element={<IslamPage />} />
-            <Route path="/islam/azkar/:set" element={<AzkarPage />} />
             <Route path="/islam/quran" element={<QuranPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
             <Route path="/life/bills" element={<BillsPage />} />

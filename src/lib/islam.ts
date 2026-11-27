@@ -1,4 +1,4 @@
-/** Islam: the Quran's surahs (Hafs), daily azkar (Hisn al-Muslim) and the five prayers. */
+/** Islam tracking: surah names (for memorization), the azkar you tick off, and the five prayers. */
 
 /** The 114 surahs: Arabic name, transliteration, number of ayahs. */
 export const SURAHS: [ar: string, en: string, ayahs: number][] = [
@@ -130,107 +130,14 @@ export const PRAYERS = [
 ] as const;
 export type PrayerKey = (typeof PRAYERS)[number]['key'];
 
-export interface Zikr {
-  id: string;
-  text: string;
-  count: number;
-  /** Short note on what it is. */
-  note?: string;
-}
 export type AzkarSet = 'morning' | 'evening' | 'prayer' | 'sleep';
 
-const KURSI =
-  'الله لا إله إلا هو الحي القيوم، لا تأخذه سنة ولا نوم، له ما في السماوات وما في الأرض، من ذا الذي يشفع عنده إلا بإذنه، يعلم ما بين أيديهم وما خلفهم، ولا يحيطون بشيء من علمه إلا بما شاء، وسع كرسيه السماوات والأرض، ولا يؤوده حفظهما، وهو العلي العظيم';
-const IKHLAS = 'بسم الله الرحمن الرحيم. قل هو الله أحد ۝ الله الصمد ۝ لم يلد ولم يولد ۝ ولم يكن له كفوا أحد';
-const FALAQ = 'بسم الله الرحمن الرحيم. قل أعوذ برب الفلق ۝ من شر ما خلق ۝ ومن شر غاسق إذا وقب ۝ ومن شر النفاثات في العقد ۝ ومن شر حاسد إذا حسد';
-const NAS = 'بسم الله الرحمن الرحيم. قل أعوذ برب الناس ۝ ملك الناس ۝ إله الناس ۝ من شر الوسواس الخناس ۝ الذي يوسوس في صدور الناس ۝ من الجنة والناس';
-const ISTIGHFAR_SAYYID =
-  'اللهم أنت ربي لا إله إلا أنت، خلقتني وأنا عبدك، وأنا على عهدك ووعدك ما استطعت، أعوذ بك من شر ما صنعت، أبوء لك بنعمتك علي، وأبوء بذنبي فاغفر لي، فإنه لا يغفر الذنوب إلا أنت';
-const TAHLIL = 'لا إله إلا الله وحده لا شريك له، له الملك وله الحمد، وهو على كل شيء قدير';
-
-const shared = (): Zikr[] => [
-  { id: 'kursi', text: KURSI, count: 1, note: 'Ayat al-Kursi' },
-  { id: 'ikhlas', text: IKHLAS, count: 3, note: 'Al-Ikhlas' },
-  { id: 'falaq', text: FALAQ, count: 3, note: 'Al-Falaq' },
-  { id: 'nas', text: NAS, count: 3, note: 'An-Nas' },
-];
-
-export const AZKAR: Record<AzkarSet, { title: string; ar: string; emoji: string; items: Zikr[] }> = {
-  morning: {
-    title: 'Morning azkar',
-    ar: 'أذكار الصباح',
-    emoji: '🌅',
-    items: [
-      ...shared(),
-      {
-        id: 'asbahna',
-        text: 'أصبحنا وأصبح الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير، رب أسألك خير ما في هذا اليوم وخير ما بعده، وأعوذ بك من شر ما في هذا اليوم وشر ما بعده، رب أعوذ بك من الكسل وسوء الكبر، رب أعوذ بك من عذاب في النار وعذاب في القبر',
-        count: 1,
-      },
-      { id: 'bika', text: 'اللهم بك أصبحنا، وبك أمسينا، وبك نحيا، وبك نموت، وإليك النشور', count: 1 },
-      { id: 'sayyid', text: ISTIGHFAR_SAYYID, count: 1, note: 'Sayyid al-Istighfar' },
-      { id: 'hasbi', text: 'حسبي الله لا إله إلا هو، عليه توكلت، وهو رب العرش العظيم', count: 7 },
-      { id: 'bismillah', text: 'بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء، وهو السميع العليم', count: 3 },
-      { id: 'radeet', text: 'رضيت بالله ربا، وبالإسلام دينا، وبمحمد صلى الله عليه وسلم نبيا', count: 3 },
-      { id: 'afini', text: 'اللهم عافني في بدني، اللهم عافني في سمعي، اللهم عافني في بصري، لا إله إلا أنت', count: 3 },
-      { id: 'hayy', text: 'يا حي يا قيوم برحمتك أستغيث، أصلح لي شأني كله، ولا تكلني إلى نفسي طرفة عين', count: 1 },
-      { id: 'tahlil', text: TAHLIL, count: 10 },
-      { id: 'subhan', text: 'سبحان الله وبحمده', count: 100 },
-      { id: 'istighfar', text: 'أستغفر الله وأتوب إليه', count: 100 },
-    ],
-  },
-  evening: {
-    title: 'Evening azkar',
-    ar: 'أذكار المساء',
-    emoji: '🌇',
-    items: [
-      ...shared(),
-      {
-        id: 'amsayna',
-        text: 'أمسينا وأمسى الملك لله، والحمد لله، لا إله إلا الله وحده لا شريك له، له الملك وله الحمد وهو على كل شيء قدير، رب أسألك خير ما في هذه الليلة وخير ما بعدها، وأعوذ بك من شر ما في هذه الليلة وشر ما بعدها، رب أعوذ بك من الكسل وسوء الكبر، رب أعوذ بك من عذاب في النار وعذاب في القبر',
-        count: 1,
-      },
-      { id: 'bika', text: 'اللهم بك أمسينا، وبك أصبحنا، وبك نحيا، وبك نموت، وإليك المصير', count: 1 },
-      { id: 'sayyid', text: ISTIGHFAR_SAYYID, count: 1, note: 'Sayyid al-Istighfar' },
-      { id: 'hasbi', text: 'حسبي الله لا إله إلا هو، عليه توكلت، وهو رب العرش العظيم', count: 7 },
-      { id: 'bismillah', text: 'بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء، وهو السميع العليم', count: 3 },
-      { id: 'kalimat', text: 'أعوذ بكلمات الله التامات من شر ما خلق', count: 3 },
-      { id: 'radeet', text: 'رضيت بالله ربا، وبالإسلام دينا، وبمحمد صلى الله عليه وسلم نبيا', count: 3 },
-      { id: 'afini', text: 'اللهم عافني في بدني، اللهم عافني في سمعي، اللهم عافني في بصري، لا إله إلا أنت', count: 3 },
-      { id: 'hayy', text: 'يا حي يا قيوم برحمتك أستغيث، أصلح لي شأني كله، ولا تكلني إلى نفسي طرفة عين', count: 1 },
-      { id: 'tahlil', text: TAHLIL, count: 10 },
-      { id: 'subhan', text: 'سبحان الله وبحمده', count: 100 },
-    ],
-  },
-  prayer: {
-    title: 'After prayer',
-    ar: 'أذكار بعد الصلاة',
-    emoji: '🤲',
-    items: [
-      { id: 'astaghfir', text: 'أستغفر الله', count: 3 },
-      { id: 'salam', text: 'اللهم أنت السلام ومنك السلام، تباركت يا ذا الجلال والإكرام', count: 1 },
-      { id: 'subhanallah', text: 'سبحان الله', count: 33 },
-      { id: 'alhamdulillah', text: 'الحمد لله', count: 33 },
-      { id: 'allahuakbar', text: 'الله أكبر', count: 33 },
-      { id: 'tahlil', text: TAHLIL, count: 1 },
-      { id: 'kursi', text: KURSI, count: 1, note: 'Ayat al-Kursi' },
-    ],
-  },
-  sleep: {
-    title: 'Before sleep',
-    ar: 'أذكار النوم',
-    emoji: '🌙',
-    items: [
-      { id: 'bismika', text: 'باسمك اللهم أموت وأحيا', count: 1 },
-      { id: 'kursi', text: KURSI, count: 1, note: 'Ayat al-Kursi' },
-      { id: 'ikhlas', text: IKHLAS, count: 3, note: 'Al-Ikhlas' },
-      { id: 'falaq', text: FALAQ, count: 3, note: 'Al-Falaq' },
-      { id: 'nas', text: NAS, count: 3, note: 'An-Nas' },
-      { id: 'subhanallah', text: 'سبحان الله', count: 33 },
-      { id: 'alhamdulillah', text: 'الحمد لله', count: 33 },
-      { id: 'allahuakbar', text: 'الله أكبر', count: 34 },
-    ],
-  },
+/** Azkar you tick off each day (the text is in your own app). */
+export const AZKAR: Record<AzkarSet, { title: string; ar: string; emoji: string }> = {
+  morning: { title: 'Morning azkar', ar: 'أذكار الصباح', emoji: '🌅' },
+  evening: { title: 'Evening azkar', ar: 'أذكار المساء', emoji: '🌇' },
+  prayer: { title: 'After prayer', ar: 'أذكار بعد الصلاة', emoji: '🤲' },
+  sleep: { title: 'Before sleep', ar: 'أذكار النوم', emoji: '🌙' },
 };
 export const AZKAR_SETS: AzkarSet[] = ['morning', 'evening', 'prayer', 'sleep'];
 

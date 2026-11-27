@@ -1,7 +1,7 @@
-/** Islam: the five prayers, daily azkar, Quran memorization and reading, and a tasbih, for both of you. */
+/** Islam tracking for both of you: prayers, azkar done, Quran memorization and pages read, tasbih. */
 import { BookOpen, Check, ChevronRight, Minus, Plus, RotateCcw, Search, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { PageHeader } from '@/components/layout/AppShell';
 import { Button, IconButton } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -15,7 +15,7 @@ import { tick } from '@/lib/alerts';
 import { cn } from '@/lib/cn';
 import { addDays } from '@/lib/date';
 import { t } from '@/lib/i18n';
-import { AZKAR, AZKAR_SETS, JUZ_AMMA_FROM, PRAYERS, SURAHS, TOTAL_AYAHS, hijri, type AzkarSet } from '@/lib/islam';
+import { AZKAR, AZKAR_SETS, JUZ_AMMA_FROM, PRAYERS, SURAHS, TOTAL_AYAHS, hijri } from '@/lib/islam';
 import { usePartnerStore } from '@/lib/partner';
 import { toast } from '@/stores/toastStore';
 import type { IslamDay, QuranProgress, QuranStatus } from '@/types/db';
@@ -115,11 +115,22 @@ export function IslamPage() {
           <div className="grid grid-cols-2 gap-2">
             {AZKAR_SETS.map((s) => {
               const a = AZKAR[s];
+              const on = Boolean(mine?.azkar[s]);
               return (
-                <Link key={s} to={`/islam/azkar/${s}`} className="press rounded-2xl bg-white/[0.04] p-3">
+                <button
+                  key={s}
+                  type="button"
+                  disabled={!canWrite}
+                  aria-pressed={on}
+                  onClick={() => {
+                    tick();
+                    update({ azkar: { ...(mine?.azkar ?? {}), [s]: !on } });
+                  }}
+                  className={cn('press rounded-2xl p-3 text-start', on ? 'bg-islam/15 ring-1 ring-islam/60' : 'bg-white/[0.04]')}
+                >
                   <div className="flex items-start justify-between">
                     <span className="text-2xl">{a.emoji}</span>
-                    {mine?.azkar[s] && <Check size={18} className="text-islam" strokeWidth={3} />}
+                    <span className={cn('grid size-6 place-items-center rounded-full', on ? 'bg-islam text-bg' : 'border border-white/20')}>{on && <Check size={14} strokeWidth={3} />}</span>
                   </div>
                   <div className="mt-1 text-sm font-semibold">{t(a.title)}</div>
                   <div className="text-xs text-ink-3" lang="ar">
@@ -130,7 +141,7 @@ export function IslamPage() {
                       {right.name} {theirs?.azkar[s] ? '✓' : '…'}
                     </div>
                   )}
-                </Link>
+                </button>
               );
             })}
           </div>
@@ -216,76 +227,6 @@ function Tasbih() {
         {right && <p className="mt-3 text-xs text-ink-3">{t('{name} today: {n}', { name: right.name, n: theirs?.tasbih ?? 0 })}</p>}
       </div>
     </Card>
-  );
-}
-
-// ================================================================ azkar
-
-export function AzkarPage() {
-  const { set = 'morning' } = useParams();
-  const key = (AZKAR_SETS.includes(set as AzkarSet) ? set : 'morning') as AzkarSet;
-  const a = AZKAR[key];
-  const today = useToday();
-  const { mine, theirs, update, right, canWrite } = useIslamDay(today);
-  const counts = mine?.counts ?? {};
-  const done = (id: string, count: number) => (counts[`${key}.${id}`] ?? 0) >= count;
-  const finished = a.items.filter((z) => done(z.id, z.count)).length;
-  const press = (id: string, count: number) => {
-    if (!canWrite) return;
-    const k = `${key}.${id}`;
-    const cur = counts[k] ?? 0;
-    if (cur >= count) return;
-    tick();
-    const next = { ...counts, [k]: cur + 1 };
-    const all = a.items.every((z) => (next[`${key}.${z.id}`] ?? 0) >= z.count);
-    update({ counts: next, azkar: { ...(mine?.azkar ?? {}), [key]: all } });
-    if (all && !mine?.azkar[key]) toast.success(t('{title} done. May Allah accept it 🤍', { title: t(a.title) }));
-  };
-  const reset = () => {
-    const next = { ...counts };
-    for (const z of a.items) delete next[`${key}.${z.id}`];
-    update({ counts: next, azkar: { ...(mine?.azkar ?? {}), [key]: false } });
-  };
-  return (
-    <>
-      <PageHeader title={t(a.title)} subtitle={a.ar} />
-      <div className="mb-3 flex items-center gap-3 rounded-2xl bg-white/[0.035] px-3 py-2.5">
-        <ProgressBar value={finished} max={a.items.length} accent={ACCENT} className="h-2 flex-1" />
-        <span className="tabular text-xs font-semibold text-ink-2">
-          {finished}/{a.items.length}
-        </span>
-        {right && <span className={cn('text-xs', theirs?.azkar[key] ? 'text-us' : 'text-ink-3')}>{right.name} {theirs?.azkar[key] ? '✓' : '…'}</span>}
-        <IconButton label={t('Start again')} className="size-8" disabled={!canWrite} onClick={reset}>
-          <RotateCcw size={14} />
-        </IconButton>
-      </div>
-      <ul className="space-y-2.5">
-        {a.items.map((z) => {
-          const n = counts[`${key}.${z.id}`] ?? 0;
-          const complete = n >= z.count;
-          return (
-            <li key={z.id}>
-              <button
-                type="button"
-                onClick={() => press(z.id, z.count)}
-                className={cn('glass press block w-full rounded-[22px] p-4 text-start transition-opacity', complete && 'opacity-50')}
-              >
-                <p dir="rtl" lang="ar" className="text-[19px] leading-[2.1] text-ink">
-                  {z.text}
-                </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <span className="text-xs text-ink-3">{z.note ? t(z.note) : ''}</span>
-                  <span className={cn('tabular flex h-8 min-w-[4.5rem] items-center justify-center gap-1 rounded-full px-3 text-sm font-bold', complete ? 'bg-islam text-bg' : 'bg-islam/15 text-islam')}>
-                    {complete ? <Check size={15} strokeWidth={3} /> : `${n}/${z.count}`}
-                  </span>
-                </div>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      <p className="mt-4 text-center text-xs text-ink-3">{t('Tap a card each time you say it. From Hisn al-Muslim.')}</p>
-    </>
   );
 }
 
