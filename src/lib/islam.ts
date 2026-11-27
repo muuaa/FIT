@@ -122,13 +122,15 @@ export const TOTAL_AYAHS = 6236;
 export const JUZ_AMMA_FROM = 78;
 
 export const PRAYERS = [
-  { key: 'fajr', label: 'Fajr', ar: 'الفجر', sunnah: '2 before' },
+  { key: 'fajr', label: 'Fajr', ar: 'الفجر', sunnah: '2 before' as string | null },
   { key: 'dhuhr', label: 'Dhuhr', ar: 'الظهر', sunnah: '4 + 2' },
-  { key: 'asr', label: 'Asr', ar: 'العصر', sunnah: '4 before' },
+  { key: 'asr', label: 'Asr', ar: 'العصر', sunnah: null },
   { key: 'maghrib', label: 'Maghrib', ar: 'المغرب', sunnah: '2 after' },
   { key: 'isha', label: 'Isha', ar: 'العشاء', sunnah: '2 after' },
 ] as const;
 export type PrayerKey = (typeof PRAYERS)[number]['key'];
+/** Prayers with a regular (rawatib) sunnah: all but Asr. */
+export const SUNNAH = PRAYERS.filter((p) => p.sunnah);
 
 export type AzkarSet = 'morning' | 'evening' | 'prayer' | 'sleep';
 

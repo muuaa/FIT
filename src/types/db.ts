@@ -400,8 +400,9 @@ export interface IslamDay {
   prayers: Partial<Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>>;
   /** Sunnah prayers prayed with each prayer. */
   sunnah?: Partial<Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>>;
-  /** Qiyam al-Layl (night prayer). */
+  /** Qiyam al-Layl (night prayer) and Witr. */
   qiyam?: boolean;
+  witr?: boolean;
   /** Azkar sets finished today. */
   azkar: Partial<Record<'morning' | 'evening' | 'prayer' | 'sleep', boolean>>;
   /** How far into each zikr (`set.id` → count). */
