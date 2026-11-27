@@ -141,7 +141,8 @@ export const AZKAR: Record<AzkarSet, { title: string; ar: string; emoji: string 
   prayer: { title: 'After prayer', ar: 'أذكار بعد الصلاة', emoji: '🤲' },
   sleep: { title: 'Before sleep', ar: 'أذكار النوم', emoji: '🌙' },
 };
-export const AZKAR_SETS: AzkarSet[] = ['morning', 'evening', 'prayer', 'sleep'];
+/** The azkar card's sets (after-prayer azkar are ticked with each prayer instead). */
+export const AZKAR_SETS: AzkarSet[] = ['morning', 'evening', 'sleep'];
 
 /** Today's date in the Hijri calendar, e.g. "6 Jumada II 1448". */
 export function hijri(date: Date = new Date()): string {

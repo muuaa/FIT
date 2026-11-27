@@ -126,6 +126,34 @@ export function IslamPage() {
               );
             })}
           </div>
+          {/* after-prayer azkar with each prayer */}
+          <div className="mt-1.5 grid grid-cols-5 gap-1.5">
+            {PRAYERS.map((p) => {
+              const on = Boolean(mine?.afterAzkar?.[p.key]);
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  disabled={!canWrite}
+                  aria-pressed={on}
+                  aria-label={t('{prayer} azkar', { prayer: t(p.label) })}
+                  onClick={() => {
+                    tick();
+                    update({ afterAzkar: { ...(mine?.afterAzkar ?? {}), [p.key]: !on } });
+                  }}
+                  className={cn('press flex flex-col items-center gap-0.5 rounded-xl py-1.5', on ? 'bg-islam/12 text-ink ring-1 ring-islam/40' : 'bg-white/[0.03] text-ink-3')}
+                >
+                  <span className="flex items-center gap-1 text-[10.5px] font-semibold">
+                    <span className={cn('grid size-3.5 place-items-center rounded-full', on ? 'bg-islam text-bg' : 'border border-white/25')}>{on && <Check size={9} strokeWidth={3.5} />}</span>
+                    {t('Azkar')}
+                  </span>
+                  <span className="text-[9.5px] text-ink-3" lang="ar">
+                    بعد الصلاة
+                  </span>
+                </button>
+              );
+            })}
+          </div>
           {/* night prayer */}
           <div className="mt-2 grid grid-cols-2 gap-1.5">
             {(
@@ -169,7 +197,7 @@ export function IslamPage() {
                 </span>
               </div>
               <div className="tabular text-xs text-ink-3">
-                {t('Sunnah {n}/{of}', { n: SUNNAH.filter((p) => theirs?.sunnah?.[p.key]).length, of: SUNNAH.length })} · {t('Qiyam')} {theirs?.qiyam ? <span className="text-us">✓</span> : '—'} · {t('Witr')}{' '}
+                {t('Sunnah {n}/{of}', { n: SUNNAH.filter((p) => theirs?.sunnah?.[p.key]).length, of: SUNNAH.length })} · {t('Azkar {n}/5', { n: PRAYERS.filter((p) => theirs?.afterAzkar?.[p.key]).length })} · {t('Qiyam')} {theirs?.qiyam ? <span className="text-us">✓</span> : '—'} · {t('Witr')}{' '}
                 {theirs?.witr ? <span className="text-us">✓</span> : '—'}
               </div>
             </div>
@@ -178,7 +206,7 @@ export function IslamPage() {
 
         {/* azkar */}
         <Card title={t('Azkar')} icon={Sparkles} accent={ACCENT}>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {AZKAR_SETS.map((s) => {
               const a = AZKAR[s];
               const on = Boolean(mine?.azkar[s]);

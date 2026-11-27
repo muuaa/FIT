@@ -400,6 +400,8 @@ export interface IslamDay {
   prayers: Partial<Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>>;
   /** Sunnah prayers prayed with each prayer. */
   sunnah?: Partial<Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>>;
+  /** After-prayer azkar said, for each prayer. */
+  afterAzkar?: Partial<Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>>;
   /** Qiyam al-Layl (night prayer) and Witr. */
   qiyam?: boolean;
   witr?: boolean;
