@@ -122,6 +122,7 @@ const fmt = {
   sleep: (s?: DaySnapshot) => (s ? (s.sleepMin !== null ? hm(s.sleepMin) : '—') : '…'),
   trained: (s?: DaySnapshot) => (s ? (s.trained ? '✓' : '—') : '…'),
   steps: (s?: DaySnapshot) => (s ? (s.steps ? s.steps.toLocaleString() : '—') : '…'),
+  prayers: (s?: DaySnapshot) => (s ? `${s.prayers}/5` : '…'),
 };
 
 export function SideBySide() {
@@ -150,6 +151,7 @@ export function SideBySide() {
         <Stat label={t('Mood')} a={fmt.mood(a)} b={fmt.mood(b)} />
         <Stat label={t('Sleep')} a={fmt.sleep(a)} b={fmt.sleep(b)} />
         <Stat label={t('Workout')} a={fmt.trained(a)} b={fmt.trained(b)} />
+        <Stat label={t('Prayers')} a={fmt.prayers(a)} b={fmt.prayers(b)} />
       </div>
     </Card>
   );

@@ -97,6 +97,8 @@ export interface DaySnapshot {
   sleepMin: number | null;
   trained: boolean;
   steps: number;
+  /** Prayers prayed (0–5). */
+  prayers: number;
 }
 
 /** A person's day from their synced rows (works for the partner, whose rows we can read). */
@@ -108,7 +110,7 @@ export async function fetchDaySnapshot(userId: string, date: string): Promise<Da
     base().eq('tbl', 'profile'),
     base().in('tbl', ['water_days', 'checkins', 'sleep_logs', 'workout_sessions', 'steps_days']).eq('data->>date', date),
     home().eq('tbl', 'habits'), // shared
-    home().eq('tbl', 'habit_logs').eq('data->>date', date).eq('data->>by', userId),
+    home().in('tbl', ['habit_logs', 'islam_days']).eq('data->>date', date).eq('data->>by', userId),
   ]);
   for (const r of [small, day, habits, ticks]) if (r.error) throw new Error(r.error.message);
   const rows = [...(small.data ?? []), ...(day.data ?? []), ...(habits.data ?? []), ...(ticks.data ?? [])];
@@ -136,6 +138,7 @@ export async function fetchDaySnapshot(userId: string, date: string): Promise<Da
     sleepMin,
     trained: of('workout_sessions').some((r) => r.ended_at),
     steps: Number(of('steps_days')[0]?.steps ?? 0),
+    prayers: Object.values((of('islam_days')[0]?.prayers ?? {}) as Record<string, boolean>).filter(Boolean).length,
   };
 }
 

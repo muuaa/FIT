@@ -9,6 +9,7 @@ import { useTable, useTableActions } from '@/hooks/useTable';
 import { useToday } from '@/hooks/useToday';
 import { tick } from '@/lib/alerts';
 import { cn } from '@/lib/cn';
+import { OtherRoutines } from '@/features/us/OtherPerson';
 import { t } from '@/lib/i18n';
 import { uid } from '@/lib/localDb';
 import type { Routine } from '@/types/db';
@@ -189,6 +190,7 @@ export function RoutinesCard() {
           })}
         </ul>
       )}
+      <OtherRoutines date={today} />
       <RoutineEditor open={edit} onClose={() => setEdit(false)} />
     </Card>
   );

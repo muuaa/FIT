@@ -415,3 +415,32 @@ export function OtherNotes() {
     </OtherCard>
   );
 }
+
+// ---------------------------------------------------------------- routines
+
+/** The other person's routines today: a line under yours. */
+export function OtherRoutines({ date }: { date: string }) {
+  const { who, data } = useOther(
+    'routines',
+    async (w) => {
+      const [all, logs] = await Promise.all([fetchRows(w.id, ['routines']), fetchRows(w.id, ['routine_logs'], date)]);
+      const routines = pick<Routine>(all, 'routines').sort((a, b) => a.position - b.position);
+      const done = pick<RoutineLog>(logs, 'routine_logs');
+      return routines.map((r) => ({ ...r, done: done.find((l) => l.routine_id === r.id)?.done.length ?? 0 }));
+    },
+    [date],
+  );
+  if (!who || !data?.length) return null;
+  return (
+    <div className="mt-3 rounded-2xl bg-white/[0.035] px-3 py-2.5">
+      <div className="mb-1 text-xs font-semibold text-us">{who.name}</div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1">
+        {data.map((r) => (
+          <span key={r.id} className="tabular text-sm text-ink-2">
+            {r.emoji} {r.name} <span className={r.done >= r.steps.length ? 'font-semibold text-us' : 'text-ink-3'}>{r.done >= r.steps.length ? '✓' : `${r.done}/${r.steps.length}`}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
