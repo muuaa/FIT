@@ -406,7 +406,7 @@ export interface IslamDay {
   qiyam?: boolean;
   witr?: boolean;
   /** Azkar sets finished today. */
-  azkar: Partial<Record<'morning' | 'evening' | 'prayer' | 'sleep', boolean>>;
+  azkar: Partial<Record<'wakeup' | 'morning' | 'evening' | 'prayer' | 'sleep', boolean>>;
   /** How far into each zikr (`set.id` → count). */
   counts: Record<string, number>;
   /** Quran pages read today. */

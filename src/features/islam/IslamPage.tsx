@@ -15,7 +15,7 @@ import { tick } from '@/lib/alerts';
 import { cn } from '@/lib/cn';
 import { addDays } from '@/lib/date';
 import { t } from '@/lib/i18n';
-import { AZKAR, AZKAR_SETS, JUZ_AMMA_FROM, PRAYERS, SUNNAH, SURAHS, TOTAL_AYAHS, hijri } from '@/lib/islam';
+import { AZKAR, AZKAR_SETS, MORNING_SETS, JUZ_AMMA_FROM, PRAYERS, SUNNAH, SURAHS, TOTAL_AYAHS, hijri } from '@/lib/islam';
 import { usePartnerStore } from '@/lib/partner';
 import { toast } from '@/stores/toastStore';
 import type { IslamDay, QuranProgress, QuranStatus } from '@/types/db';
@@ -222,7 +222,49 @@ export function IslamPage() {
 
         {/* azkar */}
         <Card title={t('Azkar')} icon={Sparkles} accent={ACCENT}>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            {/* waking up + morning, in one box */}
+            <div className={cn('col-span-2 rounded-2xl p-2', MORNING_SETS.every((s) => mine?.azkar[s]) ? 'bg-islam/15 ring-1 ring-islam/60' : 'bg-white/[0.04]')}>
+              <div className="grid grid-cols-2 gap-1">
+                {MORNING_SETS.map((s) => {
+                  const a = AZKAR[s];
+                  const on = Boolean(mine?.azkar[s]);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={!canWrite}
+                      aria-pressed={on}
+                      onClick={() => {
+                        tick();
+                        update({ azkar: { ...(mine?.azkar ?? {}), [s]: !on } });
+                      }}
+                      className="press flex items-center gap-2 rounded-xl p-1.5 text-start"
+                    >
+                      <span className="text-xl">{a.emoji}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[14px] font-semibold">{t(s === 'wakeup' ? 'Wake up' : 'Morning')}</span>
+                        <span className="block text-[11px] text-ink-3" lang="ar">
+                          {a.ar}
+                        </span>
+                      </span>
+                      <span className={cn('grid size-6 shrink-0 place-items-center rounded-full', on ? 'bg-islam text-bg' : 'border border-white/20')}>{on && <Check size={14} strokeWidth={3} />}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {right && (
+                <div className="px-1.5 pt-1 text-[11px] text-ink-3">
+                  {right.name}:{' '}
+                  {MORNING_SETS.map((s, i) => (
+                    <span key={s} className={theirs?.azkar[s] ? 'text-us' : undefined}>
+                      {i > 0 ? ' · ' : ''}
+                      {t(s === 'wakeup' ? 'Wake up' : 'Morning')} {theirs?.azkar[s] ? '✓' : '…'}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             {AZKAR_SETS.map((s) => {
               const a = AZKAR[s];
               const on = Boolean(mine?.azkar[s]);

@@ -132,17 +132,20 @@ export type PrayerKey = (typeof PRAYERS)[number]['key'];
 /** Prayers with a regular (rawatib) sunnah: all but Asr. */
 export const SUNNAH = PRAYERS.filter((p) => p.sunnah);
 
-export type AzkarSet = 'morning' | 'evening' | 'prayer' | 'sleep';
+export type AzkarSet = 'wakeup' | 'morning' | 'evening' | 'prayer' | 'sleep';
 
 /** Azkar you tick off each day (the text is in your own app). */
 export const AZKAR: Record<AzkarSet, { title: string; ar: string; emoji: string }> = {
+  wakeup: { title: 'Wake up azkar', ar: 'أذكار الاستيقاظ', emoji: '⏰' },
   morning: { title: 'Morning azkar', ar: 'أذكار الصباح', emoji: '🌅' },
   evening: { title: 'Evening azkar', ar: 'أذكار المساء', emoji: '🌇' },
   prayer: { title: 'After prayer', ar: 'أذكار بعد الصلاة', emoji: '🤲' },
   sleep: { title: 'Before sleep', ar: 'أذكار النوم', emoji: '🌙' },
 };
 /** The azkar card's sets (after-prayer azkar are ticked with each prayer instead). */
-export const AZKAR_SETS: AzkarSet[] = ['morning', 'evening', 'sleep'];
+export const AZKAR_SETS: AzkarSet[] = ['evening', 'sleep'];
+/** Ticked together in one box: waking up, then the morning azkar. */
+export const MORNING_SETS: AzkarSet[] = ['wakeup', 'morning'];
 
 /** Today's date in the Hijri calendar, e.g. "6 Jumada II 1448". */
 export function hijri(date: Date = new Date()): string {
