@@ -391,3 +391,34 @@ export interface Wish {
   created_by: string;
   created_at: string;
 }
+
+/** One person's day of worship (shared: you each see the other's). */
+export interface IslamDay {
+  date: string;
+  by: string;
+  /** Prayers prayed today. */
+  prayers: Partial<Record<'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha', boolean>>;
+  /** Azkar sets finished today. */
+  azkar: Partial<Record<'morning' | 'evening' | 'prayer' | 'sleep', boolean>>;
+  /** How far into each zikr (`set.id` → count). */
+  counts: Record<string, number>;
+  /** Quran pages read today. */
+  pages: number;
+  /** Tasbih count today. */
+  tasbih: number;
+  updated_at: string;
+}
+
+export type QuranStatus = 'learning' | 'memorized';
+
+/** One person's memorization of one surah. */
+export interface QuranProgress {
+  surah: number; // 1–114
+  by: string;
+  status: QuranStatus;
+  /** Ayahs memorized so far. */
+  ayahs: number;
+  /** Last time it was revised (YYYY-MM-DD). */
+  reviewed: string | null;
+  updated_at: string;
+}

@@ -23,6 +23,9 @@ const MoneyPage = lazy(() => import('@/features/life/money').then((m) => ({ defa
 const ReviewPage = lazy(() => import('@/features/us/review').then((m) => ({ default: m.ReviewPage })));
 const WishlistPage = lazy(() => import('@/features/us/collections').then((m) => ({ default: m.WishlistPage })));
 const GoalsPage = lazy(() => import('@/features/us/goals').then((m) => ({ default: m.GoalsPage })));
+const IslamPage = lazy(() => import('@/features/islam/IslamPage').then((m) => ({ default: m.IslamPage })));
+const AzkarPage = lazy(() => import('@/features/islam/IslamPage').then((m) => ({ default: m.AzkarPage })));
+const QuranPage = lazy(() => import('@/features/islam/IslamPage').then((m) => ({ default: m.QuranPage })));
 const JournalPage = lazy(() => import('@/features/life/journal').then((m) => ({ default: m.JournalPage })));
 const ListsPage = lazy(() => import('@/features/life/lists').then((m) => ({ default: m.ListsPage })));
 const RemindersPage = lazy(() => import('@/features/reminders/RemindersPage').then((m) => ({ default: m.RemindersPage })));
@@ -72,6 +75,9 @@ export default function App() {
             <Route path="/us/review" element={<ReviewPage />} />
             <Route path="/us/wishlist" element={<WishlistPage />} />
             <Route path="/us/goals" element={<GoalsPage />} />
+            <Route path="/islam" element={<IslamPage />} />
+            <Route path="/islam/azkar/:set" element={<AzkarPage />} />
+            <Route path="/islam/quran" element={<QuranPage />} />
             <Route path="/life/lists" element={<ListsPage />} />
             <Route path="/life/bills" element={<BillsPage />} />
             <Route path="/life/meals" element={<MealsPage />} />

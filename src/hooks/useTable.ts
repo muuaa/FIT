@@ -27,7 +27,7 @@ export function mine<T extends TableName>(t: T): Tables[T][] {
 /** Write helpers below take keys without the person (e.g. `habit|date`); add whose row it is. */
 const own = (t: TableName, key: string) => (PERSON_TABLES.has(t) ? `${key}|${personId()}` : key);
 const stamp = <T extends TableName>(t: T, row: Tables[T]): Tables[T] => (PERSON_TABLES.has(t) ? ({ ...row, by: personId() } as Tables[T]) : row);
-type In<T extends TableName> = T extends 'habit_logs' | 'journal' | 'reviews' ? Omit<Tables[T], 'by'> : Tables[T];
+type In<T extends TableName> = T extends 'habit_logs' | 'journal' | 'reviews' | 'islam_days' | 'quran' ? Omit<Tables[T], 'by'> : Tables[T];
 
 export function useTableActions<T extends TableName>(t: T) {
   const qc = useQueryClient();

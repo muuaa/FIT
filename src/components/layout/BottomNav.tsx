@@ -1,4 +1,4 @@
-import { CalendarCheck, HeartHandshake, House, Leaf, Sparkles, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, HeartHandshake, House, Leaf, Moon, Sparkles, type LucideIcon } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { Logo } from '@/components/Logo';
@@ -25,6 +25,7 @@ export const TABS: Tab[] = [
     also: ['/train', '/fuel', '/progress', '/life/sleep', '/life/mood'],
   },
   { to: '/us', label: 'Us', icon: HeartHandshake, accent: 'var(--color-us)', also: ['/life/lists'] },
+  { to: '/islam', label: 'Islam', icon: Moon, accent: 'var(--color-islam)' },
   { to: '/life', label: 'Life', icon: Sparkles, accent: 'var(--color-life)' },
 ];
 
@@ -49,7 +50,7 @@ export function BottomNav() {
   const current = tabFor(pathname);
   return (
     <nav className="pb-safe pointer-events-none fixed inset-x-0 bottom-0 z-40 px-3 lg:hidden">
-      <ul className="glass-strong pointer-events-auto mx-auto mb-2 grid h-[66px] max-w-lg grid-cols-5 rounded-[26px] px-1 md:mb-4 md:max-w-xl">
+      <ul className="glass-strong pointer-events-auto mx-auto mb-2 grid h-[66px] max-w-lg grid-cols-6 rounded-[26px] px-1 md:mb-4 md:max-w-xl">
         {TABS.map(({ to, label, icon: Icon, accent }) => {
           const active = current === to;
           return (
@@ -65,7 +66,7 @@ export function BottomNav() {
                 )}
               >
                 <span
-                  className="grid h-8 w-14 place-items-center rounded-full transition-all duration-300"
+                  className="grid h-8 w-12 place-items-center rounded-full transition-all duration-300"
                   style={
                     active
                       ? { background: `color-mix(in oklab, ${accent} 20%, transparent)`, color: accent, boxShadow: `0 0 22px -6px ${accent}` }

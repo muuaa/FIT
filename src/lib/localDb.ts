@@ -42,6 +42,8 @@ import type {
   WorkoutSession,
   WeekReview,
   Wish,
+  IslamDay,
+  QuranProgress,
 } from '@/types/db';
 
 export interface WaterDay {
@@ -96,6 +98,8 @@ export interface Tables {
   notes: Note;
   reviews: WeekReview;
   wishes: Wish;
+  islam_days: IslamDay;
+  quran: QuranProgress;
 }
 export type TableName = keyof Tables;
 
@@ -134,6 +138,8 @@ export const TABLE_NAMES: TableName[] = [
   'notes',
   'reviews',
   'wishes',
+  'islam_days',
+  'quran',
 ];
 
 const BASE = 'fit.v1.';
@@ -166,11 +172,11 @@ let viewPerson: string | null = null;
  */
 export const JOINT_TABLES = new Set<string>([
   'todos', 'todo_done', 'expenses', 'home_settings', 'events', 'countdowns', 'goals', 'bills', 'meal_plan', 'chores',
-  'habits', 'habit_logs', 'journal', 'reviews', 'wishes',
+  'habits', 'habit_logs', 'journal', 'reviews', 'wishes', 'islam_days', 'quran',
 ]);
 
 /** Shared tables where each row belongs to one of us (`by`): your habit ticks, your journal entry. */
-export const PERSON_TABLES = new Set<string>(['habit_logs', 'journal', 'reviews']);
+export const PERSON_TABLES = new Set<string>(['habit_logs', 'journal', 'reviews', 'islam_days', 'quran']);
 
 /** Whose rows the screens show: the partner's while viewing them, otherwise the signed-in user's. */
 export function personId(): string {
@@ -279,6 +285,14 @@ export function rowKey<T extends TableName>(t: T, row: Tables[T]): string {
   if (t === 'journal') {
     const r = row as JournalEntry;
     return `${r.date}|${r.by}`;
+  }
+  if (t === 'islam_days') {
+    const r = row as IslamDay;
+    return `${r.date}|${r.by}`;
+  }
+  if (t === 'quran') {
+    const r = row as QuranProgress;
+    return `${r.surah}|${r.by}`;
   }
   if (t === 'reviews') {
     const r = row as WeekReview;
