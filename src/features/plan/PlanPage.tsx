@@ -69,7 +69,7 @@ function WeekStrip({ date, onPick, marks }: { date: string; onPick: (d: string) 
   );
 }
 
-function EventRow({ e, onOpen }: { e: CalEvent; onOpen: () => void }) {
+function EventRow({ e, color, onOpen }: { e: CalEvent; color: string; onOpen: () => void }) {
   const me = useSession((s) => s.user);
   const { partner, viewing, self } = usePartnerStore();
   const meLabel = viewing ? (self?.name ?? t('Me')) : t('Me');
@@ -77,6 +77,7 @@ function EventRow({ e, onOpen }: { e: CalEvent; onOpen: () => void }) {
   return (
     <li>
       <button type="button" onClick={onOpen} className="press flex w-full items-center gap-3 rounded-2xl bg-white/[0.04] py-2.5 ps-3 pe-3 text-start">
+        <span className="h-8 w-1 shrink-0 rounded-full" style={{ background: color }} aria-hidden />
         <span className="tabular w-12 shrink-0 text-sm font-semibold text-todo">{e.time ?? t('All day')}</span>
         <span className="text-xl">{e.emoji}</span>
         <span className="min-w-0 flex-1">
@@ -89,6 +90,19 @@ function EventRow({ e, onOpen }: { e: CalEvent; onOpen: () => void }) {
 }
 
 const VIEW_KEY = 'fit.plan.view';
+const WHO_KEY = 'fit.plan.who';
+type Whose = 'me' | 'them' | 'both';
+/** One colour per person, so you can tell whose plans are whose at a glance. */
+export const WHO_COLOR: Record<Whose, string> = { me: '#a89bff', them: '#ff9eb5', both: '#7ad9c0' };
+function savedWho(): Record<Whose, boolean> {
+  try {
+    const v = JSON.parse(localStorage.getItem(WHO_KEY) ?? 'null') as Record<Whose, boolean> | null;
+    if (v && typeof v.me === 'boolean') return v;
+  } catch {
+    /* fine */
+  }
+  return { me: true, them: true, both: true };
+}
 const VIEWS: CalView[] = ['day', '3day', 'week', 'month', 'list'];
 function savedView(): CalView {
   try {
@@ -117,6 +131,7 @@ function step(view: CalView, date: string, dir: 1 | -1): string {
 export function PlanPage() {
   const today = useToday();
   const me = useSession((s) => s.user);
+  const partner = usePartnerStore((s) => s.partner);
   const [date, setDate] = useState(today);
   const [view, setViewState] = useState<CalView>(savedView);
   const setView = (v: CalView) => {
@@ -127,12 +142,24 @@ export function PlanPage() {
       /* fine */
     }
   };
+  const [show, setShowState] = useState(savedWho);
+  const toggleWho = (k: Whose) => {
+    const next = { ...show, [k]: !show[k] };
+    setShowState(next);
+    try {
+      localStorage.setItem(WHO_KEY, JSON.stringify(next));
+    } catch {
+      /* fine */
+    }
+  };
+  const gWho = (g: GEvent): Whose => (g.who === 'both' ? 'both' : (g.who === me?.id || (g.who !== partner?.id && g.owner === me?.id)) ? 'me' : 'them');
+  const lWho = (e: CalEvent): Whose => (e.who === 'both' ? 'both' : e.who === me?.id ? 'me' : 'them');
   const { data: events = [] } = useTable('events');
   const { data: todos = [] } = useTable('todos');
   const { data: todoDone = [] } = useTable('todo_done');
   const [sheet, setSheet] = useState<{ event: CalEvent | null; time?: string; date?: string } | null>(null);
   const doneKeys = useMemo(() => new Set(todoDone.map((d) => `${d.todo_id}|${d.date}`)), [todoDone]);
-  const dayEvents = eventsOn(events, date);
+  const dayEvents = eventsOn(events, date).filter((e) => show[lWho(e)]);
   // Once connected, Google Calendar is the calendar: the events on screen come from (and go to) Google.
   useGoogleReturn();
   const gStatus = useGoogleStatus();
@@ -154,11 +181,11 @@ export function PlanPage() {
     }, 1200);
     return () => window.clearTimeout(id);
   }, [qc, useGoogle, view, from]); // eslint-disable-line react-hooks/exhaustive-deps
-  const google = gq.data?.events ?? [];
+  const google = (gq.data?.events ?? []).filter((g) => show[gWho(g)]);
   const [gSheet, setGSheet] = useState<{ event: GEvent | null; time?: string; date?: string } | null>(null);
   const dayGoogle = google.filter((g) => gOn(g, date)).sort((a, b) => (a.time ?? '').localeCompare(b.time ?? ''));
   const marks = (d: string) =>
-    eventsOn(events, d).length + google.filter((g) => gOn(g, d)).length + todosFor(todos, doneKeys, d, today).filter((i) => !i.done).length;
+    eventsOn(events, d).filter((e) => show[lWho(e)]).length + google.filter((g) => gOn(g, d)).length + todosFor(todos, doneKeys, d, today).filter((i) => !i.done).length;
   const addEvent = (at?: { date: string; time: string }) =>
     useGoogle ? setGSheet({ event: null, ...at }) : setSheet({ event: null, ...at });
 
@@ -173,12 +200,12 @@ export function PlanPage() {
       time: g.time,
       endDate: g.endDate,
       endTime: g.endTime,
-      color: g.color || '#9eaaff',
-      theirs: Boolean(me && g.owner !== me.id),
+      color: WHO_COLOR[gWho(g)],
+      theirs: false,
       open: () => setGSheet({ event: g }),
     }));
     for (const d of shown) {
-      for (const e of eventsOn(events, d)) {
+      for (const e of eventsOn(events, d).filter((x) => show[lWho(x)])) {
         out.push({
           key: `l|${e.id}|${d}`,
           title: e.title,
@@ -187,14 +214,14 @@ export function PlanPage() {
           time: e.time,
           endDate: d,
           endTime: null,
-          color: '#9eaaff',
-          theirs: Boolean(me && e.who !== 'both' && e.who !== me.id),
+          color: WHO_COLOR[lWho(e)],
+          theirs: false,
           open: () => setSheet({ event: e }),
         });
       }
     }
     return out;
-  }, [view, google, events, from, to, me]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view, google, events, from, to, me, show]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prev = () => setDate(step(view, date, -1));
   const next = () => setDate(step(view, date, 1));
@@ -228,6 +255,26 @@ export function PlanPage() {
           { value: 'list', label: t('List') },
         ]}
       />
+      <div className="mb-2 flex gap-1.5" role="group" aria-label={t('Whose plans')}>
+        {(
+          [
+            { k: 'me', label: t('Me') },
+            { k: 'them', label: partner?.name ?? t('Partner') },
+            { k: 'both', label: t('Both of us') },
+          ] as { k: Whose; label: string }[]
+        ).map(({ k, label }) => (
+          <button
+            key={k}
+            type="button"
+            aria-pressed={show[k]}
+            onClick={() => toggleWho(k)}
+            className={cn('press flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-opacity', show[k] ? 'bg-white/[0.07] text-ink' : 'bg-white/[0.03] text-ink-3 opacity-60')}
+          >
+            <span className="size-2.5 rounded-full" style={{ background: show[k] ? WHO_COLOR[k] : 'transparent', boxShadow: `inset 0 0 0 1.5px ${WHO_COLOR[k]}` }} />
+            {label}
+          </button>
+        ))}
+      </div>
       {view !== 'list' && (
         <div className="mb-2 flex items-center justify-between px-1">
           <IconButton label={t('Previous')} onClick={prev}>
@@ -266,10 +313,10 @@ export function PlanPage() {
             {dayEvents.length || dayGoogle.length ? (
               <ul className="space-y-1.5">
                 {dayEvents.map((e) => (
-                  <EventRow key={e.id} e={e} onOpen={() => setSheet({ event: e })} />
+                  <EventRow key={e.id} e={e} color={WHO_COLOR[lWho(e)]} onOpen={() => setSheet({ event: e })} />
                 ))}
                 {dayGoogle.map((g) => (
-                  <GEventRow key={`${g.owner}|${g.id}`} e={g} onOpen={() => setGSheet({ event: g })} />
+                  <GEventRow key={`${g.owner}|${g.id}`} e={g} color={WHO_COLOR[gWho(g)]} onOpen={() => setGSheet({ event: g })} />
                 ))}
               </ul>
             ) : useGoogle && gq.isLoading && !gq.data ? (

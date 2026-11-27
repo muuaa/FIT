@@ -31,7 +31,7 @@ export function GoogleG({ size = 14 }: { size?: number }) {
 const GIcon = ((p: { size?: number }) => <GoogleG size={p.size} />) as unknown as LucideIcon;
 
 /** An event from Google in the day's schedule. */
-export function GEventRow({ e, onOpen }: { e: GEvent; onOpen: () => void }) {
+export function GEventRow({ e, color, onOpen }: { e: GEvent; color?: string; onOpen: () => void }) {
   const me = useSession((s) => s.user);
   const { partner, viewing, self } = usePartnerStore();
   const meLabel = viewing ? (self?.name ?? t('Me')) : t('Me');
@@ -41,7 +41,7 @@ export function GEventRow({ e, onOpen }: { e: GEvent; onOpen: () => void }) {
   return (
     <li>
       <button type="button" onClick={onOpen} className="press flex w-full items-center gap-3 rounded-2xl bg-white/[0.035] px-3 py-2.5 text-start">
-        <span className="h-8 w-1 shrink-0 rounded-full" style={{ background: e.color }} aria-hidden />
+        <span className="h-8 w-1 shrink-0 rounded-full" style={{ background: color ?? e.color }} aria-hidden />
         <span className="tabular w-11 shrink-0 text-sm font-semibold text-ink-2">{e.time ?? t('All day')}</span>
         {e.emoji && <span className="text-lg">{e.emoji}</span>}
         <span className="min-w-0 flex-1">
