@@ -133,7 +133,7 @@ const ACTIVITY: Record<string, { emoji: string; label: string; text: Record<Lang
   chore: { emoji: '🧹', label: 'Chores', text: { en: 'Did {title} ✓', ar: 'أنجز {title} ✓' }, url: '/FIT/life/chores', cooldownSec: 60 },
   list: { emoji: '🛒', label: 'Lists', text: { en: 'Added {item} to {list}', ar: 'أضاف {item} إلى {list}' }, url: '/FIT/life/lists', cooldownSec: 120 },
   todo: { emoji: '✅', label: 'To-dos', text: { en: 'Added a to-do: {title}', ar: 'أضاف مهمة: {title}' }, url: '/FIT/plan', cooldownSec: 60 },
-  pic: { emoji: '📸', label: 'New photo', text: { en: 'Sent you a photo{note}', ar: 'أرسل لك صورة{note}' }, url: '/FIT/us/pics', cooldownSec: 5 },
+  pic: { emoji: '📸', label: 'Shared with you', text: { en: 'Sent you {what}{note}', ar: 'أرسل لك {what}{note}' }, url: '/FIT/us/pics', cooldownSec: 5 },
 };
 
 const SPLITS: Record<string, string[]> = { 'PPL-UL': ['push', 'pull', 'legs', 'upper', 'lower'], 'UL-PPL': ['upper', 'lower', 'push', 'pull', 'legs'] };

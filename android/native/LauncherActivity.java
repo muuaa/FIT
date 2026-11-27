@@ -84,6 +84,14 @@ public class LauncherActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(web, true);
         web.addJavascriptInterface(new Bridge(), "BTNative");
         web.setWebViewClient(new Client());
+        if (Build.VERSION.SDK_INT >= 24) {
+            android.webkit.ServiceWorkerController.getInstance().setServiceWorkerClient(new android.webkit.ServiceWorkerClient() {
+                @Override
+                public android.webkit.WebResourceResponse shouldInterceptRequest(WebResourceRequest req) {
+                    return sharedResponse(req.getUrl());
+                }
+            });
+        }
         web.setWebChromeClient(new Chrome());
         // The web view ignores its own padding, so it sits inside a frame that keeps it clear of the bars.
         FrameLayout frame = new FrameLayout(this);
@@ -350,7 +358,9 @@ public class LauncherActivity extends Activity {
     /** Where to open: a notification's page, a link into the app, or Home. */
     private String startUrl(Intent intent) {
         String url = HOME;
-        Uri data = intent != null ? intent.getData() : null;
+        String shared = shareUrl(intent);
+        if (shared != null) url = shared;
+        Uri data = intent != null && shared == null ? intent.getData() : null;
         if (data != null) {
             if ("https".equals(data.getScheme()) && HOST.equals(data.getHost())) {
                 url = data.toString();
@@ -369,7 +379,59 @@ public class LauncherActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        if (intent != null && intent.getData() != null) web.loadUrl(startUrl(intent));
+        if (intent != null && (intent.getData() != null || Intent.ACTION_SEND.equals(intent.getAction()))) web.loadUrl(startUrl(intent));
+    }
+
+    /** A file shared into the app from another app, served to the page at /FIT/__shared__/file. */
+    private Uri sharedFile;
+    private String sharedMime;
+
+    /** Share → Better Together: open the Shared page with the link, or with the photo/video. */
+    private String shareUrl(Intent intent) {
+        if (intent == null || !Intent.ACTION_SEND.equals(intent.getAction())) return null;
+        String type = intent.getType() != null ? intent.getType() : "";
+        String base = "https://" + HOST + "/FIT/us/pics";
+        if (type.startsWith("image/") || type.startsWith("video/")) {
+            Uri stream = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+            if (stream == null) return null;
+            sharedFile = stream;
+            sharedMime = getContentResolver().getType(stream);
+            if (sharedMime == null) sharedMime = type;
+            String name = type.startsWith("video/") ? "video.mp4" : "photo.jpg";
+            return base + "?shared=1&name=" + Uri.encode(name);
+        }
+        CharSequence text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+        if (text == null) return null;
+        String subject = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+        String all = (subject != null && !text.toString().contains(subject) ? subject + " " : "") + text;
+        return base + "?share=" + Uri.encode(all.length() > 1500 ? all.substring(0, 1500) : all);
+    }
+
+    /** Hand the shared file to the page (same address as the app, so the page can read it). */
+    private android.webkit.WebResourceResponse sharedResponse(Uri u) {
+        if (u == null || !HOST.equals(u.getHost()) || !"/FIT/__shared__/file".equals(u.getPath()) || sharedFile == null) return null;
+        try {
+            java.io.InputStream in = getContentResolver().openInputStream(sharedFile);
+            if (in == null) return null;
+            return new android.webkit.WebResourceResponse(sharedMime != null ? sharedMime : "application/octet-stream", null, in);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** A shared post: open it in its own app (Instagram, TikTok, YouTube…) when there is one, else a browser tab. */
+    private void openInApp(Uri uri) {
+        try {
+            Intent view = new Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE);
+            if (Build.VERSION.SDK_INT >= 30) {
+                view.addFlags(Intent.FLAG_ACTIVITY_REQUIRE_NON_BROWSER);
+                startActivity(view);
+                return;
+            }
+        } catch (ActivityNotFoundException ignored) {
+            // no app for it: a browser tab instead
+        }
+        openOutside(uri);
     }
 
     @Override
@@ -421,6 +483,12 @@ public class LauncherActivity extends Activity {
         @Override
         public void onPageFinished(WebView view, String url) {
             main.postDelayed(LauncherActivity.this::revealWhenDrawn, 3000);
+        }
+
+        @Override
+        public android.webkit.WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
+            android.webkit.WebResourceResponse r = sharedResponse(req.getUrl());
+            return r != null ? r : super.shouldInterceptRequest(view, req);
         }
 
         @Override
@@ -558,6 +626,11 @@ public class LauncherActivity extends Activity {
         @JavascriptInterface
         public void openExternal(String url) {
             main.post(() -> openOutside(Uri.parse(url)));
+        }
+
+        @JavascriptInterface
+        public void openLink(String url) {
+            main.post(() -> openInApp(Uri.parse(url)));
         }
     }
 }

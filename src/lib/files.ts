@@ -34,7 +34,7 @@ export async function uploadFile(file: Blob, name: string): Promise<{ path: stri
   if (!supabase || !user) throw new Error(t('Sign in to attach files.'));
   if (!navigator.onLine) throw new Error(t("You're offline. Attachments need internet; try again when you're connected."));
   const body = await shrinkImage(file);
-  if (body.size > 20 * 1024 * 1024) throw new Error(t('That file is over 20 MB.'));
+  if (body.size > 50 * 1024 * 1024) throw new Error(t('That file is over 50 MB. Try a shorter video.'));
   const ext = (body.type === 'image/jpeg' && file.type !== 'image/jpeg' ? 'jpg' : name.split('.').pop() || 'bin')
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '')

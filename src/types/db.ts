@@ -423,11 +423,19 @@ export interface QuranProgress {
   updated_at: string;
 }
 
-/** A photo one of you sent the other. */
+/** Something one of you shared with the other: a photo, a video, or a link to a post. */
 export interface Pic {
   id: string;
-  /** Path in file storage. */
+  /** What it is (older rows are photos). */
+  kind?: 'photo' | 'video' | 'link';
+  /** Path in file storage (photos and videos; empty for links). */
   path: string;
+  mime?: string;
+  /** For links: the address, and its preview. */
+  url?: string;
+  title?: string | null;
+  image?: string | null;
+  site?: string | null;
   caption: string;
   by: string;
   created_at: string;
