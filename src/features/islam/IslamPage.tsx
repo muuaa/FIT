@@ -103,7 +103,8 @@ export function IslamPage() {
           <div className="mt-1.5 grid grid-cols-5 gap-1.5">
             {PRAYERS.map((p) => {
               const on = Boolean(mine?.sunnah?.[p.key]);
-              if (!p.sunnah) return <span key={p.key} />;
+              // Asr has none; Isha's sunnah sits with Witr, beside Qiyam.
+              if (!p.sunnah || p.key === 'isha') return <span key={p.key} />;
               return (
                 <button
                   key={p.key}
@@ -154,38 +155,53 @@ export function IslamPage() {
               );
             })}
           </div>
-          {/* night prayer */}
+          {/* night prayer: Qiyam, and Isha's sunnah with Witr */}
           <div className="mt-2 grid grid-cols-2 gap-1.5">
-            {(
-              [
-                { k: 'qiyam', label: 'Qiyam', ar: 'قيام الليل', emoji: '🌌' },
-                { k: 'witr', label: 'Witr', ar: 'الوتر', emoji: '✨' },
-              ] as const
-            ).map(({ k, label, ar, emoji }) => {
-              const on = Boolean(mine?.[k]);
-              return (
+            <button
+              type="button"
+              disabled={!canWrite}
+              aria-pressed={Boolean(mine?.qiyam)}
+              onClick={() => {
+                tick();
+                update({ qiyam: !mine?.qiyam });
+              }}
+              className={cn('press flex items-center gap-2 rounded-2xl px-3 py-2.5 text-start', mine?.qiyam ? 'bg-islam/15 ring-1 ring-islam/60' : 'bg-white/[0.04]')}
+            >
+              <span className="text-lg">🌌</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{t('Qiyam')}</span>
+                <span className="block text-xs text-ink-3" lang="ar">
+                  قيام الليل
+                </span>
+              </span>
+              <span className={cn('grid size-6 shrink-0 place-items-center rounded-full', mine?.qiyam ? 'bg-islam text-bg' : 'border border-white/20')}>
+                {mine?.qiyam && <Check size={14} strokeWidth={3} />}
+              </span>
+            </button>
+            <div className={cn('rounded-2xl px-2 py-1.5', mine?.sunnah?.isha && mine?.witr ? 'bg-islam/15 ring-1 ring-islam/60' : 'bg-white/[0.04]')}>
+              {(
+                [
+                  { k: 'isha', label: 'Isha sunnah', ar: 'سنة العشاء', on: Boolean(mine?.sunnah?.isha), set: () => update({ sunnah: { ...(mine?.sunnah ?? {}), isha: !mine?.sunnah?.isha } }) },
+                  { k: 'witr', label: 'Witr', ar: 'الوتر', on: Boolean(mine?.witr), set: () => update({ witr: !mine?.witr }) },
+                ] as const
+              ).map((x) => (
                 <button
-                  key={k}
+                  key={x.k}
                   type="button"
                   disabled={!canWrite}
-                  aria-pressed={on}
+                  aria-pressed={x.on}
+                  aria-label={t(x.label)}
                   onClick={() => {
                     tick();
-                    update({ [k]: !on });
+                    x.set();
                   }}
-                  className={cn('press flex items-center gap-2 rounded-2xl px-3 py-2.5 text-start', on ? 'bg-islam/15 ring-1 ring-islam/60' : 'bg-white/[0.04]')}
+                  className="press flex w-full items-center gap-2 rounded-xl px-1 py-1 text-start"
                 >
-                  <span className="text-lg">{emoji}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{t(label)}</span>
-                    <span className="block text-xs text-ink-3" lang="ar">
-                      {ar}
-                    </span>
-                  </span>
-                  <span className={cn('grid size-6 shrink-0 place-items-center rounded-full', on ? 'bg-islam text-bg' : 'border border-white/20')}>{on && <Check size={14} strokeWidth={3} />}</span>
+                  <span className={cn('grid size-5 shrink-0 place-items-center rounded-full', x.on ? 'bg-islam text-bg' : 'border border-white/25')}>{x.on && <Check size={12} strokeWidth={3} />}</span>
+                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold">{t(x.label)}</span>
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
           {right && (
             <div className="mt-3 space-y-1 rounded-2xl bg-white/[0.035] px-3 py-2">
