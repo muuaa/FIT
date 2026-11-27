@@ -33,8 +33,6 @@ const NUDGES = [
   { emoji: '💧', text: 'Drink some water!' },
   { emoji: '🏋️', text: 'Time to train. You’ve got this!' },
   { emoji: '😴', text: 'Bedtime. Come sleep!' },
-  { emoji: '🛒', text: 'Check the shopping list' },
-  { emoji: '📞', text: 'Call me when you can' },
 ];
 
 export function NudgeBar() {
