@@ -99,13 +99,64 @@ export function IslamPage() {
               );
             })}
           </div>
-          {right && (
-            <div className="mt-3 flex items-center justify-between rounded-2xl bg-white/[0.035] px-3 py-2">
-              <span className="text-sm text-ink-2">{right.name}</span>
-              <span className="flex items-center gap-2">
-                <Dots n={prayed(theirs)} of={5} accent="var(--color-us)" />
-                <span className="tabular text-xs text-ink-3">{prayed(theirs)}/5</span>
+          {/* sunnah with each prayer */}
+          <div className="mt-1.5 grid grid-cols-5 gap-1.5">
+            {PRAYERS.map((p) => {
+              const on = Boolean(mine?.sunnah?.[p.key]);
+              return (
+                <button
+                  key={p.key}
+                  type="button"
+                  disabled={!canWrite}
+                  aria-pressed={on}
+                  aria-label={t('{prayer} sunnah', { prayer: t(p.label) })}
+                  onClick={() => {
+                    tick();
+                    update({ sunnah: { ...(mine?.sunnah ?? {}), [p.key]: !on } });
+                  }}
+                  className={cn('press flex flex-col items-center gap-0.5 rounded-xl py-1.5', on ? 'bg-islam/12 text-ink ring-1 ring-islam/40' : 'bg-white/[0.03] text-ink-3')}
+                >
+                  <span className="flex items-center gap-1 text-[10.5px] font-semibold">
+                    <span className={cn('grid size-3.5 place-items-center rounded-full', on ? 'bg-islam text-bg' : 'border border-white/25')}>{on && <Check size={9} strokeWidth={3.5} />}</span>
+                    {t('Sunnah')}
+                  </span>
+                  <span className="text-[9.5px] text-ink-3">{t(p.sunnah)}</span>
+                </button>
+              );
+            })}
+          </div>
+          {/* night prayer */}
+          <button
+            type="button"
+            disabled={!canWrite}
+            aria-pressed={Boolean(mine?.qiyam)}
+            onClick={() => {
+              tick();
+              update({ qiyam: !mine?.qiyam });
+            }}
+            className={cn('press mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-start', mine?.qiyam ? 'bg-islam/15 ring-1 ring-islam/60' : 'bg-white/[0.04]')}
+          >
+            <span className="text-xl">🌌</span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">{t('Qiyam al-Layl')}</span>
+              <span className="block text-xs text-ink-3" lang="ar">
+                قيام الليل
               </span>
+            </span>
+            <span className={cn('grid size-6 place-items-center rounded-full', mine?.qiyam ? 'bg-islam text-bg' : 'border border-white/20')}>{mine?.qiyam && <Check size={14} strokeWidth={3} />}</span>
+          </button>
+          {right && (
+            <div className="mt-3 space-y-1 rounded-2xl bg-white/[0.035] px-3 py-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-ink-2">{right.name}</span>
+                <span className="flex items-center gap-2">
+                  <Dots n={prayed(theirs)} of={5} accent="var(--color-us)" />
+                  <span className="tabular text-xs text-ink-3">{prayed(theirs)}/5</span>
+                </span>
+              </div>
+              <div className="tabular text-xs text-ink-3">
+                {t('Sunnah {n}/5', { n: PRAYERS.filter((p) => theirs?.sunnah?.[p.key]).length })} · {t('Qiyam')} {theirs?.qiyam ? <span className="text-us">✓</span> : '—'}
+              </div>
             </div>
           )}
         </Card>

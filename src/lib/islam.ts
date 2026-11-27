@@ -122,11 +122,11 @@ export const TOTAL_AYAHS = 6236;
 export const JUZ_AMMA_FROM = 78;
 
 export const PRAYERS = [
-  { key: 'fajr', label: 'Fajr', ar: 'الفجر' },
-  { key: 'dhuhr', label: 'Dhuhr', ar: 'الظهر' },
-  { key: 'asr', label: 'Asr', ar: 'العصر' },
-  { key: 'maghrib', label: 'Maghrib', ar: 'المغرب' },
-  { key: 'isha', label: 'Isha', ar: 'العشاء' },
+  { key: 'fajr', label: 'Fajr', ar: 'الفجر', sunnah: '2 before' },
+  { key: 'dhuhr', label: 'Dhuhr', ar: 'الظهر', sunnah: '4 + 2' },
+  { key: 'asr', label: 'Asr', ar: 'العصر', sunnah: '4 before' },
+  { key: 'maghrib', label: 'Maghrib', ar: 'المغرب', sunnah: '2 after' },
+  { key: 'isha', label: 'Isha', ar: 'العشاء', sunnah: '2 after' },
 ] as const;
 export type PrayerKey = (typeof PRAYERS)[number]['key'];
 
